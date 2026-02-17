@@ -67,7 +67,10 @@ def get_datatypes(data, dport):
                 }
                 return dt
         except Exception:
-            return False
+            return {
+                "MIME Type": mime_type,
+                "data": descs,
+            }
         try:
             if base64.b64encode(base64.b64decode(ln, validate=False)) == ln:
                 get_datatypes(base64.b64decode(ln), dport)
@@ -83,7 +86,10 @@ def get_datatypes(data, dport):
                 }
                 return dt
         except Exception:
-            return False
+            return {
+                "MIME Type": mime_type,
+                "data": descs,
+            }
 
     udescs = list(set(descs))
     if "empty" in udescs:
