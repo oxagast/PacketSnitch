@@ -16,7 +16,10 @@ from scipy.stats import entropy
 import socket
 import chardet
 import zlib
-import base64
+import geoip2.database
+
+database_path = "GeoLite2-City.mmdb"
+
 
 try:
     import scapy.all as scapy
@@ -53,12 +56,27 @@ def safe_decompress(compressed_data):
         result = dco.decompress(compressed_data)
         result += dco.flush()
     except zlib.error as e:
-        # Potentially use dco.unconsumed_tail to recover data
         pass
     return result
 
 
-def get_datatypes(data, dport):
+def get_geoip_info(ip):
+    try:
+        with geoip2.database.Reader(database_path) as reader:
+            response = reader.city(ip)
+            return {
+                "Country": response.country.name,
+                "City": response.city.name,
+                "Postal Code": response.postal.code,
+                "Time Zone": response.location.time_zone,
+            }
+    except geoip2.errors.AddressNotFoundError:
+        return {"Location": "Unknown"}
+    except Exception as e:
+        return {"Error": str(e)}
+
+
+def get_datatypes(data, dport, srcip, destip):
     mime_type = magic.from_buffer(data, mime=True)
     descs = []
     dedata = ""
@@ -80,7 +98,7 @@ def get_datatypes(data, dport):
         udescs.remove("data")
     if udescs == []:
         udescs = ["Unknown data type"]
-    trait_struct = get_traits(data, dport)
+    trait_struct = get_traits(data, dport, srcip, destip)
     dt = {
         "MIME Type": mime_type,
         "Decompressed": compressedd,
@@ -92,13 +110,13 @@ def get_datatypes(data, dport):
 
 def get_serv(port, protocol="tcp"):
     try:
-        service_name = socket.getservbyport(port, protocol)
-        return service_name
+        serv_name = socket.getservbyport(port, protocol)
+        return serv_name
     except Exception:
         return "Unknown"
 
 
-def get_traits(data, dport):
+def get_traits(data, dport, srcip, destip):
     counts = np.bincount(list(data))
     entop = entropy(counts, base=2)
     data_len = len(data)
@@ -107,15 +125,21 @@ def get_traits(data, dport):
     chars_used = len(set(data))
     uniq_chars = set(data)
     encoding = chardet.detect(data)
+    loc_info_src = get_geoip_info(srcip)
+    loc_info_dest = get_geoip_info(destip)
     return {
         "Shannon Entropy": entop,
+        "Location Data": {
+            "Source IP": loc_info_src,
+            "Destination IP": loc_info_dest,
+        },
         "Length": data_len,
-        "Protocol": protostr,
+        "Port Protcol": protostr,
         "Characters": {
             "Charset": charset,
+            "Encoding": encoding,
             "Characters used": chars_used,
             "Unique characters": bytearray(list(uniq_chars)).hex(),
-            "Encoding": encoding,
         },
     }
 
@@ -135,7 +159,7 @@ def parse_pcap(pcap_path, srcp, dstp):
             if (srcp is None or sport == srcp) and (dstp is None or dport == dstp):
                 if raw_d is not None and len(raw_d) > 0:
                     write_testcase(raw_d, args.output, dport_dir, s)
-                    dt_struct = get_datatypes(raw_d, dport)
+                    dt_struct = get_datatypes(raw_d, dport, p["IP"].src, p["IP"].dst)
                     pkt_struct = {
                         "Packet Processed": int(s),
                         "IP": {
