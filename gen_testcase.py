@@ -442,7 +442,7 @@ to enrich the output with additional network and server information.
           - all_testcases_info.json: a consolidated file with info for all testcases
                                  """,
     ),
-    epilog="Example usage: python3 gen_testcase.py traffic.pcap -o output_dir -s 80 -d 8080 -T 5 -a",
+    epilog="   Example usage: python3 gen_testcase.py traffic.pcap -o output_dir -s 80 -d 8080 -T 5 -a",
 )
 parser.add_argument("pcap_file", help="The .pcap file to parse.")
 parser.add_argument(
@@ -454,7 +454,7 @@ parser.add_argument(
 parser.add_argument(
     "-s",
     "--source-port",
-    help="Only generate testcases for this destination port.",
+    help="Only generate testcases from this source port.",
     type=int,
 )
 parser.add_argument(
