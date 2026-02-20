@@ -17,25 +17,31 @@ import geoip2.database
 import magic
 import numpy as np
 import requests
+import yaml
 from bs4 import BeautifulSoup
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from scipy.stats import entropy
 
 try:
     import scapy.all as scapy
-    from scapy.all import rdpcap
 except ImportError:
     import scapy
 
-geodat_path = "common/GeoLite2-City.mmdb"
-mac_vendors_path = "common/mac-vendors-export.csv"
-icann_csv_path = "common/service-names-port-numbers.csv"
 checked_ips = []
 ar = "False"
 
 
+def config_loader(filename="conf.yaml"):
+    if not os.path.exists(filename):
+        print("Error: Configuration file not found!", file=sys.stderr)
+        sys.exit(1)
+    with open(filename, "r") as f:
+        return yaml.safe_load(f)
+
+
 def get_port_description(port, protocol="tcp"):
     if not os.path.exists(icann_csv_path):
+        print("Error: ICANN port description database file not found!", file=sys.stderr)
         return "ICANN port description file not found!"
     with open(icann_csv_path, newline="", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
@@ -140,7 +146,7 @@ def get_serv_banner(ip, port, t, hostname):
                 return {
                     "IP": ip,
                     "Port": port,
-                    "Banner": "Error fetching banner: " + str(e),
+                    "Banner": "Error fetching banner",
                     "Page Title": pt,
                     "SSL Cert": socket_cert,
                     "SSL Version": ssl_version,
@@ -162,8 +168,7 @@ def get_serv_banner(ip, port, t, hostname):
 
 def get_page_title(url, t):
     try:
-        requests.packages.urllib3.disable_warnings(
-            category=InsecureRequestWarning)
+        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
         res = requests.get(url, timeout=t, verify=False)
         res.raise_for_status()
         cont = res.content
@@ -181,16 +186,14 @@ def write_testcase(data, output_dir, pdir, index):
     if not os.path.exists(output_dir + "/" + pdir):
         os.mkdir(output_dir + "/" + pdir)
     out = open(
-        output_dir + "/" + pdir + "/pcap.data_packet." +
-        str(index) + ".dat", "wb"
+        output_dir + "/" + pdir + "/pcap.data_packet." + str(index) + ".dat", "wb"
     )
     out.write(data)
 
 
 def write_info(output_dir, pdir, index, dt_json, pkt_json):
     out = open(
-        output_dir + "/" + pdir + "/pcap.info_packet." +
-        str(index) + ".json", "wb"
+        output_dir + "/" + pdir + "/pcap.info_packet." + str(index) + ".json", "wb"
     )
     merge_json = {
         "Packet Info": json.loads(pkt_json),
@@ -201,6 +204,8 @@ def write_info(output_dir, pdir, index, dt_json, pkt_json):
     main = open("all_testcases_info.json", "a")
     main.write(json.dumps(merge_json) + "\n")
     main.close()
+    if verbose >= 2:
+        print(json.dumps(merge_json, indent=2))
     return merge_json
 
 
@@ -238,10 +243,10 @@ def get_geoip_info(ip):
             return {
                 "Country": response.country.name,
                 "City": response.city.name,
-                "Postal Code": response.postal.code,
-                "Time Zone": response.location.time_zone,
+                "Postal Code": response.postal.code,  # type: ignore
+                "Time Zone": response.location.time_zone,  # type: ignore
             }
-    except geoip2.errors.AddressNotFoundError:
+    except geoip2.errors.AddressNotFoundError:  # type: ignore
         return {"Location": "Localnet"}
     except Exception as e:
         return {"Location": "Error: " + str(e)}
@@ -346,6 +351,7 @@ def get_traits(data, dport, srcip, destip, timeout):
 
 def mac_addr_to_vendor(mac):
     if not os.path.exists(mac_vendors_path):
+        print("Error: MAC vendor database file not found!", file=sys.stderr)
         return "Error: MAC vendor file not found!"
     with open(mac_vendors_path, newline="", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
@@ -356,20 +362,17 @@ def mac_addr_to_vendor(mac):
 
 
 def parse_pcap(pcap_path, srcp, dstp, tmout):
-    print("Generating testcases based on " +
-          pcap_path + ".  This will take a while...")
+    print("Generating testcases based on " + pcap_path + ".  This will take a while...")
     s = 0
-    packets = scapy.rdpcap(pcap_path)
+    packets = scapy.rdpcap(pcap_path)  # type: ignore
     for p in packets:
         mac_addr_src = p.src if p.haslayer("Ethernet") else "N/A"
         mac_addr_dst = p.dst if p.haslayer("Ethernet") else "N/A"
         mac_vendor_src = (
-            mac_addr_to_vendor(
-                mac_addr_src) if mac_addr_src != "N/A" else "N/A"
+            mac_addr_to_vendor(mac_addr_src) if mac_addr_src != "N/A" else "N/A"
         )
         mac_vendor_dst = (
-            mac_addr_to_vendor(
-                mac_addr_dst) if mac_addr_dst != "N/A" else "N/A"
+            mac_addr_to_vendor(mac_addr_dst) if mac_addr_dst != "N/A" else "N/A"
         )
         if p.haslayer("TCP"):
             raw_d = p["TCP"].payload.original
@@ -442,7 +445,7 @@ to enrich the output with additional network and server information.
           - all_testcases_info.json: a consolidated file with info for all testcases
                                  """,
     ),
-    epilog="   Example usage: python3 gen_testcase.py traffic.pcap -o output_dir -s 80 -d 8080 -T 5 -a",
+    epilog="Example usage: \n   python3 gen_testcase.py traffic.pcap -o output_dir -s 80 -d 8080 -T 5 -a",
 )
 parser.add_argument("pcap_file", help="The .pcap file to parse.")
 parser.add_argument(
@@ -476,9 +479,81 @@ parser.add_argument(
     help="Perform active reconnaissance to gather extra info (geoip, banners, titles).",
     action="store_true",
 )
-
+parser.add_argument(
+    "-c",
+    "--conf",
+    help="Path to configuration YAML file (default: conf.yaml).",
+)
+parser.add_argument(
+    "-v",
+    "--verbose",
+    help="Enable verbose output for debugging.",
+    action="count",
+    default=0,
+)
+verbose = parser.parse_args().verbose
 args = parser.parse_args()
-ar = args.active_recon
+config = config_loader(args.conf if args.conf else "conf.yaml")
+if config["database_locations"]["geoip"]:
+    geodat_path = config["database_locations"]["geoip"]
+    if verbose >= 1:
+        if os.path.exists(geodat_path):
+            print("Using GeoIP Database found at: " + geodat_path, file=sys.stderr)
+        else:
+            print(
+                "Error: GeoIP database file not found at specified location!",
+                file=sys.stderr,
+            )
+else:
+    if verbose >= 1:
+        print(
+            "Error: GeoIP database location not specified in config!", file=sys.stderr
+        )
+if config["database_locations"]["mac_vendors"]:
+    mac_vendors_path = config["database_locations"]["mac_vendors"]
+    if verbose >= 1:
+        if os.path.exists(mac_vendors_path):
+            print(
+                "Using MAC Vendor Database found at: " + mac_vendors_path,
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "Error: MAC vendor database file not found at specified location!",
+                file=sys.stderr,
+            )
+else:
+    if verbose >= 1:
+        print(
+            "Error: MAC vendor database location not specified in config!",
+            file=sys.stderr,
+        )
+if config["database_locations"]["icann_ports"]:
+    icann_csv_path = config["database_locations"]["icann_ports"]
+    if verbose >= 1:
+        if os.path.exists(icann_csv_path):
+            print(
+                "Using ICANN Port Description Database found at: " + icann_csv_path,
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "Error: ICANN port description database file not found at specified location!",
+                file=sys.stderr,
+            )
+else:
+    if verbose >= 1:
+        print(
+            "Error: ICANN port description database location not specified in config!",
+            file=sys.stderr,
+        )
+if not args.active_recon:
+    if config["active_recon"]:
+        ar = config["active_recon"]
+    else:
+        ar = False
+
+
 if not os.path.exists(args.pcap_file):
     print("The .pcap file does not exist.", file=sys.stderr)
     sys.exit(1)
