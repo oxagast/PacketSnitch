@@ -44,8 +44,6 @@ def config_loader(filename="conf.yaml"):
 
 
 # Lookup port description from ICANN CSV database
-
-
 def get_port_description(port, protocol="tcp"):
     if not os.path.exists(icann_csv_path):
         print("Error: ICANN port description database file not found!", file=sys.stderr)
@@ -69,8 +67,6 @@ def get_port_description(port, protocol="tcp"):
 
 
 # Perform reverse DNS lookup for an IP address
-
-
 def reverse_dns_lookup(ip):
     try:
         dat = socket.gethostbyaddr(ip)
@@ -83,13 +79,11 @@ def reverse_dns_lookup(ip):
         return {
             "Resolved": False,
             "Error": "Address resolution error: " + str(e),
-            "Hostnames": [],
+            "Host": [],
         }
 
 
 # Fetch server banner and SSL certificate information for a given IP and port
-
-
 def get_serv_banner(ip, port, t, hostname):
     socket_cert = "Unavailable"
     encrypted_with = "N/A"
@@ -184,8 +178,6 @@ def get_serv_banner(ip, port, t, hostname):
 
 
 # Fetch the page title from a URL
-
-
 def get_page_title(url, t):
     try:
         requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
@@ -203,8 +195,6 @@ def get_page_title(url, t):
 
 
 # Write raw packet data to a testcase file
-
-
 def write_testcase(data, output_dir, pdir, index):
     if not os.path.exists(output_dir + "/" + pdir):
         os.mkdir(output_dir + "/" + pdir)
@@ -215,8 +205,6 @@ def write_testcase(data, output_dir, pdir, index):
 
 
 # Write packet info and extra info to JSON files
-
-
 def write_info(output_dir, pdir, index, dt_json, pkt_json):
     out = open(
         output_dir + "/" + pdir + "/pcap.info_packet." + str(index) + ".json", "wb"
@@ -236,8 +224,6 @@ def write_info(output_dir, pdir, index, dt_json, pkt_json):
 
 
 # Determine IP network class (A/B/C/D/E)
-
-
 def get_netclass(ip):
     fo = int(ip.split(".")[0])
     if 0 <= fo <= 127:
@@ -251,8 +237,6 @@ def get_netclass(ip):
 
 
 # Safely decompress data using zlib/gzip
-
-
 def safe_decompress(compressed_data):
     # Initialize decompressor
     # Handle gzip and zlib formats
@@ -267,8 +251,6 @@ def safe_decompress(compressed_data):
 
 
 # Get GeoIP information for an IP address
-
-
 def get_geoip_info(ip):
     if not os.path.exists(geodat_path):
         return {"Location": "Error: GeoIP database not found!"}
@@ -288,8 +270,6 @@ def get_geoip_info(ip):
 
 
 # Analyze packet data for MIME type, decompression, and traits
-
-
 def get_datatypes(data, dport, srcip, destip, tmout):
     mime_type = magic.from_buffer(data, mime=True)
     descs = []
@@ -323,8 +303,6 @@ def get_datatypes(data, dport, srcip, destip, tmout):
 
 
 # Get service name for a port using socket library
-
-
 def get_serv(port, protocol="tcp"):
     try:
         serv_name = socket.getservbyport(port, protocol)
@@ -334,8 +312,6 @@ def get_serv(port, protocol="tcp"):
 
 
 # Extract traits from packet data (entropy, network info, banners, charset, etc.)
-
-
 def get_traits(data, dport, srcip, destip, timeout):
     counts = np.bincount(list(data))
     entop = entropy(counts, base=2)
@@ -394,8 +370,6 @@ def get_traits(data, dport, srcip, destip, timeout):
 
 
 # Lookup MAC address vendor from CSV database
-
-
 def mac_addr_to_vendor(mac):
     if not os.path.exists(mac_vendors_path):
         print("Error: MAC vendor database file not found!", file=sys.stderr)
@@ -409,8 +383,6 @@ def mac_addr_to_vendor(mac):
 
 
 # Parse .pcap file and generate testcases and info files
-
-
 def parse_pcap(pcap_path, srcp, dstp, tmout):
     print("Generating testcases based on " + pcap_path + ".  This will take a while...")
     s = 0
@@ -431,7 +403,7 @@ def parse_pcap(pcap_path, srcp, dstp, tmout):
             dport_dir = str(dport)
             if (srcp is None or sport == srcp) and (dstp is None or dport == dstp):
                 if raw_d is not None and len(raw_d) > 0:
-                    write_testcase(raw_d, args.output, dport_dir, s)
+                    write_testcase(raw_d, outd, dport_dir, s)
                     dt_struct = get_datatypes(
                         raw_d, dport, p["IP"].src, p["IP"].dst, tmout
                     )
@@ -496,7 +468,7 @@ def parse_pcap(pcap_path, srcp, dstp, tmout):
                         },
                     }
                     write_info(
-                        args.output,
+                        outd,
                         dport_dir,
                         s,
                         json.dumps(dt_struct).encode(),
@@ -628,6 +600,14 @@ else:
             file=sys.stderr,
         )
 
+outd = "testcases"
+if args.output and args.output != "testcases":
+    outd = args.output
+    print("Using output directory: " + args.output, file=sys.stderr)
+
+if "output_dir" in config:
+    outd = config["output_dir"]
+    print("Using output directory from config: " + outd, file=sys.stderr)
 # Set active recon flag from config if not provided as argument
 if not args.active_recon:
     if config["active_recon"]:
@@ -639,8 +619,8 @@ if not args.active_recon:
 if not os.path.exists(args.pcap_file):
     print("The .pcap file does not exist.", file=sys.stderr)
     sys.exit(1)
-if not os.path.exists(args.output):
-    os.mkdir(args.output)
+if not os.path.exists(outd):
+    os.mkdir(outd)
     parse_pcap(args.pcap_file, args.source_port, args.dest_port, args.timeout)
     sys.exit(0)
 else:
@@ -655,11 +635,11 @@ else:
     try:
         if os.path.exists("all_testcases_info.json"):
             os.remove("all_testcases_info.json")
-        if os.path.isdir(args.output):
-            shutil.rmtree(args.output, ignore_errors=True)
+        if os.path.isdir(outd):
+            shutil.rmtree(outd, ignore_errors=True)
         # Small delay to ensure file system has completed deletions
         time.sleep(1)
-        os.mkdir(args.output)
+        os.mkdir(outd)
         parse_pcap(args.pcap_file, args.source_port, args.dest_port, args.timeout)
         sys.exit(0)
     except Exception as e:
