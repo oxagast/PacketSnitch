@@ -653,6 +653,20 @@ else:
             "Error: ICANN port description database location not specified in config!",
             file=sys.stderr,
         )
+totalp = 0
+if args.source_port is None and args.dest_port is None:
+    totalp = len(scapy.rdpcap(args.pcap_file))  # type: ignore
+else:
+    for pkt in scapy.rdpcap(args.pcap_file):  # type: ignore
+        if pkt.haslayer("TCP"):
+            if (
+                pkt["TCP"].dport == args.dest_port
+                or pkt["TCP"].sport == args.source_port
+            ):
+                totalp = totalp + 1
+if totalp == 0:
+    print("No packets found matching the specified port filters.", file=sys.stderr)
+    exit(1)
 
 if "threads" in config and config["threads"]:
     nthreads = config["threads"]
@@ -692,7 +706,6 @@ else:
     use_llm = False
 
 
-totalp = len(scapy.rdpcap(args.pcap_file))  # type: ignore
 print(
     "Preparing to process "
     + str(totalp)
