@@ -15,6 +15,8 @@ import textwrap
 import chardet
 import geoip2.database
 import magic
+import threading
+import random
 import numpy as np
 import requests
 import ollama
@@ -32,18 +34,37 @@ except ImportError:
 # Global variables for caching and configuration
 checked_ips = []
 ar = "False"
+percentage_pcap = 10
+response_length = 200
+use_llm = False
+llm_model = "minimax-m2.5:cloud"
+nthreads = 6
+threads = []
 
 
 def llm_query(packet_infos):
-    res = ollama.generate(
-        model="minimax-m2.5:cloud",
-        prompt="Give a sub 200 word analysis of the following packet in paragraph form: "
-        + packet_infos,
-    )
-    return {"Summary": res["response"]}
+    try:
+        if ollama and use_llm:
+            res = ollama.generate(
+                model=llm_model,
+                prompt="Give a sub "
+                + str(response_length)
+                + " word analysis of the following packet in paragraph form: "
+                + packet_infos,
+            )
+            if res and "response" in res:
+                return {"Summary": res["response"]}
+            else:
+                return {"Summary": ""}
+        else:
+            return {"Summary": "LLM integration not enabled"}
+    except Exception as e:
+        return {"Summary": "LLM integration error: " + str(e)}
 
 
 # Load YAML configuration file
+
+
 def config_loader(filename="conf.yaml"):
     if not os.path.exists(filename):
         print("Error: Configuration file not found!", file=sys.stderr)
@@ -226,7 +247,10 @@ def write_info(output_dir, pdir, index, dt_json, pkt_json, perp):
     pkt_num = int(index)
     if pkt_num % perp == 0:
         llm_info = llm_query(json.dumps(merge_json))
-        with_llm = {"Packet": merge_json, "Analysis": llm_info}
+        if llm_info and "Summary" in llm_info and llm_info["Summary"] != "":
+            with_llm = {"Packet": merge_json, "Analysis": llm_info}
+        else:
+            with_llm = {"Packet": merge_json}
     else:
         with_llm = {"Packet": merge_json}
     out.write(json.dumps(merge_json).encode())
@@ -379,7 +403,7 @@ def get_traits(data, dport, srcip, destip, timeout):
         "Characters": {
             "Charset": charset,
             "Encoding": encoding
-            if entop <= 2.5
+            if entop <= 4.85
             else "Unavailable for high entropy data",
             "Characters used": chars_used,
             "Unique characters": bytearray(list(uniq_chars)).hex(),
@@ -401,14 +425,22 @@ def mac_addr_to_vendor(mac):
 
 
 # Parse .pcap file and generate testcases and info files
-def parse_pcap(pcap_path, srcp, dstp, tmout):
-    print("Generating testcases based on " + pcap_path + ".  This will take a while...")
-    s = 0
+def parse_pcap(pcap_path, srcp, dstp, tmout, percentage_p, from_p, to_p, thread_id):
+    print(
+        "Starting thread "
+        + str(thread_id)
+        + " for packets "
+        + str(from_p)
+        + " to "
+        + str(to_p),
+        file=sys.stderr,
+    )
+    s = from_p
     total_pkts = len(scapy.rdpcap(pcap_path))  # type: ignore
-    per_pkts = int((15 / 100) * total_pkts)
-    pp = int((15 / 100) * per_pkts)
+    per_pkts = int((percentage_p / 100) * total_pkts)
+    pp = int((percentage_p / 100) * per_pkts)
     packets = scapy.rdpcap(pcap_path)  # type: ignore
-    for p in packets:
+    for p in packets[int(from_p) : int(to_p)]:
         mac_addr_src = p.src if p.haslayer("Ethernet") else "N/A"
         mac_addr_dst = p.dst if p.haslayer("Ethernet") else "N/A"
         mac_vendor_src = (
@@ -622,6 +654,9 @@ else:
             file=sys.stderr,
         )
 
+if "threads" in config and config["threads"]:
+    nthreads = config["threads"]
+
 outd = "testcases"
 if args.output and args.output != "testcases":
     outd = args.output
@@ -636,14 +671,64 @@ if not args.active_recon:
         ar = config["active_recon"]
     else:
         ar = False
+if "ollama" in config and config["ollama"].get("model"):
+    if config["ollama"].get("use_llm", False) and verbose >= 1:
+        print(
+            "LLM integration enabled. Using model: "
+            + config["ollama"]["model"]
+            + ". LLM analysis will be included for every "
+            + str(config["ollama"].get("pcap_percentage", 10))
+            + "% of packets.",
+            file=sys.stderr,
+        )
+        llm_model = config["ollama"]["model"]
+    pcap_percentage = config["ollama"].get("pcap_percentage", 10)
+    response_length = config["ollama"].get("response_length", 200)
+    use_llm = config["ollama"].get("use_llm", False)
+else:
+    llm_model = "minimax-m2.5:cloud"
+    pcap_percentage = 10
+    response_length = 200
+    use_llm = False
 
+
+totalp = len(scapy.rdpcap(args.pcap_file))  # type: ignore
+print(
+    "Preparing to process "
+    + str(totalp)
+    + " packets with "
+    + str(nthreads)
+    + " threads.",
+    file=sys.stderr,
+)
 # Main execution logic: check files, handle output directory, and run parsing
 if not os.path.exists(args.pcap_file):
     print("The .pcap file does not exist.", file=sys.stderr)
     sys.exit(1)
 if not os.path.exists(outd):
     os.mkdir(outd)
-    parse_pcap(args.pcap_file, args.source_port, args.dest_port, args.timeout)
+    if __name__ == "__main__":
+        for c in range(nthreads):
+            step = int(totalp / nthreads)
+            start = int(c * step) if c != 0 else 0
+            end = int((c + 1) * step) if c != nthreads - 1 else totalp
+            t = threading.Thread(
+                target=parse_pcap,
+                args=(
+                    args.pcap_file,
+                    args.source_port,
+                    args.dest_port,
+                    args.timeout,
+                    pcap_percentage,
+                    start,
+                    end,
+                    c,
+                ),
+            )
+            threads.append(t)
+            t.start()
+        for t in threads:
+            t.join()
     sys.exit(0)
 else:
     if (
@@ -662,7 +747,28 @@ else:
         # Small delay to ensure file system has completed deletions
         time.sleep(1)
         os.mkdir(outd)
-        parse_pcap(args.pcap_file, args.source_port, args.dest_port, args.timeout)
+        if __name__ == "__main__":
+            for c in range(nthreads):
+                step = int(totalp / nthreads)
+                start = int(c * step) if c != 0 else 0
+                end = int((c + 1) * step) if c != nthreads - 1 else totalp
+                t = threading.Thread(
+                    target=parse_pcap,
+                    args=(
+                        args.pcap_file,
+                        args.source_port,
+                        args.dest_port,
+                        args.timeout,
+                        pcap_percentage,
+                        start,
+                        end,
+                        c,
+                    ),
+                )
+                threads.append(t)
+                t.start()
+            for t in threads:
+                t.join()
         sys.exit(0)
     except Exception as e:
         print("Error clearing output directory: " + str(e), file=sys.stderr)

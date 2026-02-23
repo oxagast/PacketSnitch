@@ -3,4 +3,11 @@ database_locations:
   geoip: "common/GeoLite2-City.mmdb"
   mac_vendors: "common/mac-vendors-export.csv"
   icann_ports: "common/service-names-port-numbers.csv"
-output_dir: "test"
+output_dir: "testcases"
+ollama:
+  use_llm: true
+#  model: "deepseek-r1:latest"
+  model: "minimax-m2.5:cloud"
+  response_length: 200
+  pcap_percentage: 10
+threads: 4
