@@ -614,22 +614,25 @@ def start_threading():
 
 # Argument parser setup for command-line options
 parser = argparse.ArgumentParser(
-    prog="gen_testcase.py",
+    prog="snitch.py",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description=textwrap.dedent(
         f"""
-This script generates payload testcases from a .pcap file. It extracts packet data,
+PacketSnitch.
+This software analyzes pcap network captures. It extracts mostly TCP packet data,
 writes testcases, and gathers extra information such as MIME types, entropy, geoip,
 network class, banners, and more. Optionally, it performs active reconnaissance
-to enrich the output with additional network and server information.
+to enrich the output with additional network and server information.  A full capture
+summary is generated using a large languuage model to provide insights into the data.
 
         Outputs:
           - Testcase files: output_dir/<dest_port>/pcap.data_packet.<index>.dat
           - Testcase info: output_dir/<dest_port>/pcap.info_packet.<index>.json
-          - all_testcases_info.json: a consolidated file with info for all testcases
+          - all_testcases_info.json: a consolidated file with info for the entire
+            capture.
                                  """,
     ),
-    epilog="Example usage: \n   python3 gen_testcase.py traffic.pcap -o output_dir -s 80 -d 8080 -T 5 -a",
+    epilog="Example usage: \n   python3 snitch.py traffic.pcap -o output_dir -s 80 -d 8080 -T 5 -a",
 )
 parser.add_argument("pcap_file", help="The .pcap file to parse.")
 parser.add_argument(
@@ -641,13 +644,13 @@ parser.add_argument(
 parser.add_argument(
     "-s",
     "--source-port",
-    help="Only generate testcases from this source port.",
+    help="Only generate from this source port.",
     type=int,
 )
 parser.add_argument(
     "-d",
     "--dest-port",
-    help="Only generate testcases for this destination port.",
+    help="Only generate for this destination port.",
     type=int,
 )
 parser.add_argument(

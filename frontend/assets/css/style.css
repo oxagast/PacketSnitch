@@ -121,8 +121,8 @@ hr {
 /* Main panel */
 .main_panel {
   flex: 1;
-  margin-left: 50px;
-  margin-right: 50px;
+  margin-left: 30px;
+  margin-right: 30px;
   border: 1px solid var(--color-4);
   background-color: #111;
   color: white;
@@ -168,6 +168,10 @@ table {
   cursor: pointer;
 }
 
+#summary-btn {
+  display: none;
+}
+
 /* Status bar */
 .status_bar {
   margin-top: 5px;
@@ -195,6 +199,7 @@ table {
   font-size: small;
   position: relative;
   justify-content: flex-end;
+  bottom: -4px;
 }
 
 .welcome_message {
