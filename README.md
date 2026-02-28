@@ -1,8 +1,8 @@
-# pcap2data
+# PacketSnitch
 
 ## Overview
 
-`pcap2data` is a Python tool for extracting payloads and rich metadata from network packet capture (`.pcap`) files. It generates testcases for fuzzing, protocol analysis, and research by saving raw packet data and detailed information about each packet, including protocol, entropy, geoip, banners, and more. The tool optionally performs active reconnaissance to enrich output with server banners, SSL certificate info, and web page titles.
+PacketSnitch is a Python tool for extracting payloads and rich metadata from network packet capture (`.pcap`) files. It generates testcases for fuzzing, protocol analysis, and research by saving raw packet data and detailed information about each packet, including protocol, entropy, geoip, banners, and more. The tool optionally performs active reconnaissance to enrich output with server banners, SSL certificate info, and web page titles.
 
 ## Features
 
@@ -58,7 +58,7 @@ python3 gen_testcase.py traffic.pcap -o output_dir [-s SRC_PORT] [-d DST_PORT] [
 ### Example
 
 ```bash
-python3 gen_testcase.py traffic.pcap -o output_dir -s 80 -d 8080 -T 5 -a -v
+python3 gen_testcase.py traffic.pcap -o output_dir -T 5 -a -v
 ```
 
 ## Output Structure

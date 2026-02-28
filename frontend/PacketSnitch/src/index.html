@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PCAP Analysis Tool (by: oxagast)</title>
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik+Glitch&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <style>
+      body {
+        background-image: url("assets/images/background.webp");
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-attachment: fixed;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container_box">
+      <div class="top_bar">
+        <div class="titleline">PacketSnitch</div>
+        <div class="byline">by oxasploits</div>
+      </div>
+
+      <div class="entry_bar">
+        <div class="logo-cont">
+          <img src="data:image/webp;base64,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" />
+        </div>
+        <label style="color: white">ip/hostname:</label>
+        <input id="host_filter" type="text" placeholder="0.0.0.0" disabled />
+      </div>
+
+      <div class="content_area">
+        <div class="sidebar">
+          <form
+            method="post"
+            enctype="multipart/form-data"
+            id="jsonFile"
+            name="jsonFile"
+          >
+            <input type="file" id="json-upload" name="json-up" hidden />
+            <label for="json-upload" class="custom-btns">choose json</label>
+          </form>
+          <input
+            hidden
+            type="button"
+            id="summary-btn"
+            value="Summary"
+            class="custom-btns"
+          />
+
+          <br />
+          <!-- Dropdown menus -->
+          <select id="target_hosts" hidden>
+            <option>ALL hosts</option>
+            <option>Localnet Hosts</option>
+          </select>
+          <select id="Format" hidden>
+            <option>Tables</option>
+            <option>Pretty JSON</option>
+            <option>Raw</option>
+          </select>
+        </div>
+
+        <div id="main" class="main_panel">
+          <div class="welcome_message">
+            <h2>Welcome to PacketSnitch!</h2>
+            <br />
+          </div>
+          Choose a json decode using the button to the left, then select an IP
+          to inspect.
+        </div>
+      </div>
+
+      <div id="status" class="status_bar">Status: Ready</div>
+
+      <div class="footer">oxasploits, llc (&copy; 2026)</div>
+    </div>
+    <br />
+    <script src="assets/scripts/scripts.js"></script>
+  </body>
+</html>
