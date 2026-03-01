@@ -45,6 +45,7 @@ threads = []
 summaries = []
 by_host_dict = {}
 all_info = []
+pktnum = 0
 
 
 def llm_query(packet_infos):
@@ -250,17 +251,17 @@ def join_info(output_dir, pdir, index, dt_json, pkt_json, perp, host):
     # checking modulo of of the index to determine whether to query the LLM for
     # analysis to avoid excessive API calls while still providing insights on
     # a subset of packets
-    llm_info = llm_query(json.dumps(merge_json))
-    print(llm_info)
-    if (
-        llm_info
-        and "Summary" in llm_info
-        and (llm_info["Summary"] != "" and "Error" not in llm_info["Summary"])
-    ):
-        with_llm = {"Packet": merge_json, "Analysis": llm_info}
-    else:
-        with_llm = {"Packet": merge_json}
-    out.write(json.dumps(with_llm).encode())
+    # llm_info = llm_query(json.dumps(merge_json))
+    # print(llm_info)
+    # if (
+    #    llm_info
+    #    and "Summary" in llm_info
+    #    and (llm_info["Summary"] != "" and "Error" not in llm_info["Summary"])
+    # ):
+    #    with_llm = {"Packet": merge_json, "Analysis": llm_info}
+    # else:
+    #    with_llm = {"Packet": merge_json}
+    out.write(json.dumps(merge_json).encode())
     out.close()
     #    main = open("all_testcases_info.json", "a")
     # main.write(json.dumps(with_llm) + "\n")
@@ -527,7 +528,7 @@ def packet_loop(p, from_p, pcap_path, percentage_p, srcp, dstp, tmout):
                         "Payload Length": len(raw_d),
                     },
                 }
-                join_info(
+                data_back = join_info(
                     outd,
                     dport_dir,
                     s,
@@ -538,6 +539,7 @@ def packet_loop(p, from_p, pcap_path, percentage_p, srcp, dstp, tmout):
                     if get_geoip_info(p["IP"].dst).get("Location") != "Localnet"
                     else p["IP"].src,
                 )
+                return data_back
                 s = s + 1
 
 
@@ -555,14 +557,25 @@ def parse_pcap(pcap_path, srcp, dstp, tmout, percentage_p, from_p, to_p, thread_
         )
         time.sleep(1)
     packets = scapy.rdpcap(pcap_path)  # type: ignore
-    if verbose >= 2:
-        for p in packets[int(from_p) : int(to_p)]:
-            packet_loop(p, from_p, pcap_path, percentage_p, srcp, dstp, tmout)
-    else:
-        for p in tqdm(
-            packets[int(from_p) : int(to_p)], position=0, desc="Processing PCAP"
-        ):
-            packet_loop(p, from_p, pcap_path, percentage_p, srcp, dstp, tmout)
+    for p in packets[int(from_p) : int(to_p)]:
+        batch_size = 6
+        packet_data = packet_loop(p, from_p, pcap_path, percentage_p, srcp, dstp, tmout)
+        # for every 10 packets processed, add all 10 to a string to send to llm for batch analysis to generate insights on the traffic in the capture as a whole and add that analysis to the json of each packet in the batch
+        if packet_data and len(all_info) % batch_size == 0 and len(all_info) > 0:
+            batch_data = json.dumps(all_info[-batch_size:])
+            pquery = llm_query(batch_data[:15000])
+            summaries.append(pquery["Summary"])
+            print(pquery["Summary"])
+
+            # add the asme llm_query output to the json of each packet in the batch for later consolidation into the final summary
+            if (
+                pquery
+                and "Summary" in pquery
+                and (pquery["Summary"] != "" and "Error" not in pquery["Summary"])
+            ):
+                for i in range(-batch_size, 0):
+                    if i >= -len(all_info):
+                        all_info[i]["LLM Analysis"] = pquery["Summary"]  # type: ignore
 
 
 def start_threading():

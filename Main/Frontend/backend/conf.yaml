@@ -8,9 +8,8 @@ ollama:
   use_llm: true
   # model: "phi3:mini"
   #  model: "deepseek-r1:latest"
-#  model: "minimax-m2.5:cloud"
-  model: "mistral-large-3:675b-cloud"
+  model: "minimax-m2.5:cloud"
+#  model: "mistral-large-3:675b-cloud"
   response_length: 200
-  pcap_percentage: 8
 threads: 5
 final_summary: true
