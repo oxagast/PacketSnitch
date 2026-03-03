@@ -35,25 +35,23 @@ except ImportError:
     import scapy
 
 # Global variables for caching and configuration
-checked_ips = []
 ar = "False"
 percentage_pcap = 10
-response_length = 100
-use_llm = False
-llm_model = "minimax-m2.5:cloud"
 nthreads = 6
 threads = []
-summaries = []
-by_host_dict = {}
-all_info = []
 pktnum = 0
+
+
+response_length = 100
+llm_model = "minimax-m2.5:cloud"
+use_llm = False
 
 
 def llm_query(packet_infos):
     if verbose == 0:
         print(".", end="", flush=True)
     try:
-        if ollama and use_llm and packet_infos and packet_infos.length > 100:
+        if ollama and use_llm and packet_infos:
             for resc in range(2):
                 try:
                     print(".", end="", flush=True)
@@ -64,8 +62,6 @@ def llm_query(packet_infos):
                     if res and "response" in res:
                         if verbose == 0:
                             print(".", end="", flush=True)
-                        summaries.append(res["response"])
-                        return {"Summary": res["response"]}
                     else:
                         return {"Summary": ""}
                 except ResponseError as re:
@@ -131,6 +127,9 @@ def reverse_dns_lookup(ip):
             "Resolved": False,
             "Error": "Address resolution error: " + str(e),
         }
+
+
+checked_ips = []
 
 
 # Fetch server banner and SSL certificate information for a given IP and port
@@ -262,6 +261,9 @@ def write_testcase(data, output_dir, pdir, index):
     out.write(data)
 
 
+all_info = []
+
+
 # Write packet info and extra info to JSON files
 def join_info(output_dir, pdir, index, dt_json, pkt_json, perp, host):
     if verbose == 0:
@@ -278,8 +280,10 @@ def join_info(output_dir, pdir, index, dt_json, pkt_json, perp, host):
     if verbose >= 2:
         print(json.dumps(merge_json, indent=2))
     all_info.append({"Host": host, "Packet": merge_json})
-    summaries.append(json.dumps(merge_json))
     return merge_json
+
+
+by_host_dict = {}
 
 
 def by_host(out, final_summary):
@@ -590,27 +594,32 @@ def parse_pcap(pcap_path, srcp, dstp, tmout, percentage_p, from_p, to_p, thread_
         # for every 10 packets processed, add all 10 to a string to send to llm for batch analysis to generate insights on the traffic in the capture as a whole and add that analysis to the json of each packet in the batch
 
 
+summaries_batch = []
+
+
 def information_seive():
+    # loop over a batch of packets stored in all_info and for every batch_size packets send them to the llm for analysis, where their response will be added to summaries[] for later
     batch_size = 4
-    # iterate over a batch of 5 summaries and concatenate them into a single string to send to the LLM for a final analysis of the capture as a whole, generating insights on the traffic in the capture and adding that analysis to a final summary section in the all_testcases_info_by_host.json file
-    for i in range(0, len(summaries), batch_size):
-        batch = summaries[i : i + batch_size]
+    q = ""
+    for i in range(0, len(all_info), batch_size):
         if verbose == 0:
             print(".", end="", flush=True)
-        if verbose >= 2:
+        if i + batch_size > len(all_info):
+            batch = all_info[i:]
+            if use_llm:
+                q = llm_query(json.dumps(batch)).get("Summary", "")
+                summaries_batch.append(q)
+        else:
+            batch = all_info[i : i + batch_size]
+            if use_llm:
+                q = llm_query(json.dumps(batch)).get("Summary", "")
+                summaries_batch.append(q)
+
+        if verbose >= 2 and q:
             print(
-                f"\nProcessing batch {i // batch_size + 1} of {len(summaries) // batch_size + (1 if len(summaries) % batch_size > 0 else 0)} for LLM analysis...",
+                f"\nLLM analysis for packets {i} to {i + batch_size}:\n{q}\n",
                 file=sys.stderr,
             )
-        t = threading.Thread(
-            target=llm_query,
-            args=(" ".join(batch),),
-            name="LLM-Thread-" + str(i // batch_size),
-        )
-        threads.append(t)
-        t.start()
-    for t in threads:
-        t.join()
 
 
 def start_threading():
@@ -642,8 +651,10 @@ def start_threading():
             t.start()
         for t in threads:
             t.join()
-            information_seive()
-        drilldown = " ".join(summaries) if summaries else "No LLM summaries generated."
+        information_seive()
+        drilldown = (
+            " ".join(summaries_batch) if summaries else "No LLM summaries generated."
+        )
         if config.get("final_summary", True) and config["ollama"].get("use_llm", True):
             try:
                 final_res = ollama.generate(
