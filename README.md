@@ -1,4 +1,4 @@
-# PacketSnitch
+![PacketSnitch](https://raw.githubusercontent.com/oxagast/PacketSnitch/refs/heads/main/Main/Orig-Pages/assets/images/packet-snitch-tag.png)
 
 ## Overview
 
