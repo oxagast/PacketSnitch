@@ -4,6 +4,11 @@
 
 PacketSnitch is a Python tool for extracting payloads and rich metadata from network packet capture (`.pcap`) files. It generates testcases for fuzzing, protocol analysis, and research by saving raw packet data and detailed information about each packet, including protocol, entropy, geoip, banners, and more. The tool optionally performs active reconnaissance to enrich output with server banners, SSL certificate info, and web page titles.
 
+## Screenshot
+
+This is a screenshot of the frontend (while still in heavy alpha development).
+![Screenshot](https://raw.githubusercontent.com/oxagast/PacketSnitch/refs/heads/main/Documentation/screenshot_3.jpg)
+
 ## Features
 
 - Extracts TCP payloads from `.pcap` files and saves them as binary testcase files.
@@ -21,6 +26,7 @@ PacketSnitch is a Python tool for extracting payloads and rich metadata from net
 - Verbose/debug output modes.
 
 ## License
+Commercial
 
 Commercial
 
