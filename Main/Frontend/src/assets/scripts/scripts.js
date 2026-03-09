@@ -80,7 +80,7 @@ function statusUpdate(message) {
   status.textContent = message;
   setTimeout(() => {
     status.textContent = "Status: Ready";
-  }, 3000);
+  }, 6000);
 }
 /* we use this to add a single row of data on the table */
 function addRow(d1, d2) {
@@ -98,12 +98,11 @@ function hostPacketInfo(ip) {
   packetsForHost = [];
   const hostPackets = packets["Host"][selected];
   for (const packet in hostPackets) {
+    packetsForHost.push(hostPackets[packet]);
     if (packet !== "Summary") {
       const packetData = hostPackets[packet];
 
       for (const key in packetData) {
-        packetInfo = packetData;
-        packetsForHost.push(packetInfo["Packet Info"]);
       }
     }
   }
@@ -137,8 +136,12 @@ function highlightTab(tabId) {
 document.getElementById("summary-btn").addEventListener("click", function () {
   statusUpdate("Status: Displaying capture analysis summary");
   highlightTab("summary-btn");
-  document.getElementById("main").innerHTML =
-    "<strong>Capture Analysis:</strong><br><br>" + final_summary + "<br>";
+  if (json_cap == "") {
+    statusUpdate("Status: No JSON file loaded, please upload a file first");
+  } else {
+    document.getElementById("main").innerHTML =
+      "<strong>Capture Analysis:</strong><br><br>" + final_summary + "<br>";
+  }
 });
 
 //     if (key === "Packet Info") {
@@ -258,10 +261,14 @@ document.getElementById("data-btn").addEventListener("click", function () {
   statusUpdate(
     "Status: Displaying packet information for " + host_filter.value,
   );
-  document.getElementById("prev-btn").style.display = "block";
-  document.getElementById("next-btn").style.display = "block";
-  hostPacketInfo(host_filter.value);
-  handlePacketNavigation(null);
+  if (json_cap == "") {
+    statusUpdate("Status: No JSON file loaded, please upload a file first");
+  } else {
+    document.getElementById("prev-btn").style.display = "block";
+    document.getElementById("next-btn").style.display = "block";
+    hostPacketInfo(host_filter.value);
+    handlePacketNavigation("first-load");
+  }
 });
 //let pakinfo = hostPacketInfo(document.getElementById("host_filter").value);
 //writePacketInfo("Packet Info", "Details");
@@ -281,26 +288,41 @@ document.getElementById("next-btn").addEventListener("click", function () {
 });
 
 function handlePacketNavigation(btn) {
-  if (index >= 1 && btn === "prev-btn") {
-    index = index - 1;
-    document.getElementById("main").innerHTML = JSON.stringify(
-      packetsForHost[index],
-      null,
-      2,
+  if (btn === "first-load") {
+    "Status: Displaying packet 1 of " + packetsForHost.length;
+  } else if (index >= 0 && btn === "prev-btn") {
+    index--;
+    statusUpdate(
+      "Status: Displaying packet " + index + " of " + packetsForHost.length,
+    );
+  } else if (index <= packetsForHost.length && btn === "next-btn") {
+    index++;
+    statusUpdate(
+      "Status: Displaying packet " + index + " of " + packetsForHost.length,
     );
   } else {
     statusUpdate("Status: No more packets in this direction");
   }
-  if (index <= packetsForHost.length + 1 && btn === "next-btn") {
-    index = index + 1;
-    document.getElementById("main").innerHTML = JSON.stringify(
-      packetsForHost[index],
-      null,
-      2,
-    );
-  } else {
-    statusUpdate("Status: No more packets in this direction");
+  if (packetsForHost[index] == undefined) {
+    statusUpdate("Status: Index out of range, reverting to zero");
+    index = 0;
   }
+  if (packetsForHost.length == 0 || packetsForHost[0] == undefined) {
+    statusUpdate("Status: No packet information found for this host");
+    document.getElementById("main").innerHTML = "Please select a json file!";
+  }
+  /* in the data main secton, this is where we would 
+    add the packet info for each packet, for now we just
+    dump the json, we'll format later 
+   
+   packetsForHost[index] is an array of all packet info 
+   for the current host, we want to be able to navigate
+   through it with next and prev buttons */
+  document.getElementById("main").innerHTML = JSON.stringify(
+    packetsForHost[index],
+    null,
+    2,
+  );
 }
 
 /* this runs when the bookmarks data button is clicked */
