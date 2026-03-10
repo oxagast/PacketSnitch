@@ -291,7 +291,9 @@ def get_page_title(url, t):
     if verbose == 0:
         print(".", end="", flush=True)
     try:
-        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+        requests.packages.urllib3.disable_warnings(  # ignore
+            category=InsecureRequestWarning  # ignore request warning
+        )  # ignore
         res = requests.get(url, timeout=t, verify=False)
         res.raise_for_status()
         cont = res.content
@@ -394,7 +396,7 @@ def safe_decompress(compressed_data):
     try:
         result = dcomper.decompress(compressed_data)
         result += dcomper.flush()
-    except zlib.error as e:
+    except zlib.error:
         pass
     return result
 
@@ -501,7 +503,9 @@ def get_traits(data, dport, srcip, destip, timeout):
             destip,
             dport,
             timeout,
-            hostn.get("Hostnames")[0] if hostn.get("Resolved") else destip,
+            hostn.get("Hostnames")[0]
+            if hostn.get("Resolved")
+            else destip,  # ignore subscript warning, it checks for resolution first
         )
     else:
         banner = "Active recon not performed"
@@ -752,7 +756,7 @@ parser = argparse.ArgumentParser(
     prog="snitch.py",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description=textwrap.dedent(
-        f"""
+        f"""                                
 PacketSnitch.
 This software analyzes pcap network captures. It extracts mostly TCP packet data,
 writes testcases, and gathers extra information such as MIME types, entropy, geoip,
@@ -767,7 +771,7 @@ summary is generated using a large languuage model to provide insights into the 
                                  """,
     ),
     epilog="Example usage: \n   python3 snitch.py traffic.pcap -o output_dir -s 80 -d 8080 -T 5 -a",
-)
+)  # ignore fstring
 parser.add_argument("pcap_file", help="The .pcap file to parse.")
 parser.add_argument(
     "-o",
@@ -929,7 +933,7 @@ if not os.path.exists(outd):
         os.mkdir(outd)
         final_s = start_threading()
         by_host(outd, final_s)
-    except Exception as e:
+    except Exception:
         final_s = start_threading()
         by_host(outd, final_s)
 else:
@@ -950,7 +954,7 @@ else:
             os.mkdir(outd)
             final_s = start_threading()
             by_host(outd, final_s)
-        except Exception as e:
+        except Exception:
             final_s = start_threading()
             by_host(outd, final_s)
     finally:
