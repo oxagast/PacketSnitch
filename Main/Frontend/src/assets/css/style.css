@@ -268,6 +268,16 @@ strong {
   bottom: -4px;
 }
 
+.bmdrop {
+  background-color: var(--color-2);
+  border: 1px solid var(--color-4);
+  padding: 5px;
+  display: none;
+  position: absolute;
+  left: 741px;
+  top: 165px;
+}
+
 .welcome_message {
   font-size: 14pt;
   font-family: "Courier New", Courier, monospace;

@@ -47,6 +47,10 @@
         <label style="color: white">ip/hostname:</label>
         <input id="host_filter" type="text" placeholder="0.0.0.0" disabled />
       </div>
+      <div class="menu_bar" id="dropdown" style="display: none">
+        <!-- this is where the dropdowns are handled, they are hidden by
+               default and only shown when called upon -->
+      </div>
       <div class="menu_bar" id="tab-btns">
         <input
           type="button"
@@ -63,13 +67,13 @@
         <input type="button" id="tools-btn" value="Tools" class="custom-btns" />
         <input
           type="button"
-          id="bookmarks-btn"
+          id="bkmrk-btn"
           value="Bookmarks"
           class="custom-btns"
         />
         <input type="button" id="prev-btn" value="Prev" class="custom-btns" />
         <input type="button" id="next-btn" value="Next" class="custom-btns" />
-      </div>
+             </div>
       <div class="content_area">
         <div class="sidebar">
           <form
@@ -95,7 +99,7 @@
         </div>
 
         <div id="main" class="main_panel">
-          <div class="welcome_message">
+           <div class="welcome_message">
             <h2>Welcome to PacketSnitch!</h2>
             <br />
           </div>
@@ -104,6 +108,13 @@
             to inspect.
           </div>
         </div>
+<div class="bmdrop" id="selPacket">
+          <input type="button" id="setBookmark" value="Set Bookmark" class="custom-btns" />
+          <select id="bookmarkSelect">
+            <option value="" disabled selected>Select a bookmark</option>
+        </div>
+
+
       </div>
 
       <div id="status" class="status_bar">Status: Ready</div>

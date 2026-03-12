@@ -10,6 +10,7 @@ let currentPacketIndex = 0;
 let packetsForHost = [];
 let index = 0;
 
+const bookmark = {};
 /* if a json is loaded this gets our code ready */
 document
   .getElementById("json-upload")
@@ -266,7 +267,7 @@ document.getElementById("data-btn").addEventListener("click", function () {
   } else {
     document.getElementById("prev-btn").style.display = "block";
     document.getElementById("next-btn").style.display = "block";
-    hostPacketInfo(host_filter.value);
+    //hostPacketInfostPacketInfo(host_filter.value);
     handlePacketNavigation("first-load");
   }
 });
@@ -276,18 +277,74 @@ document.getElementById("data-btn").addEventListener("click", function () {
 document.getElementById("prev-btn").addEventListener("click", function () {
   statusUpdate("Status: Displaying capture analysis summary");
   highlightTab("prev-btn");
-  hostPacketInfo(host_filter.value);
+  //hostPacketInfo(host_filter.value);
   handlePacketNavigation("prev-btn");
 });
 
 document.getElementById("next-btn").addEventListener("click", function () {
   statusUpdate("Status: Displaying capture analysis summary");
   highlightTab("next-btn");
-  hostPacketInfo(host_filter.value);
+  //hostPacketInfo(host_filter.value);
   handlePacketNavigation("next-btn");
 });
 
-function handlePacketNavigation(btn) {
+document.getElementById("bkmrk-btn").addEventListener("click", function () {
+  statusUpdate("Status: Displaying bookmarked packet information");
+  highlightTab("bkmrk-btn");
+  // her make dropdown that you can either bookmark or
+  // select from a list previous bookmarks.
+
+  dropdown = document.getElementById("selPacket");
+  dropdown.style.display = "block";
+  //  dropdown.style.display = "block";
+  dropdown.addEventListener("click", function (event) {
+    const isClickedInside = dropdown.contains(event.target);
+    if (isClickedInside) {
+      document
+        .getElementById("setBookmark")
+        .addEventListener("click", function () {
+          bookmark["host"] = host_filter.value;
+          bookmark["packet"] = index;
+          dropdown.style.display = "none";
+          handlePacketNavigation("bkmrk-btn", bookmark);
+        });
+    } else {
+      dropdown.style.display = "none";
+    }
+    //  });
+  });
+  //});
+});
+function handlePacketNavigation(btn, bookmark) {
+  dropdown = document.getElementById("selPacket");
+  //  dropdown.style.display = "none";
+  if (btn === "bkmrk-btn") {
+    dropdown.addEventListener("click", function (event) {
+      bookmark["host"] = document.getElementById("host_filter").value;
+      bookmark["packet"] = index;
+      const newOpt = new Option(
+        "Host: " + bookmark["host"] + " Packet: " + bookmark["packet"],
+        bookmark,
+      );
+      document.getElementById("bookmarkSelect").add(newOpt);
+    });
+    document
+      .getElementById("bookmarkSelect")
+      .addEventListener("change", function () {
+        hostPacketInfo(bookmark["host"]);
+        index = bookmark["packet"];
+        document.getElementById("main").innerHTML = JSON.stringify(
+          packetsForHost[index],
+          null,
+          2,
+        );
+        dropdown.style.display = "none";
+      });
+  } else {
+    hostPacketInfo(document.getElementById("host_filter").value);
+    dropdown.style.display = "none";
+  }
+
   if (btn === "first-load") {
     "Status: Displaying packet 1 of " + packetsForHost.length;
   } else if (index >= 0 && btn === "prev-btn") {
