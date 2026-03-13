@@ -289,19 +289,13 @@ document.getElementById("next-btn").addEventListener("click", function () {
 });
 
 document
-  .getElementById("bookmarkSelect")
+  .getElementById("selectBookmark")
   .addEventListener("change", function () {
-    host =
-      bookmarkList[
-        document.getElementById("bookmarkSelect").selectedIndex - 1
-      ].split(":");
-    packet =
-      bookmarkList[
-        document.getElementById("bookmarkSelect").selectedIndex - 1
-      ].split(":");
+    host = document.getElementById("selectBookmark").value.split(":")[0];
+    index = document.getElementById("selectBookmark").value.split(":")[1];
+    host_filter.value = host;
+    packetsForHost = packets["Host"][host];
 
-    hostPacketInfo(bookmark["host"]);
-    index = bookmark["packet"];
     document.getElementById("main").innerHTML = JSON.stringify(
       packetsForHost[index],
       null,
@@ -309,20 +303,20 @@ document
     );
   });
 
-dropdown = document.getElementById("selPacket");
-dropdown.addEventListener("click", function (event) {
-  const isClickedInside = dropdown.contains(event.target);
-  if (isClickedInside) {
-    document
-      .getElementById("setBookmark")
-      .addEventListener("click", function () {
-        bookmarkList.push(host_filter.value + ":" + index);
-        handlePacketNavigation("bkmrk-btn", bookmark);
-      });
-  }
+document.getElementById("setBookmark").addEventListener("click", function () {
+  curPacket = document.getElementById("host_filter").value + ":" + index;
+  //  if (!bookmarkList.includes(curPacket)) {
+  bookmarkList.push(curPacket);
+  document
+    .getElementById("selectBookmark")
+    .appendChild(new Option(curPacket, curPacket));
+  // }
 });
+
 function handlePacketNavigation(btn, bookmark) {
+  packetsForHost = packets["Host"][host_filter.value];
   if (btn === "first-load") {
+    index = 0;
     "Status: Displaying packet 1 of " + packetsForHost.length;
   } else if (index >= 0 && btn === "prev-btn") {
     index--;
@@ -358,12 +352,6 @@ function handlePacketNavigation(btn, bookmark) {
     2,
   );
 }
-
-/* this runs when the bookmarks data button is clicked */
-document.getElementById("bookmarks-btn").addEventListener("click", function () {
-  highlightTab("bookmarks-btn");
-  statusUpdate("Status: Syncing bookmarks... " + host_filter.value);
-});
 
 // Example function to run the binary
 function runMyBinary() {
