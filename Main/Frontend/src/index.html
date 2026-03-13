@@ -92,24 +92,7 @@
             <option>ALL hosts</option>
             <option>Localnet Hosts</option>
           </select>
-          <select id="Format" hidden>
-            <option>Tables</option>
-            <option>Pretty JSON</option>
-            <option>Raw</option>
-          </select>
-        </div>
-
-        <div id="main" class="main_panel">
-          <div class="welcome_message">
-            <h2>Welcome to PacketSnitch!</h2>
-            <br />
-          </div>
-          <div id="main_content" class="main_panel">
-            Choose a json decode using the button to the left, then select an IP
-            to inspect.
-          </div>
-        </div>
-        <div class="sidebar">
+          <br />
           <input
             type="button"
             id="setBookmark"
@@ -120,8 +103,12 @@
             <option value="" disabled selected>Select a bookmark</option>
           </select>
         </div>
-      </div>
-    </div>
+
+        <div id="main" class="main_panel">
+          <div id="packetInfoPane" class="main_panel">info pane</div>
+          <div id="packetPayloadPane" class="main_panel">payload data</div>
+        </div>
+        <div class="sidebar"></div>
 
     <div class="footer">
       <div id="status" class="footer">Status: Ready</div>
