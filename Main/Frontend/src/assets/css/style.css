@@ -264,6 +264,13 @@ strong {
   bottom: 11px;
 }
 
+#packetInfoPane {
+  height: 200px;
+}
+
+#packetPayloadPane {
+}
+
 .logo-cont {
   width: 45px;
   height: 52px;
@@ -289,14 +296,6 @@ strong {
   left: 741px;
   top: 165px;
   height: 30px;
-}
-
-.welcome_message {
-  font-size: 14pt;
-  font-family: "Courier New", Courier, monospace;
-  color: var(--color-1);
-  margin-top: 100px;
-  display: flex;
 }
 
 .logo-cont img {
