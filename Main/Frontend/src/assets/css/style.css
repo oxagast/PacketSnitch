@@ -120,6 +120,7 @@ hr {
   font-size: 12px;
   overflow-y: hidden;
   height: 90%;
+  word-break: break-all;
 }
 
 #main_content {
@@ -240,32 +241,44 @@ strong {
 }
 
 /* Status bar */
-.status_bar {
-  margin-top: 5px;
-  margin-left: 5px;
+#status {
+  text-align: left;
+  margin-top: 3px;
+  padding-top: 2px;
+  margin-bottom: 3px;
+  margin-left: 7px;
   height: 20px;
   background-color: black;
   color: white;
   border: 1px solid grey;
-  display: flex;
-  align-items: center;
   padding-left: 8px;
   font-size: small;
+  position: relative;
+  width: 98%;
+}
+
+#copyright {
+  width: 88%;
+  text-align: center;
+  padding: 5px;
+  bottom: 11px;
 }
 
 .logo-cont {
-  width: 45px; /* or a percentage, e.g., 100% */
+  width: 45px;
   height: 52px;
 }
 
 .footer {
+  width: 90%;
+  position: fixed;
   background-color: black;
   height: 10px;
-  width: 100%;
+  width: 95%;
   color: white;
-  text-align: center;
   font-size: small;
   justify-content: flex-end;
+  bottom: 25px;
 }
 
 .bmdrop {
@@ -291,8 +304,4 @@ strong {
   height: 100%;
   object-fit: cover; /* or 'contain' */
   margin-top: 9px;
-}
-
-#foot {
-  position: absolute;
 }

@@ -9,8 +9,9 @@ let host_filter = document.getElementById("host_filter");
 let currentPacketIndex = 0;
 let packetsForHost = [];
 let index = 0;
+let bookmarkList = [];
 
-const bookmark = {};
+let bookmark = {};
 /* if a json is loaded this gets our code ready */
 document
   .getElementById("json-upload")
@@ -280,7 +281,6 @@ document.getElementById("prev-btn").addEventListener("click", function () {
   //hostPacketInfo(host_filter.value);
   handlePacketNavigation("prev-btn");
 });
-
 document.getElementById("next-btn").addEventListener("click", function () {
   statusUpdate("Status: Displaying capture analysis summary");
   highlightTab("next-btn");
@@ -288,57 +288,40 @@ document.getElementById("next-btn").addEventListener("click", function () {
   handlePacketNavigation("next-btn");
 });
 
-document.getElementById("bkmrk-btn").addEventListener("click", function () {
-  statusUpdate("Status: Displaying bookmarked packet information");
-  highlightTab("bkmrk-btn");
-  // her make dropdown that you can either bookmark or
-  // select from a list previous bookmarks.
+document
+  .getElementById("bookmarkSelect")
+  .addEventListener("change", function () {
+    host =
+      bookmarkList[
+        document.getElementById("bookmarkSelect").selectedIndex - 1
+      ].split(":");
+    packet =
+      bookmarkList[
+        document.getElementById("bookmarkSelect").selectedIndex - 1
+      ].split(":");
 
-  dropdown = document.getElementById("selPacket");
-  //  dropdown.style.display = "block";
-  dropdown.addEventListener("click", function (event) {
-    const isClickedInside = dropdown.contains(event.target);
-    if (isClickedInside) {
-      document
-        .getElementById("setBookmark")
-        .addEventListener("click", function () {
-          bookmark["host"] = host_filter.value;
-          bookmark["packet"] = index;
-          handlePacketNavigation("bkmrk-btn", bookmark);
-        });
-    }
-    //  });
+    hostPacketInfo(bookmark["host"]);
+    index = bookmark["packet"];
+    document.getElementById("main").innerHTML = JSON.stringify(
+      packetsForHost[index],
+      null,
+      2,
+    );
   });
-  //});
+
+dropdown = document.getElementById("selPacket");
+dropdown.addEventListener("click", function (event) {
+  const isClickedInside = dropdown.contains(event.target);
+  if (isClickedInside) {
+    document
+      .getElementById("setBookmark")
+      .addEventListener("click", function () {
+        bookmarkList.push(host_filter.value + ":" + index);
+        handlePacketNavigation("bkmrk-btn", bookmark);
+      });
+  }
 });
 function handlePacketNavigation(btn, bookmark) {
-  dropdown = document.getElementById("selPacket");
-  //  dropdown.style.display = "none";
-  if (btn === "bkmrk-btn") {
-    dropdown.addEventListener("click", function (event) {
-      bookmark["host"] = document.getElementById("host_filter").value;
-      bookmark["packet"] = index;
-      const newOpt = new Option(
-        "Host: " + bookmark["host"] + " Packet: " + bookmark["packet"],
-        bookmark,
-      );
-      document.getElementById("bookmarkSelect").add(newOpt);
-    });
-    document
-      .getElementById("bookmarkSelect")
-      .addEventListener("change", function () {
-        hostPacketInfo(bookmark["host"]);
-        index = bookmark["packet"];
-        document.getElementById("main").innerHTML = JSON.stringify(
-          packetsForHost[index],
-          null,
-          2,
-        );
-      });
-  } else {
-    hostPacketInfo(document.getElementById("host_filter").value);
-  }
-
   if (btn === "first-load") {
     "Status: Displaying packet 1 of " + packetsForHost.length;
   } else if (index >= 0 && btn === "prev-btn") {
