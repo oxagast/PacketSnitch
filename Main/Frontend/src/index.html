@@ -64,16 +64,17 @@
           value="Host Data"
           class="custom-btns"
         />
-        <input type="button" id="tools-btn" value="Tools" class="custom-btns" />
+        <!--        <input type="button" id="tools-btn" value="Tools" class="custom-btns" />
         <input
           type="button"
           id="bkmrk-btn"
           value="Bookmarks"
           class="custom-btns"
         />
+-->
         <input type="button" id="prev-btn" value="Prev" class="custom-btns" />
         <input type="button" id="next-btn" value="Next" class="custom-btns" />
-             </div>
+      </div>
       <div class="content_area">
         <div class="sidebar">
           <form
@@ -99,7 +100,7 @@
         </div>
 
         <div id="main" class="main_panel">
-           <div class="welcome_message">
+          <div class="welcome_message">
             <h2>Welcome to PacketSnitch!</h2>
             <br />
           </div>
@@ -108,20 +109,24 @@
             to inspect.
           </div>
         </div>
-<div class="sidebar" id="selPacket">
-          <input type="button" id="setBookmark" value="Set Bookmark" class="custom-btns" />
+        <div class="sidebar" id="selPacket">
+          <input
+            type="button"
+            id="setBookmark"
+            value="Set Bookmark"
+            class="custom-btns"
+          />
           <select id="bookmarkSelect">
             <option value="" disabled selected>Select a bookmark</option>
+          </select>
         </div>
-
-
-<div id="foot">
-      <div id="status" class="status_bar">Status: Ready</div>
-      <div class="footer">oxasploits, llc (&copy; 2026)</div>
-    <br />
-    </div>
-</div>
       </div>
-    <script src="assets/scripts/scripts.js"></script>
+    </div>
+
+    <div class="footer">
+      <div id="status" class="footer">Status: Ready</div>
+      <div id="copyright" class="footer">oxasploits, llc (&copy; 2026)</div>
+      <script src="assets/scripts/scripts.js"></script>
+    </div>
   </body>
 </html>
