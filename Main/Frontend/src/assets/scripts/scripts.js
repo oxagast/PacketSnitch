@@ -131,7 +131,9 @@ function writeSummary() {
     container = document.getElementById("main");
     sbp = document.createElement("div");
     sbp.setAttribute("id", "summary_box");
-    container.appendChild(sbp);
+    if (document.getElementById("summary_box") == undefined) {
+      container.appendChild(sbp);
+    }
     document.getElementById("packetInfoPane").style.display = "none";
     document.getElementById("packetPayloadPane").style.display = "none";
     document.getElementById("summary_box").style.display = "block";
