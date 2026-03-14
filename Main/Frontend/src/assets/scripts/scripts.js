@@ -304,17 +304,39 @@ function infoPanel() {
   tcplayrelen = pinfo["TCP"]["TCP layer length"];
   wirelen = pinfo["TCP"]["Wire length"];
   payloadlen = pinfo["Raw data"]["Payload Length"];
-  document.getElementById("checksums").textContent = "";
-  const data = [
-    { name: "IP", value: ipchksum },
-    { name: "TCP", value: tcpchksum },
+  document.getElementById("sidedatatable").textContent = "";
+  document.getElementById("protoInfoSrc").textContent = "Source";
+  document.getElementById("protoInfoDest").textContent = "Destination";
+
+  const chkd = [
+    { name: "IP Checksum", value: ipchksum },
+    { name: "TCP Checksum", value: tcpchksum },
+    { name: "Flags", value: flags },
+    { name: "IP Layer Length", value: iplayrelen },
+    { name: "TCP Layer Length", value: tcplayrelen },
+    { name: "Wire Length", value: wirelen },
+    { name: "Payload Length", value: payloadlen },
   ];
+  const chkh = ["Protocol data", "Details"];
+  createTable(chkd, chkh, "sidedatatable");
 
-  const headers = ["Type", "Checksums"];
-  createTable(data, headers, "checksums");
-
+  const iph = ["Packet", "Data"];
+  const ipds = [
+    { name: "IP:PORT", value: sourcepair },
+    { name: "MAC Src", value: macsrc },
+    { name: "MAC Src Vendor", value: macsrcvendor },
+  ];
+  createTable(ipds, iph, "protoInfoSrc");
+  const ipdd = [
+    { name: "IP:PORT", value: destpair },
+    { name: "MAC Dest", value: macdest },
+    { name: "MAC Dest Vendor", value: macdestvendor },
+  ];
+  createTable(ipdd, iph, "protoInfoDest");
   document.getElementById("timestamp").textContent = "Timestamp: " + ts;
+  document.getElementById("ip2ip").textContent = sourcepair + " ~ " + destpair;
 }
+
 function runMyBinary() {
   // Be sure to make the path absolute
   const command = `"${path.resolve(binaryPath)}"`;

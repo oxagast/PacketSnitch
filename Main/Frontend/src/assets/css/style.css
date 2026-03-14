@@ -111,6 +111,7 @@ hr {
   overflow-y: hidden;
   height: 90%;
   word-break: break-all;
+  overflow-x: hidden;
 }
 
 #main_content {
@@ -264,18 +265,46 @@ strong {
 }
 
 #packetInfoPane {
-  width: 104%;
+  color: var(--color-1);
+  font-size: 13px;
+  width: 102.5%;
+  display: flex;
   background-color: var(--color-4);
   height: 43%;
   border: 8px solid var(--color-3);
 }
 
-#checksumPane {
-  width: 80px;
+#moredata {
+  placement: absolute;
+  display: block;
+  width: 220px;
+  margin-left: 15px;
+  margin-top: 10px;
+}
+
+#sidedatatable {
+  justify-content: center;
+  width: 241px;
+  right: -5px;
+}
+
+#timestamp {
+  font-size: 13px;
+  placement: absolute;
+  width: 90%;
+}
+
+#ip2ip {
+  font-size: 13px;
+  placment: absolute;
+  text-align: center;
+  display: block;
+  width: 90%;
+  margin-top: -15px;
 }
 
 #packetPayloadPane {
-  width: 103.7%;
+  width: 104%;
   overflow: scroll;
   overflow-x: hidden;
   padding: 2px;
@@ -284,15 +313,25 @@ strong {
   border: 8px solid var(--color-3);
   height: 52%;
 }
+#protoInfo {
+  margin-top: 10px;
+  gap: 3px;
+  display: flex;
+  margin-left: 15px;
+}
+
+.infop {
+  width: 40%;
+}
 
 .hexGrid {
   font-size: 12px;
   display: grid;
-  grid-template-columns: repeat(16, 27px);
-  grid-template-rows: repeat(16, minmax(27px, auto));
+  grid-template-columns: repeat(32, 27px);
+  grid-template-rows: repeat(32, minmax(27px, auto));
   gap: 1px;
   justify-content: center;
-  width: 455px;
+  width: 896px;
   margin: 0 auto;
   border: 1px solid #ccc;
   background-color: var(--color-3);

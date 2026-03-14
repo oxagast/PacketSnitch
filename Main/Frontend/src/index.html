@@ -84,15 +84,20 @@
         <div id="packetInfoPane">
           <div id="timestamp"></div>
           <div id="ip2ip"></div>
-          <div id="checksums"></div>
-          <div id="protocolPart"></div>
+          <div id="moredata"></div>
+          <div id="protoInfo">
+            <div id="protoInfoSrc" class="infop">Source</div>
+            <div id="protoInfoDest" class="infop">Destination</div>
+          </div>
         </div>
         <div id="packetPayloadPane" class="main_panel">
           <br />
           <div id="hexg" class="hexGrid"></div>
         </div>
       </div>
-      <div class="sidebar"></div>
+      <div class="sidebar" id="sidedata">
+        <div id="sidedatatable"></div>
+      </div>
     </div>
     <div class="footer">
       <div id="status" class="footer">Status: Ready</div>
