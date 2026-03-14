@@ -13,6 +13,7 @@ let bookmarkList = [];
 
 let bookmark = {};
 /* if a json is loaded this gets our code ready */
+pophexgrid("00".repeat(256));
 document
   .getElementById("json-upload")
   .addEventListener("change", function (event) {
@@ -219,21 +220,32 @@ function handlePacketNavigation(btn, bookmark) {
    packetsForHost[index] is an array of all packet info 
    for the current host, we want to be able to navigate
    through it with next and prev buttons */
-  //  document.getElementById("packetPayloadPane").innerHTML = JSON.stringify(
-  //    packetsForHost[index],
-  //   null,
-  //   2,
-  // );
   ip = document.getElementById("host_filter").value;
   packetDecoded = JSON.parse(JSON.stringify(packetsForHost[index]));
   hexPayload =
     packetDecoded["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"];
-  document.getElementById("packetPayloadPane").innerHTML = hexPayload
-    .replace(/(.{1,2})/g, "$1 ")
-    .trim();
+  infoPanel();
+  pophexgrid(hexPayload);
 }
 
-// Example function to run the binary
+function pophexgrid(hex) {
+  document.getElementById("hexg").textContent = "";
+  const container = document.getElementById("hexg");
+  for (x of hex.toUpperCase().match(/.{1,2}/g)) {
+    const item = document.createElement("div");
+    item.classList.add("griditem");
+    item.textContent = x;
+    container.appendChild(item);
+  }
+}
+
+function infoPanel() {
+  p = JSON.parse(JSON.stringify(packetsForHost[index]));
+  ts = p["Packet Info"]["Packet Timestamp"];
+  document.getElementById("packetInfoPane").innerHTML =
+    "<strong>Packet Timestamp:</strong><br><br>" + ts + "<br>";
+}
+
 function runMyBinary() {
   // Be sure to make the path absolute
   const command = `"${path.resolve(binaryPath)}"`;

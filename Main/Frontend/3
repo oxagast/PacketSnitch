@@ -290,7 +290,7 @@ strong {
   grid-template-rows: repeat(16, minmax(27px, auto));
   gap: 1px;
   justify-content: center;
-  width: 455px;
+  width: 450px;
   margin: 0 auto;
   border: 1px solid #ccc;
   background-color: var(--color-3);
