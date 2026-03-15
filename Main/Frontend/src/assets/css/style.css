@@ -288,6 +288,7 @@ strong {
   height: 90.5%;
   padding: 5px;
   width: 103%;
+  margin-top: 10px;
   /*  width: 103.5%; */
 }
 
@@ -322,7 +323,7 @@ strong {
 
 #sidedatatable {
   justify-content: center;
-  width: 241px;
+  width: 265px;
   right: -5px;
 }
 

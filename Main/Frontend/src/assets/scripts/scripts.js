@@ -116,6 +116,10 @@ document.getElementById("target_hosts").addEventListener("change", function () {
   }
 });
 
+document.getElementById("target_hosts").addEventListener("click", function () {
+  const selected = document.getElementById("target_hosts").value;
+  handlePacketNavigation("first-load");
+});
 /**
  * Highlights the selected tab by changing its background color.
  */
@@ -239,6 +243,7 @@ function handlePacketNavigation(btn, bookmark) {
   document.getElementById("packetInfoPane").style.display = "block";
   document.getElementById("packetPayloadPane").style.display = "block";
   document.getElementById("summary_box").style.display = "none";
+  document.getElementById("welcome").style.display = "none";
   if (btn === undefined) {
     handlePacketNavigation("first-load");
   }
