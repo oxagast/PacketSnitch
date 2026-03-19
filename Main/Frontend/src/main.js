@@ -2,7 +2,6 @@ const { app, BrowserWindow } = require("electron");
 //const path = require("node:path");
 
 const CopyPlugin = require("copy-webpack-plugin");
-
 const { ipcMain } = require("electron");
 const { exec } = require("child_process");
 const path = require("path");

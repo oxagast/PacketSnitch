@@ -12,7 +12,7 @@ let index = 0; // Navigation index for packets
 let bookmarkList = []; // List of bookmarks (host:packet index)
 let bookmark = {}; // Current bookmark object
 let firstRun = true; // Flag for first run to initialize hex grid
-// Initialize hex grid with empty data (256 bytes of zero)
+const hostsjsonf = "/tmp/testcases/hosts.json";
 pophexgrid("00".repeat(256));
 
 // Set up file upload handler for JSON capture
@@ -418,15 +418,13 @@ function infoPanel() {
   } else {
     ebox.className = "low";
   }
-  // Get all cells in the second column (nth-child(2))
   const secondColumnCells = document.querySelectorAll(
     "table tr td:nth-child(1), table tr th:nth-child(1)",
   );
-
-  // Set a specific width
   secondColumnCells.forEach((cell) => {
     cell.style.width = "27%";
   });
+
   if (snetclass == "A") {
     const locd = [
       {
@@ -473,6 +471,17 @@ function infoPanel() {
     createTable(locd, loch, "sideloctable");
   }
 }
+
+/*
+async function checkfile() {
+  if (await fileExists(hostsjsonf)) {
+    processFile(hostsjsonf);
+  }
+}
+*/
+/* window.addEvnetListener("load", () => {
+  setInterval(checkFile, 10000);
+});*/
 
 /**
  * Example function to run a binary (not used in main flow).

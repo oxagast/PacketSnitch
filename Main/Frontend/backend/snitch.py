@@ -45,6 +45,7 @@ import numpy as np
 import ollama
 import requests
 import yaml
+import ipaddress
 from bs4 import BeautifulSoup
 from ollama import ResponseError
 from scipy.stats import entropy
@@ -65,6 +66,7 @@ use_llm = False
 summaries = []
 llm_call_lock = threading.Semaphore(nllmthreads)  # Limit concurrent LLM calls
 pprocess_lock = threading.Semaphore(nthreads)
+hostoutfile = "hosts.json"
 script_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 
@@ -119,9 +121,6 @@ def config_loader(filename="conf.yaml"):
     Load YAML configuration from the specified file.
     Exits if the file does not exist.
     """
-    if not os.path.exists(filename):
-        print("Error: Configuration file not found!", file=sys.stderr)
-        sys.exit(1)
     with open(filename, "r") as f:
         return yaml.safe_load(f)
 
@@ -361,7 +360,7 @@ def by_host(out, final_summary):
             by_host_dict[host.get("Host")] = []
         else:
             by_host_dict[host.get("Host")].append(host.get("Packet"))
-    open(out + "/all_testcases_info_by_host.json", "w+").write(
+    open(out + "/" + hostoutfile, "w+").write(
         json.dumps({"Host": by_host_dict, "Final Summary": final_summary}, indent=2)
     )
 
@@ -370,17 +369,22 @@ def get_netclass(ip):
     """
     Determine the network class (A, B, C, or Unknown) of an IPv4 address.
     """
-    if verbose == 0:
-        print(".", end="", flush=True)
-    fo = int(ip.split(".")[0])
-    if 0 <= fo <= 127:
+    ip_obj = ipaddress.ip_address(ip)
+    # Get the first octet
+    first_octet = int(str(ip_obj).split(".")[0])
+    # Determine the class
+    if 1 <= first_octet <= 127:
         return "A"
-    elif 128 <= fo <= 191:
+    elif 128 <= first_octet <= 191:
         return "B"
-    elif 192 <= fo <= 223:
+    elif 192 <= first_octet <= 223:
         return "C"
+    elif 224 <= first_octet <= 239:
+        return "D"
+    elif 240 <= first_octet <= 255:
+        return "E"
     else:
-        return "Unknown (D/E)?"
+        return "Invalid IP"
 
 
 def safe_decompress(compressed_data):
@@ -820,7 +824,24 @@ parser.add_argument(
 )
 verbose = parser.parse_args().verbose
 args = parser.parse_args()
-config = config_loader(args.conf if args.conf else "conf.yaml")
+try:
+    config = config_loader(args.conf if args.conf else "conf.yaml")
+    # this next exception handles if ther is no config file
+    # these are default opts that should work decently
+except Exception:
+    config = {
+        "output_dir": "/tmp/testcases",
+        "active_recon": True,
+        "ollama": {
+            "use_llm": True,
+            "model": "minimax-m2.5:cloud",
+            "response_length": 340,
+            "server_call_threads": 5,
+            "batch_size": 4,
+        },
+        "threads": 8,
+        "final_summary": True,
+    }
 geodat_path = script_dir + "common/GeoLite2-City.mmdb"
 mac_vendors_path = script_dir + "common/mac-vendors-export.csv"
 icann_csv_path = script_dir + "common/service-names-port-numbers.csv"
@@ -856,10 +877,6 @@ if "ollama" in config and config["ollama"].get("model"):
     response_length = config["ollama"].get("response_length", 200)
     bs = config["ollama"].get("batch_size", 5)
     use_llm = config["ollama"].get("use_llm", False)
-else:
-    llm_model = "minimax-m2.5:cloud"
-    response_length = 200
-    use_llm = False
 if llm_model and use_llm:
     if llm_model.endswith(":cloud"):
         if verbose >= 2:
@@ -884,10 +901,10 @@ if not os.path.exists(outd):
     try:
         os.mkdir(outd)
         final_s = start_threading()
-        by_host(outd, final_s)
+        # by_host(outd, final_s)
     except Exception:
         final_s = start_threading()
-        by_host(outd, final_s)
+        # by_host(outd, final_s)
 else:
     if (
         input(
@@ -905,10 +922,10 @@ else:
         try:
             os.mkdir(outd)
             final_s = start_threading()
-            by_host(outd, final_s)
+            #            by_host(outd, final_s)
         except Exception:
             final_s = start_threading()
-            by_host(outd, final_s)
+            # by_host(outd, final_s)
     finally:
         information_seive(bs)
         if verbose == 0:
@@ -929,6 +946,10 @@ else:
                         + final_res["response"]
                     )
                     final_summary = final_res["response"]
+                    # this needs to be here to address the final summary
+                    # needing to be in the by_host output, which is the
+                    # final output of the program
+                    by_host(outd, final_summary)
                     open(outd + "/final_summary.txt", "w").write(final_summary)
                     print("\n" + final_summary)
                     print("\nFinal summary saved to: " + outd + "/final_summary.txt")

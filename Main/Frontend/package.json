@@ -37,7 +37,8 @@
     "style-loader": "^3.3.4"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.1"
+    "electron-squirrel-startup": "^1.0.1",
+    "fs": "^0.0.1-security"
   },
   "plugins": [
     [
