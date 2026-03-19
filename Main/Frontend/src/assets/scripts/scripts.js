@@ -240,6 +240,7 @@ document.getElementById("setBookmark").addEventListener("click", function () {
  * Updates UI and packet info accordingly.
  */
 function handlePacketNavigation(btn, bookmark) {
+  document.getElementById("summary_box").style.display = "none";
   document.getElementById("packetInfoPane").style.display = "block";
   document.getElementById("packetPayloadPane").style.display = "block";
   document.getElementById("summary_box").style.display = "none";
@@ -293,6 +294,7 @@ function handlePacketNavigation(btn, bookmark) {
 
 function populateDataTypes() {
   list = document.getElementById("types-list");
+  list.textContent = "";
   mtype = document.getElementById("mime-type");
   packetsForHost = packets["Host"][host_filter.value];
   mimet = JSON.parse(
@@ -351,7 +353,6 @@ function createTable(data, headers, containerId) {
  * Updates the info panel with details about the current packet.
  */
 function infoPanel() {
-  document.getElementById("summary_box").style.display = "none";
   infoPane = document.getElementById("packetInfoPane");
   infoPaneOrig = infoPane.innerHTML;
   infoPane.style.display = "block";
@@ -373,6 +374,8 @@ function infoPanel() {
   tcplayrelen = pinfo["TCP"]["TCP layer length"];
   wirelen = pinfo["TCP"]["Wire length"];
   payloadlen = pinfo["Raw data"]["Payload Length"];
+  snetclass = einfo["Traits"]["Network Data"]["Source IP"]["Class"];
+  dnetclass = einfo["Traits"]["Network Data"]["Destination IP"]["Class"];
   document.getElementById("sidedatatable").textContent = "";
   document.getElementById("protoInfoSrc").textContent = "Source";
   document.getElementById("protoInfoDest").textContent = "Destination";
@@ -392,19 +395,19 @@ function infoPanel() {
     { name: "IP:Port", value: sourcepair },
     { name: "MAC", value: macsrc },
     { name: "MAC Vendor", value: macsrcvendor },
+    { name: "Network Class", value: snetclass },
   ];
   createTable(ipds, iph, "protoInfoSrc");
   const ipdd = [
     { name: "IP:Port", value: destpair },
     { name: "MAC", value: macdest },
     { name: "MAC Vendor", value: macdestvendor },
+    { name: "Network Class", value: dnetclass },
   ];
   createTable(ipdd, iph, "protoInfoDest");
   entropy = einfo["Traits"]["Shannon Entropy"];
   document.getElementById("timestamp").textContent = "Timestamp: " + ts;
   document.getElementById("ip2ip").textContent = sourcepair + " ~ " + destpair;
-  snetclass = einfo["Traits"]["Network Data"]["Source IP"]["Class"];
-  dnetclass = einfo["Traits"]["Network Data"]["Destination IP"]["Class"];
   document.getElementById("sideloctable").textContent = "";
   document.getElementById("entropybox").textContent = entropy.toFixed(2);
   ebox = document.getElementById("entropybox");
@@ -422,7 +425,7 @@ function infoPanel() {
 
   // Set a specific width
   secondColumnCells.forEach((cell) => {
-    cell.style.width = "22%";
+    cell.style.width = "27%";
   });
   if (snetclass == "A") {
     const locd = [
@@ -441,7 +444,7 @@ function infoPanel() {
           einfo["Traits"]["Network Data"]["Source IP"]["Location"]["Time Zone"],
       },
     ];
-    const loch = ["Src Location Data", "Details"];
+    const loch = ["Source Host", "Location"];
     createTable(locd, loch, "sideloctable");
   }
   if (dnetclass == "A") {
@@ -466,7 +469,7 @@ function infoPanel() {
           ],
       },
     ];
-    const loch = ["Dest Location Data", "Details"];
+    const loch = ["Destination Host", "Location"];
     createTable(locd, loch, "sideloctable");
   }
 }
