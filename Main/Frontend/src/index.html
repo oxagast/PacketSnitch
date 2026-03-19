@@ -91,8 +91,19 @@
           <div id="ip2ip"></div>
           <div id="moredata"></div>
           <div id="protoInfo">
-            <div id="protoInfoSrc" class="infop"></div>
-            <div id="protoInfoDest" class="infop"></div>
+            <div id="protoInfoHead" class="PHead">Protocol Information</div>
+            <div id="protoInfoProto" class="infop">
+              <div id="protoInfoSrc" class="infop"></div>
+              <div id="protoInfoDest" class="infop"></div>
+            </div>
+          </div>
+          <div id="data-types">
+            <div id="dataTypesHead" class="PHead">Data Type List</div>
+
+            <div id="dataTypesPane">
+              <div id="mime-type"></div>
+              <ul id="types-list"></ul>
+            </div>
           </div>
         </div>
         <div id="packetPayloadPane" class="main_panel">
@@ -101,7 +112,11 @@
         </div>
       </div>
       <div class="sidebar" id="sidedata">
-        <div id="sidedatatable"></div>
+        <div class="sidebar-header">Packet Specifics</div>
+        <div id="sidedatatable" class="sidetable"></div>
+        <div class="sidebar-header">Location</div>
+        <div id="locationtable" class="sidetable"></div>
+        <div id="sideloctable" class="sidetable"></div>
       </div>
     </div>
     <div class="footer">

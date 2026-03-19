@@ -288,6 +288,25 @@ function handlePacketNavigation(btn, bookmark) {
     packetDecoded["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"];
   infoPanel();
   pophexgrid(hexPayload);
+  populateDataTypes();
+}
+
+function populateDataTypes() {
+  list = document.getElementById("types-list");
+  mtype = document.getElementById("mime-type");
+  packetsForHost = packets["Host"][host_filter.value];
+  mimet = JSON.parse(
+    JSON.stringify(packetsForHost[index]["Extra Info"]["MIME Type"]),
+  );
+  items = JSON.parse(
+    JSON.stringify(packetsForHost[index]["Extra Info"]["Data Types"]),
+  );
+  mtype.textContent = "MIME Type: " + mimet;
+  items.forEach((item) => {
+    const listItem = document.createElement("li");
+    listItem.textContent = item;
+    list.appendChild(listItem);
+  });
 }
 
 /**
@@ -338,6 +357,7 @@ function infoPanel() {
   infoPane.style.display = "block";
   p = JSON.parse(JSON.stringify(packetsForHost[index]));
   pinfo = p["Packet Info"];
+  einfo = p["Extra Info"];
   ts = pinfo["Packet Timestamp"];
   ipchksum = pinfo["IP"]["IP Checksum"];
   tcpchksum = pinfo["TCP"]["TCP checksum"];
@@ -382,6 +402,55 @@ function infoPanel() {
   createTable(ipdd, iph, "protoInfoDest");
   document.getElementById("timestamp").textContent = "Timestamp: " + ts;
   document.getElementById("ip2ip").textContent = sourcepair + " ~ " + destpair;
+  snetclass = einfo["Traits"]["Network Data"]["Source IP"]["Class"];
+  dnetclass = einfo["Traits"]["Network Data"]["Destination IP"]["Class"];
+  document.getElementById("sideloctable").textContent = "";
+
+  if (snetclass == "A") {
+    const locd = [
+      {
+        name: "Country",
+        value:
+          einfo["Traits"]["Network Data"]["Source IP"]["Location"]["Country"],
+      },
+      {
+        name: "City",
+        value: einfo["Traits"]["Network Data"]["Source IP"]["Location"]["City"],
+      },
+      {
+        name: "Timezone",
+        value:
+          einfo["Traits"]["Network Data"]["Source IP"]["Location"]["Time Zone"],
+      },
+    ];
+    const loch = ["Src Location Data", "Details"];
+    createTable(locd, loch, "sideloctable");
+  }
+  if (dnetclass == "A") {
+    const locd = [
+      {
+        name: "Country",
+        value:
+          einfo["Traits"]["Network Data"]["Destination IP"]["Location"][
+            "Country"
+          ],
+      },
+      {
+        name: "City",
+        value:
+          einfo["Traits"]["Network Data"]["Destination IP"]["Location"]["City"],
+      },
+      {
+        name: "Timezone",
+        value:
+          einfo["Traits"]["Network Data"]["Destination IP"]["Location"][
+            "Time Zone"
+          ],
+      },
+    ];
+    const loch = ["Dest Location Data", "Details"];
+    createTable(locd, loch, "sideloctable");
+  }
 }
 
 /**

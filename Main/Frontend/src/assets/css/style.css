@@ -133,7 +133,7 @@ hr {
 /* Sidebar */
 .sidebar {
   display: block;
-  width: 230px;
+  width: 300px;
   background-color: var(--color-4);
   border: 1px solid var(--color-3);
   padding: 1px;
@@ -190,7 +190,7 @@ td {
 }
 
 table {
-  width: 85%;
+  width: 100%;
 }
 
 td {
@@ -303,6 +303,8 @@ strong {
 }
 
 #packetInfoPane {
+  overflow: scroll;
+  overflow-x: hidden;
   width: 103.5%;
   color: var(--color-1);
   font-size: 13px;
@@ -323,8 +325,6 @@ strong {
 
 #sidedatatable {
   justify-content: center;
-  width: 265px;
-  right: -5px;
 }
 
 #timestamp {
@@ -346,6 +346,34 @@ strong {
   width: 90%;
 }
 
+#data-types {
+  border: 1px solid var(--color-3);
+  margin-left: 15px;
+  margin-bottom: 20px;
+  margin-top: 20px;
+  width: 600px;
+}
+
+.sidebar-header {
+  font-size: 18px;
+  background-color: var(--color-2);
+  color: white;
+  font-weight: bold;
+  text-align: center;
+}
+
+#mime-type {
+  font-size: 14px;
+  color: var(--color-1);
+  margin-top: 10px;
+  margin-left: 15px;
+}
+
+#types-list {
+  color: white;
+  font-size: 14px;
+}
+
 #packetPayloadPane {
   width: 105%;
   /*()  width: 104%; */
@@ -359,13 +387,31 @@ strong {
 }
 #protoInfo {
   margin-top: 10px;
-  gap: 3px;
-  display: flex;
   margin-left: 15px;
+  width: 600px;
+  display: block;
+  font-size: 0px;
+  border: 1px solid var(--color-3);
+}
+#protoInfoProto {
+  font-size: 14px;
+  width: 100%;
+  display: flex;
+  color: var(--color-1);
 }
 
-.infop {
-  width: 40%;
+.PHead {
+  color: white;
+  font-size: 18px;
+  background-color: var(--color-2);
+  text-align: center;
+}
+
+#protoInfoSrc,
+#protoInfoDest {
+  width: 100%;
+  color: var(--color-1);
+  font-size: 14px;
 }
 
 .hexGrid {
