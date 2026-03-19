@@ -405,7 +405,15 @@ function infoPanel() {
   snetclass = einfo["Traits"]["Network Data"]["Source IP"]["Class"];
   dnetclass = einfo["Traits"]["Network Data"]["Destination IP"]["Class"];
   document.getElementById("sideloctable").textContent = "";
+  // Get all cells in the second column (nth-child(2))
+  const secondColumnCells = document.querySelectorAll(
+    "table tr td:nth-child(1), table tr th:nth-child(1)",
+  );
 
+  // Set a specific width
+  secondColumnCells.forEach((cell) => {
+    cell.style.width = "22%";
+  });
   if (snetclass == "A") {
     const locd = [
       {
