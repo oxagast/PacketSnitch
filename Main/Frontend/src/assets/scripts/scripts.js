@@ -49,7 +49,7 @@ function writePacketInfo(h1, h2) {
 }
 
 /**
- * Reads and parses the uploaded JSON file, updates UI and state.
+ * Reads and parses the JSON file, updates UI and state.
  */
 function processFile(file) {
   const reader = new FileReader();
@@ -471,7 +471,6 @@ function infoPanel() {
     createTable(locd, loch, "sideloctable");
   }
 }
-
 window.api.onJsonData((jsonData) => {
   processFile(
     new File([jsonData], "capture.json", { type: "application/json" }),
@@ -482,4 +481,14 @@ window.api.onJsonData((jsonData) => {
 onload = function () {
   document.getElementById("packetInfoPane").style.display = "none";
   document.getElementById("packetPayloadPane").style.display = "none";
+  filename = "blah.pcap";
+
+  window.apicomm
+    .runBackendCommand(filename)
+    .then((output) => {
+      console.log("Backend output:", output);
+    })
+    .catch((err) => {
+      console.error("Backend error:", err);
+    });
 };

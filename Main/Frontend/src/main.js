@@ -2,7 +2,6 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs");
 const path = require("path");
 
-//const hostsPath = "/tmp/testcases/hosts.json";
 let mainWindow;
 const filePath = path.join("/tmp/testcases/", "hosts.json");
 
@@ -13,6 +12,8 @@ function createWindow() {
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
+    contextIsolation: true,
+    nodeIntegration: false,
   });
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 }
@@ -21,6 +22,7 @@ app.whenReady().then(() => {
   createWindow();
   let fileSent = false;
   // this function handles polling for the existence of the json
+
   // file (on disk) and sends its content to the renderer process
   // when found
   setInterval(() => {
@@ -30,5 +32,6 @@ app.whenReady().then(() => {
       mainWindow.webContents.send("json-data", data);
       fileSent = true; // Prevent sending multiple times
     }
-  }, 2000);
+  }, 5000);
 });
+require("./back-comm");

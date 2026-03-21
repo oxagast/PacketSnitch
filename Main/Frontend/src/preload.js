@@ -7,3 +7,8 @@ contextBridge.exposeInMainWorld("api", {
     });
   },
 });
+
+contextBridge.exposeInMainWorld("apicomm", {
+  runBackendCommand: (filename) =>
+    ipcRenderer.invoke("run-backend-command", filename),
+});
