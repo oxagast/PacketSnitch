@@ -472,39 +472,14 @@ function infoPanel() {
   }
 }
 
-/*
-async function checkfile() {
-  if (await fileExists(hostsjsonf)) {
-    processFile(hostsjsonf);
-  }
-}
-*/
-/* window.addEvnetListener("load", () => {
-  setInterval(checkFile, 10000);
-});*/
-
-/**
- * Example function to run a binary (not used in main flow).
- */
-function runMyBinary() {
-  // Be sure to make the path absolute
-  const command = `"${path.resolve(binaryPath)}"`;
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return;
-    }
-    console.log(`stdout: ${stdout}`);
-    console.error(`stderr: ${stderr}`);
-  });
-}
+window.api.onJsonData((jsonData) => {
+  processFile(
+    new File([jsonData], "capture.json", { type: "application/json" }),
+  );
+});
 
 // On page load, hide packet info and payload panes
 onload = function () {
   document.getElementById("packetInfoPane").style.display = "none";
   document.getElementById("packetPayloadPane").style.display = "none";
-  window.api.getJsonData().then((jsonData) => {
-    // Use jsonData here
-    console.log("Received JSON data from main process:", jsonData);
-  });
 };
