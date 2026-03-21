@@ -75,10 +75,6 @@ Edit `conf.yaml` to specify database locations:
 
 ```yaml
 active_recon: true
-database_locations:
-  geoip: "common/GeoLite2-City.mmdb"
-  mac_vendors: "common/mac-vendors-export.csv"
-  icann_ports: "common/service-names-port-numbers.csv"
 output_dir: "testcases"
 ollama:
   use_llm: true
