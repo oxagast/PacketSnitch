@@ -35,28 +35,6 @@ document
   });
 
 /**
- * Display packet info in either table or pretty JSON format,
- * depending on user selection.
- */
-function writePacketInfo(h1, h2) {
-  const format_selection = document.getElementById("Format").value;
-  if (format_selection === "Tables") {
-    const main_panel = document.getElementById("main");
-    main_panel.textContent = "";
-    main_panel.innerHTML =
-      '<div><table class="main_panel" id="packet_space"><thead><tr><th width=25%>' +
-      h1 +
-      "</th><th>" +
-      h2 +
-      "</th></tr></thead><tbody></tbody></table></div>";
-  }
-  if (format_selection === "Pretty JSON") {
-    main_panel.textContent = "";
-    main_panel.innerHTML = '<br><pre id="json_output">' + json_cap + "</pre>";
-  }
-}
-
-/**
  * Reads and parses the JSON file, updates UI and state.
  */
 function processFile(file) {
@@ -128,6 +106,7 @@ document.getElementById("target_hosts").addEventListener("click", function () {
   const selected = document.getElementById("target_hosts").value;
   handlePacketNavigation("first-load");
 });
+
 /**
  * Highlights the selected tab by changing its background color.
  */
@@ -348,6 +327,21 @@ function hexToAscii(hex) {
   console.log("Converted hex to ASCII:", ascii);
   return ascii;
 }
+
+/*
+document.getElementById("hexg").addEventListener("mouseleave", () => {
+  document
+    .querySelectorAll(".griditem")
+    .forEach((el) => el.classList.remove("highlight"));
+});
+*/
+
+function clearGridHighlights() {
+  document
+    .querySelectorAll(".griditem")
+    .forEach((el) => el.classList.remove("highlight"));
+}
+
 /**
  * Populates the hex grid display with the given hex string.
  */
@@ -382,28 +376,36 @@ function pophexgrid(hex) {
       textbox.innerHTML = "";
       const printable = getPrintableSequence(idx);
       window.currentPrintableSequence = printable;
-      item.isHighlighted = true;
       // adds only consecutive printable characters to the ascii box
       textbox.textContent += truncate(printable, 32);
+      for (i = 0; i < truncate(printable, 32).length; i++) {
+        highlightedHex = document.querySelectorAll(".griditem")[idx + i];
+        highlightedHex.classList.add("highlight");
+      }
       hexlen = parseInt(truncate(printable, 32).length, 10)
         .toString(16)
         .padStart(2, "0")
         .toUpperCase();
-
-      offsetbox.textContent = "0x" + decToHex(idx, 4) + ":" + hexlen;
+      hexoffset = idx.toString(16).padStart(4, "0").toUpperCase();
+      offsetbox.textContent = "0x" + hexoffset + ":" + hexlen;
     });
   });
   // this fades the box back out
   document.querySelectorAll(".griditem").forEach((item) => {
     item.addEventListener("mouseleave", () => {
       asciibox.classList.remove("visible");
+      clearGridHighlights();
     });
   });
 }
+
+// trunactes a string to a max length
 function truncate(str, maxLength) {
   if (str.length <= maxLength) return str;
   return str.slice(0, maxLength);
 }
+
+// returns a 0 padded hex string of a number with a given length
 function decToHex(num, pad) {
   return num.toString(16).padStart(pad, "0");
 }
@@ -436,6 +438,12 @@ function createTable(data, headers, containerId) {
 /**
  * Updates the info panel with details about the current packet.
  */
+
+// probably should break this function up into smaller pieces,
+// but it works for now, it takes the current packet info and
+// populates the info panel with it, including the side tables
+// and the main info table, also updates the timestamp and
+// ip:port info at the top
 function infoPanel() {
   infoPane = document.getElementById("packetInfoPane");
   document.getElementById("rightside").style.display = "block";
@@ -575,13 +583,14 @@ function infoPanel() {
     //  }
   }
 }
-
+// when the main.js returns our json data from snitch.py
 window.jsonapi.onJsonData((jsonData) => {
   processFile(
     new File([jsonData], "capture.json", { type: "application/json" }),
   );
 });
 
+// here we create the backend process and hook it to the handler
 function runSnitch(file) {
   window.snitchapi.runBackendCommand(file).then((output) => {
     console.log("Backend output:", output);

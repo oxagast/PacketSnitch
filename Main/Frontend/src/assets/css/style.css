@@ -480,20 +480,21 @@ strong {
 }
 .griditem.highlight {
   background-color: lightgray;
-  padding: 20px;
-  border: 2px solid transparent;
   transition:
     background-color 0.3s,
     border-color 0.3s;
 }
+
+/*
 .highlight-box {
   background-color: lightgray;
   padding: 20px;
   border: 2px solid transparent;
   transition:
     background-color 0.3s,
-    border-color 0.3s; /* Smooth transition */
+    border-color 0.3s;
 }
+*/
 
 .griditem:hover,
 .griditem:focus {
