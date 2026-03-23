@@ -22,8 +22,8 @@ body {
 
 /* Outer container */
 .container_box {
-  width: 99%;
-  height: 99%;
+  width: 100%;
+  height: 100%;
   border: 3px solid var(--color-3);
   display: flex;
   flex-direction: column;
@@ -115,7 +115,6 @@ hr {
   margin-top: 5px;
   display: flex;
   margin-right: 5px;
-  height: 97%;
   font-family: Cantarell, system-ui;
   font-size: 12px;
   overflow-y: hidden;
@@ -128,16 +127,18 @@ hr {
   font-face: Cantarell, system-ui;
   color: var(--color-1);
   height: 90%;
+  width: 95%;
 }
 
 /* Sidebar */
 .sidebar {
   display: block;
+  position: static;
   width: 300px;
   background-color: var(--color-4);
   border: 1px solid var(--color-3);
   padding: 1px;
-  box-sizing: border-box;
+  /*  box-sizing: border-box; */
   color: var(--color-3);
   margin-right: 1px;
   padding-top: 2px;
@@ -147,7 +148,6 @@ hr {
 }
 
 .sidebar select {
-  width: 100%;
   margin-bottom: 5px;
   background-color: black;
   border: 1px solid var(--color-3);
@@ -163,15 +163,13 @@ hr {
 
 /* Main panel */
 .main_panel {
-  margin-left: 30px;
-  margin-right: 30px;
   background-color: #111;
   color: white;
   padding: 5px;
   box-sizing: border-box;
   font-family: word-break, monospace;
   align-items: center;
-  width: 1200px;
+  width: 1300px;
   justify-items: center;
 }
 
@@ -206,7 +204,7 @@ strong {
   width: 100%;
   alien-items: left;
   margin-top: -15px;
-  margin-left: 230px;
+  margin-left: 270px;
   display: flex;
   gap: 10px;
   max-width: 400px;
@@ -288,7 +286,7 @@ strong {
   background-color: var(--color-4);
   height: 90.5%;
   padding: 5px;
-  width: 103%;
+  width: 98%;
   margin-top: 10px;
   /*  width: 103.5%; */
 }
@@ -306,7 +304,7 @@ strong {
 #packetInfoPane {
   overflow: scroll;
   overflow-x: hidden;
-  width: 103.5%;
+  width: 98%;
   color: var(--color-1);
   font-size: 13px;
   /*  width: 102.5%; */
@@ -412,8 +410,7 @@ strong {
 }
 
 #packetPayloadPane {
-  width: 105%;
-  /*()  width: 104%; */
+  width: 99.5%;
   overflow: scroll;
   overflow-x: hidden;
   padding: 8px;
@@ -444,6 +441,7 @@ strong {
   text-align: center;
 }
 
+/* to main protcol boxes, src/dest */
 #protoInfoSrc,
 #protoInfoDest {
   width: 100%;
@@ -451,6 +449,7 @@ strong {
   font-size: 14px;
 }
 
+/* this is here to setup the grid bed */
 .hexGrid {
   font-size: 12px;
   display: grid;
@@ -464,6 +463,8 @@ strong {
   background-color: var(--color-3);
 }
 
+/* sets up the boxes on the grid waiting */
+/* to be assigned packet (hex) data */
 .griditem {
   background-color: var(--color-4);
   border: 1px solid var(--color-3);
@@ -478,27 +479,20 @@ strong {
     background-color 0.3s,
     border-color 0.3s; /* Smooth transition */
 }
+
+/* this is for the consecutive ones that are highlighted */
 .griditem.highlight {
-  background-color: lightgray;
+  background-color: var(--color-3);
+  border-color: white;
   transition:
     background-color 0.3s,
     border-color 0.3s;
 }
 
-/*
-.highlight-box {
-  background-color: lightgray;
-  padding: 20px;
-  border: 2px solid transparent;
-  transition:
-    background-color 0.3s,
-    border-color 0.3s;
-}
-*/
-
+/* this is for the one right under the cursor */
 .griditem:hover,
 .griditem:focus {
-  background-color: var(--color-3); /* Highlight color */
+  background-color: #7471ab; /* Highlight color */
   border-color: white;
   cursor: pointer;
 }
@@ -525,7 +519,7 @@ strong {
   border: 1px solid var(--color-4);
   padding: 5px;
   position: absolute;
-  left: 741px;
+  left: 330px;
   top: 165px;
   height: 30px;
 }

@@ -264,12 +264,12 @@ function handlePacketNavigation(btn, bookmark) {
     statusUpdate("Status: No packet information found for this host");
     document.getElementById("main").innerHTML = "Please select a json file!";
   }
-  /* in the data main secton, this is where we would 
-    add the packet info for each packet, for now we just
-    dump the json, we'll format later 
-   packetsForHost[index] is an array of all packet info 
-   for the current host, we want to be able to navigate
-   through it with next and prev buttons */
+  // in the data main secton, this is where we would
+  // add the packet info for each packet, for now we just
+  // dump the json, we'll format later
+  // packetsForHost[index] is an array of all packet info
+  // for the current host, we want to be able to navigate
+  // through it with next and prev buttons
   ip = document.getElementById("host_filter").value;
   packetDecoded = JSON.parse(JSON.stringify(packetsForHost[index]));
   hexPayload =
@@ -303,11 +303,11 @@ function populateDataTypes() {
   items = JSON.parse(
     JSON.stringify(packetsForHost[index]["Extra Info"]["Data Types"]),
   );
-  mtype.textContent = "MIME type: " + mimet;
+  mtype.textContent = "\u03B1 MIME type: " + mimet;
   charset = charset == "" ? "Unknown" : charset;
   encoding = encoding == "" ? "Unknown" : encoding;
-  chars.textContent = " Payload Charset: " + charset;
-  encode.textContent = "Payload Encoding: " + encoding;
+  chars.textContent = "\u2202 Payload Charset: " + charset;
+  encode.textContent = "\u2211 Payload Encoding: " + encoding;
 
   items.forEach((item) => {
     const listItem = document.createElement("li");
@@ -315,27 +315,34 @@ function populateDataTypes() {
     list.appendChild(listItem);
   });
 }
+// this takes a char code and returns true if it's
+// a printable ascii character, false otherwise
 function isPrintable(charCode) {
   // ASCII printable: 32 (space) to 126 (~)
   return charCode >= 32 && charCode <= 126;
 }
+
+// this changes hex to ascii
 function hexToAscii(hex) {
   let ascii = "";
   for (let i = 0; i < hex.length; i += 2) {
     ascii += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
   }
-  console.log("Converted hex to ASCII:", ascii);
   return ascii;
 }
 
-/*
-document.getElementById("hexg").addEventListener("mouseleave", () => {
-  document
-    .querySelectorAll(".griditem")
-    .forEach((el) => el.classList.remove("highlight"));
-});
-*/
+// trunactes a string to a max length
+function truncate(str, maxLength) {
+  if (str.length <= maxLength) return str;
+  return str.slice(0, maxLength);
+}
 
+// returns a 0 padded hex string of a number with a given length
+function decToHex(num, pad) {
+  return num.toString(16).padStart(pad, "0");
+}
+
+// clears the higlights (its called after the moouse leaves grid)
 function clearGridHighlights() {
   document
     .querySelectorAll(".griditem")
@@ -390,24 +397,13 @@ function pophexgrid(hex) {
       offsetbox.textContent = "0x" + hexoffset + ":" + hexlen;
     });
   });
-  // this fades the box back out
+  // this fades the box back out and calls the grid clear func
   document.querySelectorAll(".griditem").forEach((item) => {
     item.addEventListener("mouseleave", () => {
       asciibox.classList.remove("visible");
       clearGridHighlights();
     });
   });
-}
-
-// trunactes a string to a max length
-function truncate(str, maxLength) {
-  if (str.length <= maxLength) return str;
-  return str.slice(0, maxLength);
-}
-
-// returns a 0 padded hex string of a number with a given length
-function decToHex(num, pad) {
-  return num.toString(16).padStart(pad, "0");
 }
 
 /**
@@ -474,36 +470,37 @@ function infoPanel() {
   document.getElementById("protoInfoSrc").textContent = "Source";
   document.getElementById("protoInfoDest").textContent = "Destination";
   const chkd = [
-    { name: "IP Checksum", value: ipchksum },
-    { name: "TCP Checksum", value: tcpchksum },
-    { name: "Flags", value: flags },
-    { name: "IP Length", value: iplayrelen },
-    { name: "TCP Length", value: tcplayrelen },
-    { name: "Wire Length", value: wirelen },
-    { name: "Payload Length", value: payloadlen },
+    { name: "IP Checksum \u060F", value: ipchksum },
+    { name: "TCP Checksum \u2643", value: tcpchksum },
+    { name: "Flags \u0D79", value: flags },
+    { name: "IP Length \u2366", value: iplayrelen },
+    { name: "TCP Length \u263F", value: tcplayrelen },
+    { name: "Wire Length \u2123", value: wirelen },
+    { name: "Payload Length \u2318", value: payloadlen },
   ];
   const chkh = ["Protocol data", "Details"];
   createTable(chkd, chkh, "sidedatatable");
   const iph = ["Packet", "Data"];
   const ipds = [
-    { name: "IP:Port", value: sourcepair },
-    { name: "MAC", value: macsrc },
-    { name: "MAC Vendor", value: macsrcvendor },
-    { name: "Network Class", value: snetclass },
+    { name: "IP:Port \u273C", value: sourcepair },
+    { name: "MAC \u03C3", value: macsrc },
+    { name: "MAC Vendor \u03b3", value: macsrcvendor },
+    { name: "Network Class \u03c0", value: snetclass },
   ];
   createTable(ipds, iph, "protoInfoSrc");
   const ipdd = [
-    { name: "IP:Port", value: destpair },
-    { name: "MAC", value: macdest },
-    { name: "MAC Vendor", value: macdestvendor },
-    { name: "Network Class", value: dnetclass },
+    { name: "IP:Port \u273C", value: destpair },
+    { name: "MAC \u03C3", value: macdest },
+    { name: "MAC Vendor \u03B3", value: macdestvendor },
+    { name: "Network Class \u03C0", value: dnetclass },
   ];
   createTable(ipdd, iph, "protoInfoDest");
   entropy = einfo["Traits"]["Shannon Entropy"];
-  document.getElementById("timestamp").textContent = "Timestamp: " + ts;
+  document.getElementById("timestamp").textContent = "Timestamp \u221E " + ts;
   document.getElementById("ip2ip").textContent = sourcepair + " ~ " + destpair;
   document.getElementById("sideloctable").textContent = "";
-  document.getElementById("entropybox").textContent = entropy.toFixed(2);
+  document.getElementById("entropybox").textContent =
+    "\u29E7 " + entropy.toFixed(2);
   ebox = document.getElementById("entropybox");
   if (entropy >= 6.8) {
     ebox.className = "high";
@@ -524,22 +521,22 @@ function infoPanel() {
     einfo["Traits"]["Network Data"]["Source IP"]["Location"]["City"] ==
     undefined
   ) {
-    const nodata = [{ name: "Location", value: "Localnet" }];
+    const nodata = [{ name: "Location \u2205", value: "Localnet" }];
     const nodatah = ["Source Host", "Location"];
     createTable(nodata, nodatah, "sideloctable");
   } else {
     const locds = [
       {
-        name: "Country",
+        name: "Country \u2211",
         value:
           einfo["Traits"]["Network Data"]["Source IP"]["Location"]["Country"],
       },
       {
-        name: "City",
+        name: "City \u2211",
         value: einfo["Traits"]["Network Data"]["Source IP"]["Location"]["City"],
       },
       {
-        name: "Timezone",
+        name: "Timezone \u221E",
         value:
           einfo["Traits"]["Network Data"]["Source IP"]["Location"]["Time Zone"],
       },
@@ -552,25 +549,25 @@ function infoPanel() {
     einfo["Traits"]["Network Data"]["Destination IP"]["Location"]["City"] ==
     undefined
   ) {
-    const nodata = [{ name: "Location", value: "Localnet" }];
+    const nodata = [{ name: "Location \u2205", value: "Localnet" }];
     const nodatah = ["Destination Host", "Location"];
     createTable(nodata, nodatah, "sideloctable");
   } else {
     const locdd = [
       {
-        name: "Country",
+        name: "Country \u2211",
         value:
           einfo["Traits"]["Network Data"]["Destination IP"]["Location"][
             "Country"
           ],
       },
       {
-        name: "City",
+        name: "City \u2211",
         value:
           einfo["Traits"]["Network Data"]["Destination IP"]["Location"]["City"],
       },
       {
-        name: "Timezone",
+        name: "Timezone \u221E",
 
         value:
           einfo["Traits"]["Network Data"]["Destination IP"]["Location"][
@@ -583,6 +580,10 @@ function infoPanel() {
     //  }
   }
 }
+
+// the next two have hooks into IPC handlers for main.js
+// data transactions
+
 // when the main.js returns our json data from snitch.py
 window.jsonapi.onJsonData((jsonData) => {
   processFile(
