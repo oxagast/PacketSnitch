@@ -1,4 +1,4 @@
-![PacketSnitch](https://raw.githubusercontent.com/oxagast/PacketSnitch/refs/heads/main/Main/Orig-Pages/assets/images/packet-snitch-tag.png)
+![PacketSnitch](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/packetsnitch-ss16.png)
 
 ## Overview
 
@@ -7,7 +7,7 @@ PacketSnitch is a Python tool for extracting payloads and rich metadata from net
 ## Screenshot
 
 This is a screenshot of *PacketSnitch alpha v0.9.114*.
-![Screenshot 14](https://raw.githubusercontent.com/oxagast/PacketSnitch/refs/heads/main/Documentation/packetsnitch_ss16.png)
+![Screenshot 14](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/packetsnitch-ss16.png)
 
 ## Features
 
