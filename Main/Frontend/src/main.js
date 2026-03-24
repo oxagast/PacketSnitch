@@ -3,27 +3,23 @@ const fs = require("fs");
 const path = require("path");
 const process = require("process");
 let mainWindow;
-filePath = ""
+filePath = "";
 const os = require("os");
 
 const platform = os.platform();
 if (platform === "linux") {
-	fs.rmdir("/tmp/testcases", { recursive: true }, (err) => {
-  if (err) console.error(err);
-});
- filePath = path.join("/tmp/testcases/", "hosts.json");
+  fs.rmdir("/tmp/testcases", { recursive: true }, (err) => {
+    if (err) console.error(err);
+  });
+  filePath = path.join("/tmp/testcases/", "hosts.json");
+} else if (platform === "win32") {
+  fs.rmdir("C:\\Windows\\Temp\\testcases", { recursive: true }, (err) => {
+    if (err) console.error(err);
+  });
+  filePath = "C:\\Windows\\Temp\\testcases\\hosts.json";
+} else {
+  console.log("Err, OS not supported.");
 }
-else if (platform === "win32") {
-	fs.rmdir("C:\\Windows\\Temp\\testcases", { recursive: true }, (err) => {
-  if (err) console.error(err);
-});
-	filePath = "C:\\Windows\\Temp\\testcases\\hosts.json";
-}
-else {
-	console.log("Err, OS not supported.");
-}
-
-
 
 function createWindow() {
   mainWindow = new BrowserWindow({
