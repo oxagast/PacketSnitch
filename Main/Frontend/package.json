@@ -13,6 +13,22 @@
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\""
   },
+  "build": {
+  "win": {
+    "target": "nsis",
+    "icon": "ps-icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  }
+},
+
+
+
+  
   "keywords": [],
   "author": {
     "name": "Marshall Whittaker",
