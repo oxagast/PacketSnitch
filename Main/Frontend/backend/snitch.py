@@ -982,7 +982,7 @@ finally:
         all_info = all_info_new
         print("Generating LLM brief for batch of packets...")
         if all_info:
-            info_distiller(25)
+            info_distiller(75)
         all_info = all_info_orig
 
     if config.get("final_summary", True) and config["ollama"].get("use_llm", True):
