@@ -7,7 +7,7 @@ PacketSnitch is a Python tool for extracting payloads and rich metadata from net
 ## Screenshot
 
 This is a screenshot of *PacketSnitch alpha v0.9.114*.
-![Screenshot 14](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/packetsnitch-ss16.png)
+![Screenshot 19](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/packetsnitch_ss19.png)
 
 ## Features
 
