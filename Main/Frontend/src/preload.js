@@ -16,3 +16,11 @@ contextBridge.exposeInMainWorld("snitchapi", {
 contextBridge.exposeInMainWorld("getfileapi", {
   selectFile: () => ipcRenderer.invoke("select-file"),
 });
+
+contextBridge.exposeInMainWorld("api", {
+  onError: (callback) => {
+    ipcRenderer.on("backend-error", (_event, message) => {
+      callback(message);
+    });
+  },
+});

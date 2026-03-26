@@ -45,7 +45,8 @@ import numpy as np
 import ollama
 import requests
 import yaml
-#from tqdm import tqdm
+
+# from tqdm import tqdm
 import ipaddress
 from bs4 import BeautifulSoup
 from ollama import ResponseError
@@ -873,7 +874,7 @@ except Exception:
         "final_summary": True,
     }
 pcap_path = args.pcap_file
-#if not pcap_path.startswith("/"):
+# if not pcap_path.startswith("/"):
 #    print("Give me a full path for pcap.")
 #    sys.exit(1)
 geodat_path = script_dir + "common/GeoLite2-City.mmdb"
@@ -998,7 +999,9 @@ finally:
             # needing to be in the by_host output, which is the
             # final output of the program
             by_host(outd, final_summary)
-            open(outd + "/final_summary.txt", "w", encoding="utf-8").write(final_summary)
+            open(outd + "/final_summary.txt", "w", encoding="utf-8").write(
+                final_summary
+            )
             print("\n" + final_summary)
             print("\nFinal summary saved to: " + outd + "/final_summary.txt")
 
@@ -1009,4 +1012,5 @@ finally:
         + outd,
         file=sys.stderr,
     )
+
     sys.exit(0)

@@ -12,9 +12,8 @@ let index = 0; // Navigation index for packets
 let bookmarkList = []; // List of bookmarks (host:packet index)
 let bookmark = {}; // Current bookmark obje22
 let firstRun = true; // Flag for first run to initialize hex grid
-
+let loaded = false;
 popHexGrid("00".repeat(256));
-
 // Set up file upload handler for JSON capture
 document
   .getElementById("json-upload")
@@ -23,6 +22,8 @@ document
     if (file) {
       statusUpdate("Processing file: " + file.name);
       processFile(file);
+
+      loaded = true;
     }
   });
 
@@ -40,6 +41,8 @@ document
 function processFile(file) {
   const reader = new FileReader();
   reader.onload = (event) => {
+    document.getElementById("json-lab").style.display = "none";
+    document.getElementById("pcap-lab").style.display = "none";
     const main_panel = document.getElementById("main");
     packets = JSON.parse(event.target.result);
     json_cap = JSON.stringify(packets, null, 2);
@@ -60,6 +63,7 @@ function processFile(file) {
         newhost.textContent = host;
         newhost.value = host;
         targets_list.appendChild(newhost);
+        loaded = true;
         writeSummary();
       }
     }
@@ -208,7 +212,11 @@ document
     packetsForHost = packets["Host"][host];
     bookmark["Host"] = host;
     bookmark["Packet"] = index;
-    document.getElementById("target_hosts").value = host;
+    if (host == undefined || index == undefined) {
+      statusUpdate("Invalid bookmark selection, missing host or packet index");
+    } else {
+      document.getElementById("target_hosts").value = host;
+    }
     handlePacketNavigation("bookmark", bookmark);
   });
 
@@ -231,11 +239,13 @@ document.getElementById("setBookmark").addEventListener("click", function () {
  * Updates UI and packet info accordingly.
  */
 function handlePacketNavigation(btn, bookmark) {
+  document.getElementById("loading-container").style.display = "none";
   document.getElementById("summary_box").style.display = "none";
   document.getElementById("packetInfoPane").style.display = "block";
   document.getElementById("packetPayloadPane").style.display = "block";
   document.getElementById("summary_box").style.display = "none";
   document.getElementById("welcome").style.display = "none";
+
   if (btn === undefined) {
     handlePacketNavigation("first-load");
   }
@@ -246,6 +256,9 @@ function handlePacketNavigation(btn, bookmark) {
       handlePacketNavigation("first-load");
     } else {
       index = bookmark["Packet"];
+      statusUpdate(
+        "Navigating to bookmark: " + bookmark["Host"] + " packet " + index,
+      );
       document.getElementById("host_filter").value = bookmark["Host"];
     }
   }
@@ -269,9 +282,8 @@ function handlePacketNavigation(btn, bookmark) {
       statusUpdate(
         "Status: Displaying packet " + index + " of " + packetsForHost.length,
       );
-    } else {
-      statusUpdate("Status: No more packets in this direction");
     }
+
     if (packetsForHost != undefined && packetsForHost[index] == undefined) {
       statusUpdate("Status: Index out of range, reverting to zero");
       index = 0;
@@ -348,6 +360,21 @@ function populateDataTypes() {
   items = JSON.parse(
     JSON.stringify(packetsForHost[index]["Extra Info"]["Data Types"]),
   );
+  ssld = "";
+  if (
+    packetsForHost[index]["Extra Info"]["Traits"]["Server Info"][
+      "Encryption Data"
+    ] != "N/A" &&
+    packetsForHost[index]["Extra Info"]["Traits"]["Server Info"][
+      "Encryption Data"
+    ] != undefined
+  ) {
+    ssld =
+      packetsForHost[index]["Extra Info"]["Traits"]["Server Info"][
+        "Encryption Data"
+      ]["SSL Version"];
+    items.push(ssld + " encrypted stream");
+  }
   mtype.textContent = "\u03B1 MIME type: " + mimet;
   charset = charset == "" ? "Unknown" : charset;
   encoding = encoding == "" ? "Unknown" : encoding;
@@ -703,6 +730,7 @@ function infoPanel() {
 
 // when the main.js returns our json data from snitch.py
 window.jsonapi.onJsonData((jsonData) => {
+  document.getElementById("loading-container").style.display = "block";
   processFile(
     new File([jsonData], "capture.json", { type: "application/json" }),
   );
@@ -712,10 +740,16 @@ window.jsonapi.onJsonData((jsonData) => {
 // here we create the backend process and hook it to the handler
 function runSnitch(file) {
   document.getElementById("loading-container").style.display = "block";
-  window.snitchapi.runBackendCommand(file).then((output) => {
-    console.log("Backend output:", output);
-  });
+  const ret = window.snitchapi.runBackendCommand(file).then((output) => {});
 }
+
+window.api.onError((msg) => {
+  console.error("Error from backend:", msg);
+  document.getElementById("loading-container").style.display = "none";
+  document.getElementById("error-container").style.display = "block";
+  document.getElementById("error-container").textContent = msg;
+  // Show alert or UI message
+});
 
 // On page load, hide packet info and payload panes
 onload = function () {
@@ -725,3 +759,7 @@ onload = function () {
   document.getElementById("leftside").style.display = "none";
   document.getElementById("loading-container").style.display = "none";
 };
+
+//document.getElementById("error-container").style.display = "block";
+//document.getElementById("error-container").innerHTML =
+// "Please select a JSON file to analyze.";

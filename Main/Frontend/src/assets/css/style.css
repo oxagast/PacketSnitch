@@ -37,17 +37,32 @@ body {
   z-index: 1;
 }
 
-#loading-container {
+#error-container {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: rgba(65, 63, 110, 0.6);
+  background-color: rgba(180, 25, 25, 0.3);
   padding: 20px;
   border-radius: 10px;
   text-align: center;
   z-index: 1000;
   width: 400px;
+  display: none;
+}
+
+#loading-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(65, 63, 110, 0.3);
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  z-index: 1000;
+  width: 400px;
+  display: none;
 }
 
 #loading {

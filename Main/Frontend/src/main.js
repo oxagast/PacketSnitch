@@ -17,6 +17,31 @@ fs.rmdir(testcaseDir, { recursive: true }, (err) => {
   if (err) console.error(err);
 });
 
+function killProcess() {
+  console.log("Killing backend proc...");
+  if (platform === "win32") {
+    exec("taskkill /IM snitch.exe /T /F", (err) => {
+      if (err) console.error(err);
+    });
+  }
+  if (platform === "linux") {
+    exec('pkill -f "snitch"', (err) => {
+      if (err) console.error(err);
+    });
+  }
+}
+
+checkOllama().then((isInstalled) => {
+  if (isInstalled) {
+    console.log("Ollama is installed, proceeding with app launch...");
+  } else {
+    console.log(
+      "Ollama is not installed. Please install Ollama to use PacketSnitch.",
+    );
+    killProcess();
+  }
+});
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     minWidth: 1310,
@@ -31,40 +56,44 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  createWindow();
-  console.log("App ready, waiting for file selection...");
-  let fileSent = false;
-  // start the process that listens for the file selection and runs the backend command
-  require("./back-comm");
-  ipcMain.handle("select-file", async () => {
-    const { canceled, filePaths } = await dialog.showOpenDialog({
-      properties: ["openFile"],
+  checkOllama().then((isInstalled) => {
+    createWindow();
+    console.log("App ready, waiting for file selection...");
+    let fileSent = false;
+    // start the process that listens for the file selection and runs the backend command
+    require("./back-comm");
+    ipcMain.handle("select-file", async () => {
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        properties: ["openFile"],
+      });
+      if (canceled) return null;
+      console.log("Accepted pcapng.. Checking for json existence...");
+      setInterval(() => {
+        if (!fileSent && fs.existsSync(hostsFilePath)) {
+          // here we read the file in
+          const data = fs.readFileSync(hostsFilePath, "utf8");
+          mainWindow.webContents.send("json-data", data);
+          fileSent = true; // Prevent sending multiple times
+        }
+      }, 3000);
+      return filePaths[0];
     });
-    if (canceled) return null;
-    console.log("Accepted pcapng.. Checking for json existence...");
-    setInterval(() => {
-      if (!fileSent && fs.existsSync(hostsFilePath)) {
-        // here we read the file in
-        const data = fs.readFileSync(hostsFilePath, "utf8");
-        mainWindow.webContents.send("json-data", data);
-        fileSent = true; // Prevent sending multiple times
-      }
-    }, 3000);
-    return filePaths[0];
   });
 });
 
+function checkOllama() {
+  return new Promise((resolve) => {
+    exec("ollama --version", (err, stdout, stderr) => {
+      if (err) {
+        resolve(false); // not installed or not in PATH
+      } else {
+        resolve(true);
+      }
+    });
+  });
+}
+
 app.on("before-quit", () => {
   // make sure the backend snitch process dies!
-  console.log("Killing backend proc...");
-  if (platform === "win32") {
-    exec("taskkill /IM snitch.exe /T /F", (err) => {
-      if (err) console.error(err);
-    });
-  }
-  if (platform === "linux") {
-    exec('pkill -f "snitch"', (err) => {
-      if (err) console.error(err);
-    });
-  }
+  killProcess();
 });
