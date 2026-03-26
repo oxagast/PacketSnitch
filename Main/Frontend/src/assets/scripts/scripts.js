@@ -404,8 +404,15 @@ function populateDataTypes() {
       packetsForHost[index]["Extra Info"]["Traits"]["Server Info"][
         "Encryption Data"
       ]["SSL Version"];
+    proto =
+      packetsForHost[index]["Extra Info"]["Traits"]["Network Data"][
+        "Port Protcol"
+      ];
+    items = [];
     items.push(ssld + " encrypted stream");
+    items.push(proto + " protocol data");
   }
+
   mtype.textContent = "\u03B1 MIME type: " + mimet;
   charset = charset == "" ? "Unknown" : charset;
   encoding = encoding == "" ? "Unknown" : encoding;
@@ -622,11 +629,27 @@ function infoPanel() {
   document.getElementById("sidedatatable").textContent = "";
   document.getElementById("protoInfoSrc").textContent = "Source";
   document.getElementById("protoInfoDest").textContent = "Destination";
+  document.getElementById("comp").textContent = "Unknown";
   if (decompressed == false || decompressed == undefined) {
+    types = einfo["Data Types"];
+
+    types.forEach((type) => {
+      if (type.includes("Zlib") || type.includes("zlib")) {
+        document.getElementById("comp").textContent = "Compressed with zlib";
+
+        console.log("Data type identified: " + type);
+      }
+      if (type.includes("Gzip") || type.includes("gzip")) {
+        document.getElementById("comp").textContent = "Compressed with gzip";
+      }
+      if (type.includes("Zip")) {
+        document.getElementById("comp").textContent = "Compressed with zip";
+      }
+    });
+  }
+  if (decompressed == true && decompressed == undefined) {
     document.getElementById("comp").textContent =
-      "Not Compressed, or format not recognized";
-  } else {
-    document.getElementById("comp").textContent = decompressed;
+      "Not regonized as compressed data";
   }
   //  wirelen
   if (pagetitle == undefined || pagetitle == "N/A") {
