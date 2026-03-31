@@ -1,4 +1,5 @@
 const { filterPackets } = require("./filter");
+const { getDataType } = require("./filter");
 // Global variables for DOM elements and state
 const contentTarget = document.getElementById("json-upload"); // File input for JSON upload
 let packets = {}; // Stores parsed packet data from JSON
@@ -850,6 +851,7 @@ document
   .addEventListener("keydown", function (event) {
     if (event.key === "Enter") {
       filterBy = document.getElementById("filterStr").value;
+
       filteredPackets = filterPackets(jsonOfPackets, filterBy);
       handlePacketNavigation("filtered", null);
     }

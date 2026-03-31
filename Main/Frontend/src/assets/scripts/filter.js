@@ -11,7 +11,7 @@ function getLeafKeys(obj) {
         recurse(value);
       } else {
         const uKey = key.toLowerCase().replace(/ /g, "-");
-        result.push({ [key]: uKey });
+        result.push({ [key]: uKey, ["type"]: getDataType(value) });
       }
     }
   }
@@ -31,6 +31,55 @@ function searchFullKey(obj, targetKey) {
       const result = searchFullKey(value, targetKey);
       if (result !== undefined) return result;
     }
+  }
+}
+
+function getDataType(data) {
+  function isIPv4(ip) {
+    const ipv4Regex =
+      /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+    return ipv4Regex.test(ip);
+  }
+  function isHexIdentifier(str) {
+    const hexRegex = /^0x[0-9a-fA-F]+$/;
+    return hexRegex.test(str);
+  }
+  function isValidMAC(address) {
+    const macRegex = /^([0-9A-Fa-f]{2}([-:])){5}[0-9A-Fa-f]{2}$/;
+    return macRegex.test(address);
+  }
+  function isFloat(value) {
+    return (
+      typeof value === "number" &&
+      !Number.isNaN(value) &&
+      !Number.isInteger(value)
+    );
+  }
+  function isInteger(value) {
+    return Number.isInteger(value);
+  }
+  function isASCII(str) {
+    return typeof str === "string" && /^[\x00-\x7F]*$/.test(str);
+  }
+  if (isIPv4(data)) {
+    return "IP";
+  }
+  if (isHexIdentifier(data)) {
+    return "HEX";
+  }
+  if (isValidMAC(data)) {
+    return "MAC";
+  }
+  if (isFloat(data)) {
+    return "FLOAT";
+  }
+  if (isInteger(data)) {
+    return "INT";
+  }
+  if (isASCII(data)) {
+    return "ASCII";
+  } else {
+    ("BIN");
   }
 }
 
@@ -54,21 +103,38 @@ function filterPackets(packets, filter) {
         if (key != "" && val != "") {
           if (keys.includes(key)) {
             for (const packet in hosts["Host"][host]) {
-              packetVal = searchFullKey(
+              const packetVal = searchFullKey(
                 hosts["Host"][host],
                 uKeys[keys.indexOf(key)],
               );
+              if (getDataType(packetVal) === "INT") {
+                // change str to int
+                fvalue = parseInt(val);
+                cvalue = parseInt(packetVal);
+              }
+              if (getDataType(packetVal) === "FLOAT") {
+                cvalue = parseFloat(packetVal);
+                fvalue = parseFloat(val);
+              }
               if (
-                packetVal &&
-                packetVal.toString().toLowerCase().includes(val.toLowerCase())
+                getDataType(packetVal) === "IP" ||
+                getDataType(packetVal) === "MAC" ||
+                getDataType(packetVal) === "HEX" ||
+                getDataType(packetVal) === "ASCII"
               ) {
-                console.log(`Filtering packets by ${key}:${val}`);
-                filteredPackets.push(hosts["Host"][host]);
+                cvalue = packetVal.toString().toLowerCase();
+                fvalue = val.toString().toLowerCase();
+              } else cvalue = packetVal;
+              if (cvalue && fvalue) {
+                if (cvalue === fvalue) {
+                  console.log(`Filtering packets by ${key}:${cvalue}`);
+                  filteredPackets.push(hosts["Host"][host]);
+                }
               }
             }
-          } else {
-            console.log(`Invalid filter key: ${key}`);
           }
+        } else {
+          console.log(`Invalid filter key: ${key}`);
         }
       }
     }
