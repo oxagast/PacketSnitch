@@ -851,15 +851,13 @@ document
       filteredPackets = filterPackets(jsonOfPackets, filterBy);
       if (filteredPackets == undefined || filteredPackets.length == 0) {
         hideAllData();
+        statusUpdate("Status: No packets match the filter criteria");
       } else {
         statusUpdate(
           "Status: Displaying " +
             filteredPackets.length +
             " packets matching filter",
         );
-        //alert(
-        //  `Displaying ${filteredPackets.length} packets matching filter: ${filterBy}`,
-        // );
         handlePacketNavigation("filtered", null);
       }
     }

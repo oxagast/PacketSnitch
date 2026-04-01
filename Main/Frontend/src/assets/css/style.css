@@ -644,6 +644,8 @@ strong {
   margin-left: 10px;
   margin-top: -8px;
   width: 1200px;
+  background-color: black;
+  color: white;
 }
 
 #payloadascii {
