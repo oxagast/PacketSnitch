@@ -58,20 +58,27 @@ checkOllama().then((isInstalled) => {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    minWidth: 1360,
-    minHeight: 720,
+    minWidth: 1180,
+    minHeight: 600,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
     contextIsolation: true,
-    nodeIntegration: false,
+    nodeIntegration: true,
   });
+  //  mainWindow.webContents.setZoomLevel(0.5);
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+  mainWindow.webContents.on("did-finish-load", () => {
+    mainWindow.webContents.setZoomFactor(0.68); // 0.8 = 80% zoom (zoom out)
+  });
 }
 
 app.whenReady().then(() => {
   checkOllama().then((isInstalled) => {
     createWindow();
+    app.on("activate", function () {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
     console.log("App ready, waiting for file selection...");
     let fileSent = false;
     // start the process that listens for the file selection and runs the backend command
@@ -88,6 +95,7 @@ app.whenReady().then(() => {
           // here we read the file in
           const data = fs.readFileSync(hostsFilePath, "utf8");
           mainWindow.webContents.send("json-data", data);
+
           fileSent = true; // Prevent sending multiple times
         }
       }, 3000);

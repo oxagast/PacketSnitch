@@ -46,7 +46,7 @@ ipcMain.handle("run-backend-command", async (event, filename) => {
         if (stderr.includes("supported capture file")) {
           sendError("Unsupported file format!");
         } else {
-          sendError("Backend execution error!");
+          sendError("Backend execution error! " + error);
         }
       }
     });

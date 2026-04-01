@@ -968,10 +968,8 @@ try:
     try:
         os.mkdir(outd)
         final_s = start_threading()
-        #            by_host(outd, final_s)
     except Exception:
         final_s = start_threading()
-        # by_host(outd, final_s)
 finally:
     final_brief = ""
     final_summary = ""
