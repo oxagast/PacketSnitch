@@ -36,10 +36,10 @@ function searchFullKey(obj, targetKey) {
 const operators = {
   "==": (a, b) => a == b,
   "!=": (a, b) => a != b,
-  "===": (a, b) => a === b,
-  "!==": (a, b) => a !== b,
   ">": (a, b) => a > b,
   "<": (a, b) => a < b,
+  ">=": (a, b) => a >= b,
+  "<=": (a, b) => a <= b,
 };
 
 function compare(a, b, operator) {
@@ -114,10 +114,6 @@ function filterPackets(packets, filter) {
   const keys = filterKeys.map((k) => Object.values(k)[0]);
   const uKeys = filterKeys.map((k) => Object.keys(k)[0]);
   console.log("Available filter keys:", keys, ":", uKeys);
-  // leafs = getLeafKeys(hostkeys);
-  //  console.log("Leaf keys in packets:", leafs[-1]);
-  // need to lopp over each host in json data then get all leaf keys
-
   let vMod, vVal;
   if (filter) {
     if (filter.includes(":")) {
