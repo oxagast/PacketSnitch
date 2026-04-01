@@ -52,6 +52,7 @@ function isValidJSON(str) {
 
 function fileLoaded(loaded) {
   if (loaded) {
+    document.getElementById("filterStr").disabled = false;
     document.getElementById("tab-btns").style.opacity = "1";
     document.getElementById("prev-btn").style.opacity = "1";
     document.getElementById("next-btn").style.opacity = "1";
@@ -851,6 +852,14 @@ document
       if (filteredPackets == undefined || filteredPackets.length == 0) {
         hideAllData();
       } else {
+        statusUpdate(
+          "Status: Displaying " +
+            filteredPackets.length +
+            " packets matching filter",
+        );
+        //alert(
+        //  `Displaying ${filteredPackets.length} packets matching filter: ${filterBy}`,
+        // );
         handlePacketNavigation("filtered", null);
       }
     }
@@ -872,7 +881,7 @@ window.api.onError((msg) => {
 
 // On page load, hide packet info and payload panes
 onload = function () {
-  document.getElementById("selectBookmark").style.display = "none";
+  // document.getElementById("selectBookmark").style.display = "none";
   document.getElementById("packetInfoPane").style.display = "none";
   document.getElementById("packetPayloadPane").style.display = "none";
   document.getElementById("rightside").style.display = "none";
