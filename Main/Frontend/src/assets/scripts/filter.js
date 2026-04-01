@@ -98,12 +98,35 @@ function getDataType(data) {
   }
 }
 
-function compStrInt(str, intval) {
-  const num = Number(str);
-  return !Number.isNaN(num) && num === intval;
+function runQuery(data, query) {
+  const orParts = query.split("||").map((q) => q.trim());
+  const orResults = orParts.map((part) => {
+    const andParts = part.split("&&").map((q) => q.trim());
+    // Run first condition
+    let result = filterChunk(data, andParts[0]);
+    for (let i = 1; i < andParts.length; i++) {
+      const nextResult = filterChunk(data, andParts[i]);
+      const set = new Set(nextResult);
+      result = intersect(result, nextResult);
+    }
+    return result;
+  });
+
+  // Combine all OR results (union, no duplicates)
+  return [...new Set(orResults.flat())];
 }
 
-function filterPackets(packets, filter) {
+function intersect(arr1, arr2) {
+  return arr1.filter((a) =>
+    arr2.some((b) => JSON.stringify(a) === JSON.stringify(b)),
+  );
+}
+
+function filterPackets(data, query) {
+  return runQuery(data, query);
+}
+
+function filterChunk(packets, filter) {
   let hosts = JSON.parse(packets);
   let filteredPackets = [];
   for (const host in hosts["Host"]) {
@@ -156,7 +179,6 @@ function filterPackets(packets, filter) {
       }
     }
   }
-  console.log("Filtered packets:", filteredPackets);
   console.log(`Filtered packets: ${filteredPackets.length}`);
   return filteredPackets;
 }

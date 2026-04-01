@@ -149,28 +149,13 @@ document.getElementById("target_hosts").addEventListener("click", function () {
   handlePacketNavigation("first-load");
 });
 
-/**
- * Highlights the selected tab by changing its background color.
- */
-function highlightTab(tabId) {
-  const containerDiv = document.getElementById("tab-btns");
-  const allTabs = containerDiv.querySelectorAll("*");
-  allTabs.forEach((tab) => {
-    tab.style.backgroundColor = "#003b7a"; // Reset all tabs to default color
-  });
-  let tab = document.getElementById(tabId);
-  tab.style.backgroundColor = "#00294a";
-}
-
 // Show summary when summary button is clicked
 document.getElementById("summary-btn").addEventListener("click", function () {
   //  document.getElementById("welcome").style.display = "The Analysis:";
   writeSummary();
 });
 
-/**
- * Displays the summary section from the loaded JSON.
- */
+// Displays the summary section from the loaded JSON.
 
 function writeSummary() {
   statusUpdate("Status: Displaying capture analysis summary");
@@ -227,7 +212,6 @@ document.getElementById("prev-btn").addEventListener("click", function () {
     );
     populateDataTypes(packetsForHost);
   }
-  // hostPacketInfo(host_filter.value);
 });
 
 // Navigation for next packet
@@ -241,9 +225,6 @@ document.getElementById("next-btn").addEventListener("click", function () {
     packetsForHost[index]["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"],
   );
   populateDataTypes(packetsForHost);
-
-  //    handlePacketNavigation("filter", null);
-  //  }
 });
 
 // Handle bookmark selection from dropdown
@@ -294,7 +275,7 @@ function handlePacketNavigation(btn, bookmark) {
   document.getElementById("packetPayloadPane").style.display = "block";
   document.getElementById("summary_box").style.display = "none";
   document.getElementById("welcome").style.display = "none";
-
+  showAllData();
   index = 0;
   if (btn === undefined) {
     handlePacketNavigation("first-load");
@@ -835,6 +816,31 @@ function doError(message) {
   });
 }
 
+function hideAllData() {
+  //  document.getElementById("packetInfoPane").textContent =
+  //    "No matching packets found.";
+  doError("No packets match the filter criteria!");
+  statusUpdate("Status: No packets match the filter criteria");
+  document.getElementById("data-types").style.display = "none";
+  document.getElementById("protoInfo").style.display = "none";
+  document.getElementById("timestamp").style.display = "none";
+  document.getElementById("rightside").style.display = "none";
+  document.getElementById("active-recon").style.display = "none";
+  document.getElementById("prev-btn").style.opacity = "0";
+  document.getElementById("next-btn").style.opacity = "0";
+  popHexGrid("00".repeat(256));
+}
+function showAllData() {
+  document.getElementById("prev-btn").style.opacity = "1";
+  document.getElementById("next-btn").style.opacity = "1";
+  document.getElementById("data-types").style.display = "block";
+  document.getElementById("protoInfo").style.display = "block";
+  document.getElementById("timestamp").style.display = "block";
+  document.getElementById("rightside").style.display = "block";
+  document.getElementById("active-recon").style.display = "block";
+  document.getElementById("hexg").hidden = false;
+}
+
 document
   .getElementById("filterStr")
   .addEventListener("keydown", function (event) {
@@ -842,7 +848,11 @@ document
       filterBy = document.getElementById("filterStr").value;
 
       filteredPackets = filterPackets(jsonOfPackets, filterBy);
-      handlePacketNavigation("filtered", null);
+      if (filteredPackets == undefined || filteredPackets.length == 0) {
+        hideAllData();
+      } else {
+        handlePacketNavigation("filtered", null);
+      }
     }
   });
 
