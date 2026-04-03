@@ -66,10 +66,9 @@ function createWindow() {
     contextIsolation: true,
     nodeIntegration: true,
   });
-  //  mainWindow.webContents.setZoomLevel(0.5);
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   mainWindow.webContents.on("did-finish-load", () => {
-    mainWindow.webContents.setZoomFactor(0.68); // 0.8 = 80% zoom (zoom out)
+    mainWindow.webContents.setZoomFactor(0.68); // makes everything fit snuggly
   });
 }
 

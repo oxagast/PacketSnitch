@@ -310,8 +310,8 @@ def write_testcase(data, output_dir, pdir, index):
     if not os.path.exists(output_dir + "/" + pdir):
         try:
             os.mkdir(output_dir + "/" + pdir)
-        except Exception as e:
-            print("Error: Could not create minor dir: " + str(e), file=sys.stderr)
+        except Exception:
+            print("Error: Nonfatal: Could not create minor dir.")
     out = open(
         output_dir + "/" + pdir + "/pcap.data_packet." + str(index) + ".dat", "wb"
     )
@@ -345,16 +345,73 @@ def join_info(output_dir, pdir, index, dt_json, pkt_json, host):
 by_host_dict = {}
 
 
+def sort_and_index_packets(by_host_dict):
+    for host, packets in by_host_dict.items():
+        # Skip empty or invalid entries
+        if not packets:
+            continue
+
+        # Sort packets by timestamp
+        packets.sort(
+            key=lambda p: datetime.strptime(
+                p["Packet Info"]["Packet Timestamp"], "%Y-%m-%d %H:%M:%S.%f"
+            )
+        )
+
+        # Add chronological index
+        for i, pkt in enumerate(packets, start=1):
+            pkt["Packet Info"]["Index"] = i
+
+    return by_host_dict
+
+
 def by_host(out, final_summary):
     """
     Organize all_info packets by host and write to a summary JSON file.
     """
-
+    global by_host_dict
     for host in all_info:
         if host.get("Host") not in by_host_dict:
             by_host_dict[host.get("Host")] = []
         else:
             by_host_dict[host.get("Host")].append(host.get("Packet"))
+
+    by_host_dict = sort_and_index_packets(by_host_dict)
+    # all_packets =
+    #     for host, packets in by_host_dict["Host"].items():
+    #         for pkt in packets:
+    #             all_packets.append(pkt)
+    #     all_packets_sorted = sorted(
+    #         all_packets,
+    #         key=lambda p: datetime.strptime(
+    #             p["Packet Info"]["Packet Timestamp"], "%Y-%m-%d %H:%M:%S.%f"
+    #         ),
+    #     )
+    #     for i, pkt in enumerate(all_packets_sorted, start=1):
+    #         pkt["Packet Info"]["Global Index"] = i
+    # for host, packets in by_host_dict["Host"].items():
+    #     # Sort packets for this host by timestamp
+    #     packets.sort(
+    #         key=lambda p: datetime.strptime(
+    #             p["Packet Info"]["Packet Timestamp"], "%Y-%m-%d %H:%M:%S.%f"
+    #         )
+    #     )
+    #
+    #     # Add chronological index
+    #     for i, pkt in enumerate(packets, start=1):
+    #         pkt["Packet Info"]["Chronological Order"] = i
+    #
+    #
+    # for h, packets in by_host_dict["Host"].items():
+    #     by_host_dict["Host"][h] = sorted(
+    #     packets,
+    #     key=lambda p: datetime.strptime(
+    #         p["Packet Info"]["Packet Timestamp"], "%Y-%m-%d %H:%M:%S.%f"
+    #     ),
+    # )
+    # for i, pkt in enumerate(by_host_dict, start=1):
+    # pkt["Packet Info"]["Index"] = i
+
     open(out + "/" + hostoutfile, "w+").write(
         json.dumps({"Host": by_host_dict, "Final Summary": final_summary}, indent=2)
     )

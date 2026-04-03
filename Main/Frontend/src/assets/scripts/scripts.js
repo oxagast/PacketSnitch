@@ -326,6 +326,7 @@ function handlePacketNavigation(btn, bookmark) {
     return;
   } else {
     ip = document.getElementById("host_filter").value;
+    console.log(ps[index]);
     hexPayload = ps[index]["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"];
     infoPanel(ps);
     popHexGrid(hexPayload);
@@ -847,7 +848,6 @@ document
   .addEventListener("keydown", function (event) {
     if (event.key === "Enter") {
       filterBy = document.getElementById("filterStr").value;
-
       filteredPackets = filterPackets(jsonOfPackets, filterBy);
       if (filteredPackets == undefined || filteredPackets.length == 0) {
         hideAllData();

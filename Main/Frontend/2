@@ -345,7 +345,7 @@ strong {
 
 #active-recon {
   background-color: var(--color-7);
-  position: static;
+  position: relative;
   width: 340px;
   margin-top: -613px;
   margin-left: 635px;
@@ -442,8 +442,6 @@ strong {
   width: 600px;
   background-color: var(--color-7);
   height: 400px;
-  display: flex;
-  zindex: 1;
 }
 
 .sidebar-header {
@@ -490,7 +488,6 @@ strong {
 #types-list {
   color: white;
   font-size: 14px;
-  z-index: -1;
 }
 
 #entropybox {
@@ -522,8 +519,6 @@ strong {
   border: 8px solid var(--color-3);
   margin-top: -200px;
   height: 45%;
-  z-index: 4;
-  position: relative;
 }
 #protoInfo {
   margin-top: 10px;
@@ -557,7 +552,7 @@ strong {
 }
 
 #hexg {
-  z-index: 5;
+  z-index: 1;
 }
 
 /* this is here to setup the grid bed */
