@@ -513,7 +513,8 @@ strong {
 }
 
 #file-info {
-  margin-top: 25px;
+  position: relative;
+  margin-top: 100px;
   margin-left: 15px;
   color: white;
   font-size: 16px;

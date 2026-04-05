@@ -16,6 +16,7 @@ let firstRun = true; // Flag for first run to initialize hex grid
 let loaded = false;
 let jsonOfPackets;
 let filteredPackets;
+let startTime;
 popHexGrid("00".repeat(256));
 // Set up file upload handler for JSON capture
 document
@@ -23,6 +24,7 @@ document
   .addEventListener("change", function (event) {
     const file = event.target.files[0];
     if (file) {
+      startTime = performance.now();
       statusUpdate("Processing file: " + file.name);
       processFile(file);
 
@@ -64,6 +66,9 @@ function isValidJSON(str) {
 
 function fileLoaded(loaded) {
   if (loaded) {
+    retTime = performance.now();
+    document.getElementById("load-time").textContent =
+      "Load time: " + ((retTime - startTime) / 1000).toFixed(2) + " seconds";
     document.getElementById("filterStr").disabled = false;
     document.getElementById("tab-btns").style.opacity = "1";
     document.getElementById("prev-btn").style.opacity = "1";
@@ -742,8 +747,6 @@ function infoPanel(pk) {
   secondColumnCells.forEach((cell) => {
     cell.style.width = "23%";
   });
-
-  //  if (snetclass == "A") {
   if (
     einfo["Traits"]["Network Data"]["Source IP"]["Location"]["City"] ==
     undefined
@@ -771,7 +774,6 @@ function infoPanel(pk) {
     const lochs = ["Source Host", "Location"];
     createTable(locds, lochs, "sideloctable");
   }
-  //  if (dnetclass == "A") {
   if (
     einfo["Traits"]["Network Data"]["Destination IP"]["Location"]["City"] ==
     undefined
@@ -804,7 +806,6 @@ function infoPanel(pk) {
     ];
     const lochd = ["Destination Host", "Location"];
     createTable(locdd, lochd, "sideloctable");
-    //  }
   }
 }
 
@@ -820,6 +821,9 @@ window.jsonapi.onJsonData((jsonData) => {
     new File([jsonData], "capture.json", { type: "application/json" }),
   );
   document.getElementById("loading-container").style.display = "none";
+  retTime = performance.now();
+  document.getElementById("load-time").textContent =
+    "Load time: " + ((retTime - startTime) / 1000).toFixed(2) + " seconds";
 });
 
 // here we create the backend process and hook it to the handler
@@ -830,7 +834,7 @@ function runSnitch(file) {
   document.getElementById("status").textContent =
     "Status: Running snitch backend, this may take a few minutes...";
   document.getElementById("error-container").style.display = "none";
-
+  startTime = performance.now();
   const ret = window.snitchapi.runBackendCommand(file).then((output) => {});
 }
 
