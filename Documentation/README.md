@@ -101,6 +101,57 @@ ollama:
 threads: 4
 ```
 
+## Searchable Attributes
+
+Each testcase JSON contains the following dot-notation keys as leaf nodes, which can be used to search, filter, or query testcase data in the frontend or via `all_testcases_info.json`:
+
+| Attribute | Type | Description |
+|---|---|---|
+| `packet.timestamp` | string | Timestamp of the captured packet (`YYYY-MM-DD HH:MM:SS.ffffff`) |
+| `packet.hex` | string | Full raw packet bytes as a hex string |
+| `ether.src.mac.addr` | string | Source MAC address |
+| `ether.dst.mac.addr` | string | Destination MAC address |
+| `ether.src.mac.vendor` | string | Vendor name for the source MAC address |
+| `ether.dst.mac.vendor` | string | Vendor name for the destination MAC address |
+| `ip.src.addr` | string | Source IP address |
+| `ip.dst.addr` | string | Destination IP address |
+| `ip.chksum` | string | IP header checksum (hex) |
+| `ip.len` | integer | IP layer length in bytes |
+| `ip.src.class` | string | Network class of the source IP (e.g. `Localnet`, `A`, `B`, `C`) |
+| `ip.dst.class` | string | Network class of the destination IP |
+| `tcp.src.port` | integer | TCP source port number |
+| `tcp.dst.port` | integer | TCP destination port number |
+| `tcp.chksum` | string | TCP checksum (hex) |
+| `tcp.urgptr` | boolean | Whether the TCP urgent pointer is set |
+| `tcp.flags` | string | Active TCP flags (e.g. `SYN\|ACK`) |
+| `tcp.options` | list | TCP options list |
+| `tcp.len` | integer | TCP header length in bytes |
+| `tcp.proto` | string | Service/protocol name for the destination port |
+| `tcp.desc` | string | ICANN port description for the destination port |
+| `wire.len` | integer | Total wire length of the TCP segment in bytes |
+| `payload.hex` | string | Raw TCP payload as a hex string |
+| `payload.ascii` | string | Raw TCP payload decoded as ASCII (lossy) |
+| `payload.len` | integer | Length of the TCP payload in bytes |
+| `payload.mime` | string | MIME type of the payload (e.g. `text/html`, `application/octet-stream`) |
+| `payload.entropy` | float | Shannon entropy of the payload (bits per byte) |
+| `payload.charset` | string | `ascii` if all bytes are printable ASCII, otherwise `binary` |
+| `payload.chars.used` | integer | Number of distinct byte values present in the payload |
+| `payload.decompressed.hex` | string | Decompressed payload as a hex string (only present if payload was compressed) |
+| `payload.decompressed.ascii` | string | Decompressed payload decoded as ASCII (only present if payload was compressed) |
+| `host.banner` | string | Server banner retrieved via active recon (requires `-a`) |
+| `loc.src.country` | string | Country of the source IP (GeoIP lookup) |
+| `loc.src.city` | string | City of the source IP (GeoIP lookup) |
+| `loc.src.postal` | string | Postal code of the source IP (GeoIP lookup) |
+| `loc.src.tz` | string | Time zone of the source IP — alias for `loc.src.timezone` |
+| `loc.src.timezone` | string | Time zone of the source IP (GeoIP lookup) |
+| `loc.dst.country` | string | Country of the destination IP (GeoIP lookup) |
+| `loc.dst.city` | string | City of the destination IP (GeoIP lookup) |
+| `loc.dst.postal` | string | Postal code of the destination IP (GeoIP lookup) |
+| `loc.dst.tz` | string | Time zone of the destination IP — alias for `loc.dst.timezone` |
+| `loc.dst.timezone` | string | Time zone of the destination IP (GeoIP lookup) |
+
+> **Note:** GeoIP attributes (`loc.*`) are only populated for non-private/routable IP addresses. Ethernet frame attributes (`ether.*`) are only populated when both source and destination IPs resolve to the local network. `host.banner` is only populated when the `-a` (active recon) flag is used.
+
 ## Notes
 
 - Active recon may take longer and requires network access.
