@@ -6,6 +6,7 @@
   --color-5: #ccbdde;
   --color-6: #b5b5b5;
   --color-7: #413f6e;
+  --sidebar-width: 20%;
 }
 
 /* Page background */
@@ -33,7 +34,7 @@ body {
   background-color: black;
   font-color: var(--color-5);
   scrollbar-color: var(--color-7) black;
-  height: 98%;
+  overflow: hidden;
 }
 
 #error-container {
@@ -164,39 +165,42 @@ hr {
 
 /* Content area */
 .content_area {
-  flex: 3;
+  flex: 1;
+  min-height: 0;
   margin-top: 5px;
   display: flex;
   margin-right: 5px;
   font-family: Cantarell, system-ui;
   font-size: 12px;
-  overflow-y: hidden;
-  height: 90%;
+  overflow: hidden;
   word-break: break-all;
-  overflow-x: hidden;
 }
 
 #main_content {
   font-face: Cantarell, system-ui;
   color: var(--color-1);
-  height: 90%;
-  width: 95%;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
 }
 
 /* Sidebar */
 .sidebar {
   display: block;
   position: static;
-  width: 300px;
+  width: var(--sidebar-width);
+  min-width: 160px;
+  max-width: 300px;
   background-color: var(--color-4);
   border: 1px solid var(--color-3);
   padding: 1px;
-  /*  box-sizing: border-box; */
   color: white;
   margin-right: 1px;
   padding-top: 2px;
   margin-left: 6px;
-  height: 94%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
   align-items: center;
 }
 
@@ -222,8 +226,17 @@ hr {
   box-sizing: border-box;
   font-family: word-break, monospace;
   align-items: center;
-  width: 1300px;
+  flex: 1;
+  min-width: 0;
   justify-items: center;
+}
+
+/* #main is the outer flex column host for the three content panels */
+#main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
 }
 
 table,
@@ -260,9 +273,9 @@ strong {
 
 .menu_bar {
   width: 100%;
-  alien-items: left;
-  margin-top: -15px;
-  margin-left: 270px;
+  align-items: center;
+  margin-top: 2px;
+  margin-left: var(--sidebar-width);
   display: flex;
   gap: 10px;
   max-width: 400px;
@@ -324,18 +337,13 @@ strong {
 /* Status bar */
 #status {
   text-align: left;
-  margin-top: 30px;
-  padding-top: 2px;
-  margin-bottom: 2px;
-  margin-left: 15px;
+  padding: 2px 8px;
   height: 18px;
   background-color: black;
   color: white;
   border: 1px solid grey;
-  padding-left: 8px;
   font-size: small;
-  position: relative;
-  width: 98%;
+  flex: 1;
 }
 
 .active {
@@ -345,23 +353,26 @@ strong {
 
 #active-recon {
   background-color: var(--color-7);
-  position: static;
-  width: 340px;
-  margin-top: -613px;
-  margin-left: 635px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 28%;
+  min-width: 200px;
   border: 1px solid var(--color-3);
-  height: 491px;
+  height: 80%;
   color: white;
+  overflow-y: auto;
 }
 
 #summary_content {
   display: block;
   border: 1px solid var(--color-3);
   background-color: var(--color-7);
-  height: 90.5%;
+  min-height: 100%;
   padding: 10px;
   width: 95%;
   margin: 10px;
+  box-sizing: border-box;
 }
 
 #tab-btns {
@@ -373,35 +384,38 @@ strong {
   display: block;
   border: 8px solid var(--color-3);
   background-color: var(--color-4);
-  margin-left: 0px;
   padding: 10px;
-  width: 96.5%;
+  width: 100%;
+  box-sizing: border-box;
   margin-top: 2px;
-  height: 100%;
-  /*  width: 103.5%; */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 #copyright {
-  width: 85%;
-  text-align: center;
+  bottom: 0;
+  position: absolute;
+  text-align: right;
   padding: 5px;
-  bottom: 24px;
-  margin-left: 35px;
   height: 5px;
   margin-bottom: 5px;
+  justify-content: center;
 }
 
 #packetInfoPane {
-  overflow: scroll;
+  overflow-y: scroll;
   overflow-x: hidden;
-  width: 98%;
+  width: 100%;
+  box-sizing: border-box;
   color: var(--color-1);
   font-size: 13px;
-  /*  width: 102.5%; */
   display: block;
   background-color: var(--color-4);
   border: 8px solid var(--color-3);
-  height: 75%;
+  flex: 1;
+  min-height: 0;
+  position: relative;
 }
 
 #moredata {
@@ -419,10 +433,9 @@ strong {
 #timestamp {
   font-size: 13px;
   color: var(--color-1);
-  width: 90%;
   position: absolute;
-  margin-left: 700px;
-  margin-top: -32px;
+  right: 10px;
+  top: 5px;
 }
 
 #ip2ip {
@@ -439,11 +452,12 @@ strong {
   margin-left: 15px;
   margin-bottom: 20px;
   margin-top: 20px;
-  width: 600px;
+  width: 60%;
+  max-width: 600px;
   background-color: var(--color-7);
   height: 400px;
   display: flex;
-  zindex: 1;
+  z-index: 1;
 }
 
 .sidebar-header {
@@ -521,22 +535,23 @@ strong {
 }
 
 #packetPayloadPane {
-  width: 99.5%;
-  overflow: scroll;
-  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-y: scroll;
+  overflow-x: auto;
   padding: 8px;
   background-color: var(--color-4);
-  margin-top: -4px;
   border: 8px solid var(--color-3);
-  margin-top: -200px;
-  height: 45%;
+  margin-top: 0;
+  flex: 0 0 40%;
   z-index: 4;
   position: relative;
 }
 #protoInfo {
   margin-top: 10px;
   margin-left: 15px;
-  width: 600px;
+  width: 60%;
+  max-width: 600px;
   display: block;
   font-size: 0px;
   border: 1px solid var(--color-3);
@@ -576,7 +591,8 @@ strong {
   grid-template-rows: repeat(32, minmax(27px, auto));
   gap: 1px;
   justify-content: center;
-  width: 896px;
+  width: max-content;
+  min-width: 100%;
   margin: 0 auto;
   border: 1px solid #ccc;
   background-color: var(--color-7);
@@ -622,15 +638,16 @@ strong {
 }
 
 .footer {
-  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
   background-color: black;
-  height: 10px;
-  width: 92%;
+  width: 100%;
+  box-sizing: border-box;
   color: white;
   font-size: small;
-  justify-content: flex-end;
-  bottom: 25px;
-  left: 28px;
+  padding: 0 5px;
+  margin-top: 4px;
 }
 
 .bmdrop {
@@ -638,16 +655,17 @@ strong {
   border: 1px solid var(--color-4);
   padding: 5px;
   position: absolute;
-  left: 330px;
+  left: calc(var(--sidebar-width) + 30px);
   top: 165px;
   height: 30px;
 }
 
 #filters-container {
-  display: block;
-  margin-top: 10px;
-  margin-left: 15px;
-  width: 1300px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  width: auto;
+  gap: 8px;
 }
 
 #host_filter {
@@ -656,12 +674,11 @@ strong {
 }
 
 #filterStr {
-  position: absolute;
-  margin-left: 10px;
-  margin-top: -8px;
-  width: 1200px;
+  flex: 1;
   background-color: black;
   color: white;
+  border: 1px solid grey;
+  padding: 5px;
 }
 
 #payloadascii {
