@@ -513,10 +513,12 @@ function popHexGrid(hex) {
   }
   // Attach event listeners to each grid item
   document.querySelectorAll(".griditem").forEach((item, idx) => {
-    item.addEventListener("mouseenter", () => {
+    item.addEventListener("mouseenter", (e) => {
       //box fade in
       offsetbox = document.getElementById("asciiOffset");
       textbox = document.getElementById("asciiText");
+      asciibox.style.top = (e.clientY + 18) + "px";
+      asciibox.style.left = (e.clientX + 18) + "px";
       asciibox.classList.add("visible");
       textbox.innerHTML = "";
       const printable = getPrintableSequence(idx);
