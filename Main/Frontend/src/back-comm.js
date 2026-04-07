@@ -21,7 +21,7 @@ ipcMain.handle("run-backend-command", async (event, filename) => {
   if (platform === "linux") {
     appPath = path.join(basePath, "/backend/snitch");
   } else {
-    sendError("Unsupported platform!");
+    appPath = path.join(basePath, "\\backend\\snitch.exe");
   }
 
   command = `"${appPath}" "${filename}" -a -o "${testcasesDir}"`;
