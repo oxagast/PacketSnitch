@@ -112,18 +112,82 @@ function filterChunk(data, filter) {
   return results;
 }
 
+function tokenizeQuery(query) {
+  const tokens = [];
+  let i = 0;
+  while (i < query.length) {
+    if (/\s/.test(query[i])) { i++; continue; }
+    if (query[i] === "(") { tokens.push({ type: "LPAREN" }); i++; continue; }
+    if (query[i] === ")") { tokens.push({ type: "RPAREN" }); i++; continue; }
+    if (query.startsWith("||", i)) { tokens.push({ type: "OR" }); i += 2; continue; }
+    if (query.startsWith("&&", i)) { tokens.push({ type: "AND" }); i += 2; continue; }
+    let j = i;
+    while (
+      j < query.length &&
+      !query.startsWith("||", j) &&
+      !query.startsWith("&&", j) &&
+      query[j] !== "(" &&
+      query[j] !== ")"
+    ) {
+      j++;
+    }
+    const expr = query.slice(i, j).trim();
+    if (expr) tokens.push({ type: "EXPR", value: expr });
+    i = j;
+  }
+  return tokens;
+}
+
 function runQuery(data, query) {
-  const orParts = query.split("||").map((q) => q.trim());
-  const orResults = orParts.map((part) => {
-    const andParts = part.split("&&").map((q) => q.trim());
-    let result = filterChunk(data, andParts[0]);
-    for (let i = 1; i < andParts.length; i++) {
-      const next = filterChunk(data, andParts[i]);
-      result = intersectBy(result, next, getPacketKey); // ✅ FIXED
+  const tokens = tokenizeQuery(query);
+  let pos = 0;
+
+  function peek() { return tokens[pos]; }
+  function consume(type) {
+    const tok = tokens[pos];
+    if (type && (!tok || tok.type !== type)) {
+      throw new Error(`Expected ${type} but got ${tok ? tok.type : "EOF"}`);
+    }
+    pos++;
+    return tok;
+  }
+
+  function parseOr() {
+    let result = parseAnd();
+    while (peek() && peek().type === "OR") {
+      consume("OR");
+      const right = parseAnd();
+      result = unionBy([...result, ...right], getPacketKey);
     }
     return result;
-  });
-  return unionBy(orResults.flat(), getPacketKey); // ✅ FIXED
+  }
+
+  function parseAnd() {
+    let result = parseTerm();
+    while (peek() && peek().type === "AND") {
+      consume("AND");
+      const right = parseTerm();
+      result = intersectBy(result, right, getPacketKey);
+    }
+    return result;
+  }
+
+  function parseTerm() {
+    const tok = peek();
+    if (tok && tok.type === "LPAREN") {
+      consume("LPAREN");
+      const result = parseOr();
+      consume("RPAREN");
+      return result;
+    }
+    if (tok && tok.type === "EXPR") {
+      consume("EXPR");
+      return filterChunk(data, tok.value);
+    }
+    return [];
+  }
+
+  return parseOr();
 }
 
 function filterPackets(data, query) {
