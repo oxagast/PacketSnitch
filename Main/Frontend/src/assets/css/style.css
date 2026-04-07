@@ -394,10 +394,13 @@ strong {
 }
 
 #copyright {
+  bottom: 0;
+  position: absolute;
   text-align: right;
   padding: 5px;
   height: 5px;
   margin-bottom: 5px;
+  justify-content: center;
 }
 
 #packetInfoPane {
