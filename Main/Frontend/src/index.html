@@ -32,7 +32,7 @@
       <div id="filters-container">
       <input id="host_filter" type="text" placeholder="0.0.0.0" disabled />
       <label style="color: white">Filter</label>
-      <input id="filterStr" type="text" disabled placeholder="city: boston && payload-length >80"/>
+      <input id="filterStr" type="text" disabled placeholder="wire.len: >100 && tcp.proto: https"/>
       </div>
     </div>
     <div class="menu_bar" id="dropdown" style="display: none">
@@ -69,14 +69,6 @@
           >
         </form>
         <br />
-
-        <!--
-        <form
-          method="post"
-          enctype="multipart/form-data"
-          id="pcapFile"
-          name="pcapFile"
-        >  -->
         <input type="button" id="pcap-filename" name="pcap-up" hidden />
         <label id="pcap-lab" for="pcap-filename" class="menu-btns">Choose PCAP</label>
 

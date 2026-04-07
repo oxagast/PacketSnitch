@@ -457,7 +457,7 @@ def safe_decompress(compressed_data):
     return result
 
 
-def get_geoip_info(ip):
+def get_geoip_info(ip, sord):
     """
     Look up GeoIP information (country, city, postal code, timezone) for an IP address.
     Returns a dictionary with location data or error message.
@@ -468,12 +468,31 @@ def get_geoip_info(ip):
     try:
         with geoip2.database.Reader(geodat_path) as reader:
             response = reader.city(ip)
-            return {
-                "Country": response.country.name,
-                "City": response.city.name,
-                "Postal Code": response.postal.code,  # type: ignore
-                "Time Zone": response.location.time_zone,  # type: ignore
-            }
+            if sord == "src":
+                return {
+                    "Country": response.country.name,
+                    "loc.src.country": response.country.name,
+                    "City": response.city.name,
+                    "loc.src.city": response.city.name,
+                    "Postal Code": response.postal.code,  # type: ignore
+                    "loc.src.postal": response.postal.code,  # type: ignore
+                    "Time Zone": response.location.time_zone,  # type: ignore
+                    "loc.src.tz": response.location.time_zone,  # type: ignore
+                    "loc.src.timezone": response.location.time_zone,  # type: ignore
+                }
+            if sord == "dst":
+                return {
+                    "Country": response.country.name,
+                    "loc.dst.country": response.country.name,
+                    "City": response.city.name,
+                    "loc.dst.city": response.city.name,
+                    "Postal Code": response.postal.code,  # type: ignore
+                    "loc.dst.postal": response.postal.code,  # type: ignore
+                    "Time Zone": response.location.time_zone,  # type: ignore
+                    "loc.dst.tz": response.location.time_zone,  # type: ignore
+                    "loc.dst.timezone": response.location.time_zone,  # type: ignore
+                }
+
     except geoip2.errors.AddressNotFoundError:  # type: ignore
         return {"Location": "Localnet"}
     except Exception as e:
@@ -496,7 +515,9 @@ def get_datatypes(data, dport, srcip, destip, tmout):
             decom = {
                 "Decompressed data": {
                     "Decompressed Hex Encoded": dedata.hex(),
+                    "payload.decompressed.hex": dedata.hex(),
                     "Decompressed ASCII Encoded": dedata.decode(errors="ignore"),
+                    "payload.decompressed.ascii": dedata.decode(errors="ignore"),
                 },
             }
     udescs = list(set(descs))
@@ -509,7 +530,9 @@ def get_datatypes(data, dport, srcip, destip, tmout):
     trait_struct = get_traits(data, dport, srcip, destip, tmout)
     dt = {
         "MIME Type": mime_type,
+        "payload.mime": mime_type,
         "Decompressed": decom,
+        "payload.decompressed": decom,
         "Data Types": udescs,
         "Traits": trait_struct,
     }
@@ -561,34 +584,48 @@ def get_traits(data, dport, srcip, destip, timeout):
     else:
         banner = "Active recon not performed"
     encoding = chardet.detect(data)
-    loc_info_src = get_geoip_info(srcip)
-    loc_info_dest = get_geoip_info(destip)
+    loc_info_src = get_geoip_info(srcip, "src")
+    loc_info_dest = get_geoip_info(destip, "dst")
     nc_info_src = get_netclass(srcip)
     nc_info_dest = get_netclass(destip)
     port_desc = get_port_description(dport)
     return {
         "Shannon Entropy": entop,
+        "payload.entropy": entop,
         "Network Data": {
             "Source IP": {
                 "Class": nc_info_src,
+                "ip.src.class": nc_info_src,
                 "Location": loc_info_src,
+                "ip.src.location": loc_info_src,
             },
             "Destination IP": {
                 "Class": nc_info_dest,
+                "ip.dst.class": nc_info_dest,
                 "Location": loc_info_dest,
+                "ip.dst.location": loc_info_dest,
             },
             "Port Protcol": protostr,
+            "tcp.proto": protostr,
             "Port Description": port_desc,
+            "tcp.desc": port_desc,
             "Hostnames": hostn,
+            "dns.hostnames": hostn,
         },
         "Length": data_len,
         "Server Info": banner,
+        "host.banner": banner,
         "Characters": {
             "Charset": charset,
+            "payload.charset": charset,
             "Encoding": encoding
             if entop <= 4.85
             else "Unavailable for high entropy data",
+            "payload.encoding": encoding
+            if entop <= 4.85
+            else "Unavailable for high entropy data",
             "Characters used": chars_used,
+            "payload.chars.used": chars_used,
             "Unique characters": bytearray(list(uniq_chars)).hex(),
         },
     }
@@ -663,40 +700,61 @@ def packet_loop(p, from_p, pcap_path, srcp, dstp, tmout):
                 pkt_struct = {
                     "Packet Processed": int(s),
                     "Packet Timestamp": timestamp,
+                    "packet.timestamp": timestamp,
                     "Ethernet Frame": {
                         "MAC Source": mac_addr_src,
+                        "ether.src.mac.addr": mac_addr_src,
                         "MAC Destination": mac_addr_dst,
+                        "ether.dst.mac.addr": mac_addr_dst,
                         "MAC Source Vendor": mac_vendor_src,
+                        "ether.src.mac.vendor": mac_vendor_src,
                         "MAC Destination Vendor": mac_vendor_dst,
+                        "ether.dst.mac.vendor": mac_vendor_dst,
                     }
-                    if get_geoip_info(p["IP"].src).get("Location") == "Localnet"
-                    and get_geoip_info(p["IP"].dst).get("Location") == "Localnet"
+                    if get_geoip_info(p["IP"].src, "src").get("Location") == "Localnet"
+                    and get_geoip_info(p["IP"].dst, "dst").get("Location") == "Localnet"
                     else "N/A",
                     "IP": {
                         "Source IP": str(p["IP"].src),
+                        "ip.src.addr": str(p["IP"].src),
                         "Destination IP": str(p["IP"].dst),
+                        "ip.dst.addr": str(p["IP"].dst),
                         "IP Checksum": hex(int(p["IP"].chksum)),
+                        "ip.chksum": hex(int(p["IP"].chksum)),
                         "IP layer length": int(p["IP"].len),
+                        "ip.len": int(p["IP"].len),
                     },
                     "TCP": {
                         "Source port": int(sport),
+                        "tcp.src.port": int(sport),
                         "Destination port": int(dport),
+                        "tcp.dst.port": int(dport),
                         "TCP checksum": hex(int(p["TCP"].chksum)),
+                        "tcp.chksum": hex(int(p["TCP"].chksum)),
                         "Urgent flag": bool(p["TCP"].urgptr),
+                        "tcp.urgptr": bool(p["TCP"].urgptr),
                         "TCP Flag Data": {
                             "Flags": flag_data if flag_data else "None",
+                            "tcp.flags": flag_data if flag_data else "None",
                         },
                         "Options": list(p["TCP"].options),
+                        "tcp.options": list(p["TCP"].options),
                         "TCP layer length": int(p["TCP"].dataofs * 4),
+                        "tcp.len": int(p["TCP"].dataofs * 4),
                         "Wire length": len(p["TCP"]),
+                        "wire.len": len(p["TCP"]),
                     },
                     "Raw data": {
                         "Payload": {
                             "Hex Encoded": raw_d.hex(),
+                            "payload.hex": raw_d.hex(),
                             "ASCII Encoded": raw_d.decode(errors="ignore"),
+                            "payload.ascii": raw_d.decode(errors="ignore"),
                         },
                         "Packet": bytes(p).hex(),
+                        "packet.hex": bytes(p).hex(),
                         "Payload Length": len(raw_d),
+                        "payload.len": len(raw_d),
                     },
                 }
                 data_back = join_info(
@@ -706,7 +764,7 @@ def packet_loop(p, from_p, pcap_path, srcp, dstp, tmout):
                     json.dumps(dt_struct).encode(),
                     json.dumps(pkt_struct).encode(),
                     p["IP"].dst
-                    if get_geoip_info(p["IP"].dst).get("Location") != "Localnet"
+                    if get_geoip_info(p["IP"].dst, "dst").get("Location") != "Localnet"
                     else p["IP"].src,
                 )
                 s = s + 1
@@ -834,7 +892,7 @@ def start_threading():
             threads.append(t)
             t.start()
         for t in threads:
-            t.join(timeout=10)
+            t.join(timeout=120)
             if t.is_alive():
                 if verbose >= 1:
                     print(
@@ -1038,7 +1096,7 @@ finally:
         all_info = all_info_new
         print("Generating LLM brief for batch of packets...")
         if all_info:
-            info_distiller(75)
+            info_distiller(50)
         all_info = all_info_orig
 
     if config.get("final_summary", True) and config["ollama"].get("use_llm", True):
