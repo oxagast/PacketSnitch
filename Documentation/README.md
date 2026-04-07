@@ -150,7 +150,7 @@ Each testcase JSON contains the following dot-notation keys as leaf nodes, which
 | `loc.dst.tz` | string | Time zone of the destination IP — alias for `loc.dst.timezone` |
 | `loc.dst.timezone` | string | Time zone of the destination IP (GeoIP lookup) |
 
-> **Note:** GeoIP attributes (`loc.*`) are only populated for non-private/routable IP addresses. Ethernet frame attributes (`ether.*`) are only populated when both source and destination IPs resolve to the local network. Active-recon attributes (`host.banner`, `dns.hostnames`) require the `-a` flag.
+> **Note:** GeoIP attributes (`loc.*`) are only populated for non-private/routable IP addresses. Ethernet frame attributes (`ether.*`) are only populated when both source and destination IPs resolve to the local network. `host.banner` is only populated when the `-a` (active recon) flag is used.
 
 ## Notes
 
