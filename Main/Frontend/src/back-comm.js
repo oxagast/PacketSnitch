@@ -4,7 +4,6 @@ const os = require("os");
 const platform = os.platform();
 const path = require("path");
 const fs = require("fs");
-let pcapSizeMB;
 tempDir = os.tmpdir();
 testcasesDir = path.join(tempDir, "testcases");
 ipcMain.handle("run-backend-command", async (event, filename) => {

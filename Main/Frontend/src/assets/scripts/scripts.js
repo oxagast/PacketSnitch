@@ -16,6 +16,7 @@ let firstRun = true; // Flag for first run to initialize hex grid
 let loaded = false;
 let jsonOfPackets;
 let filteredPackets;
+let curPacket;
 let startTime;
 popHexGrid("00".repeat(256));
 // Set up file upload handler for JSON capture
@@ -222,6 +223,9 @@ document.getElementById("prev-btn").addEventListener("click", function () {
   //highlightTab("prev-btn");
   if (index > 0) {
     index--;
+
+    ip = packetsForHost[index]["Packet Info"]["IP"]["Source IP"];
+    curPacket = ip + ":" + packetsForHost[index]["Packet Info"]["Index"];
     infoPanel(packetsForHost);
     popHexGrid(
       packetsForHost[index]["Packet Info"]["Raw data"]["Payload"][
@@ -237,6 +241,8 @@ document.getElementById("next-btn").addEventListener("click", function () {
   statusUpdate("Status: Displaying capture analysis summary");
   if (index < packetsForHost.length - 1) {
     index++;
+    ip = packetsForHost[index]["Packet Info"]["IP"]["Source IP"];
+    curPacket = ip + ":" + packetsForHost[index]["Packet Info"]["Index"];
   }
   infoPanel(packetsForHost);
   popHexGrid(
@@ -266,18 +272,12 @@ document
 
 // Add current packet as a bookmark
 document.getElementById("setBookmark").addEventListener("click", function () {
-  if (document.getElementById("host_filter").value == "") {
-    return;
-  } else {
-    curPacket = document.getElementById("host_filter").value + ":" + index;
-
-    if (!bookmarkList.includes(curPacket)) {
-      if (curPacket != undefined) {
-        bookmarkList.push(curPacket);
-        document
-          .getElementById("selectBookmark")
-          .appendChild(new Option(curPacket, curPacket));
-      }
+  if (!bookmarkList.includes(curPacket)) {
+    if (curPacket != undefined) {
+      bookmarkList.push(curPacket);
+      document
+        .getElementById("selectBookmark")
+        .appendChild(new Option(curPacket, curPacket));
     }
   }
 });
@@ -360,7 +360,8 @@ function handlePacketNavigation(btn, bookmark) {
     doError("No packet information found for this host!");
     return;
   } else {
-    ip = document.getElementById("host_filter").value;
+    ip = ps[index]["Packet Info"]["IP"]["Source IP"];
+    curPacket = ip + ":" + index;
     console.log(ps[index]);
     hexPayload = ps[index]["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"];
     infoPanel(ps);
@@ -517,8 +518,8 @@ function popHexGrid(hex) {
       //box fade in
       offsetbox = document.getElementById("asciiOffset");
       textbox = document.getElementById("asciiText");
-      asciibox.style.top = (e.clientY + 18) + "px";
-      asciibox.style.left = (e.clientX + 18) + "px";
+      asciibox.style.top = e.clientY + 18 + "px";
+      asciibox.style.left = e.clientX + 18 + "px";
       asciibox.classList.add("visible");
       textbox.innerHTML = "";
       const printable = getPrintableSequence(idx);

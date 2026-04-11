@@ -537,7 +537,7 @@ strong {
   width: 100%;
   box-sizing: border-box;
   overflow-y: scroll;
-  overflow-x: auto;
+  overflow-x: hidden;
   padding: 8px;
   background-color: var(--color-4);
   border: 8px solid var(--color-3);

@@ -13,8 +13,6 @@ if (require("electron-squirrel-startup")) {
 }
 ipcMain.handle("file-size", async () => {
   try {
-    //    const filePath = path.join(__dirname, 'path/to/your/file.txt'); // Your actual file path here
-
     // Get file stats asynchronously
     const stats = await fs.promises.stat(filename); // Using promises version of stat
     return stats.size; // Send back the file size
@@ -81,7 +79,7 @@ function createWindow() {
   });
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   mainWindow.webContents.on("did-finish-load", () => {
-    mainWindow.webContents.setZoomFactor(0.68); // makes everything fit snuggly
+    mainWindow.webContents.setZoomFactor(0.7); // makes everything fit snuggly
   });
 }
 
