@@ -63,19 +63,39 @@ except ImportError:
 ar = "False"
 nthreads = 6
 nllmthreads = 5
-threads = []
-pktnum = 0
 response_length = 100
 llm_model = "minimax-m2.5:cloud"
 use_llm = False
+
+# Shared result lists, protected by their respective locks so that threads
+# can safely append results concurrently without data corruption.
 summaries = []
-llm_call_lock = threading.Semaphore(nllmthreads)  # Limit concurrent LLM calls
-pprocess_lock = threading.Semaphore(nthreads)
+summaries_lock = threading.Lock()
+all_info = []
+all_info_lock = threading.Lock()
+
+# Concurrency controls
+llm_call_lock = threading.Semaphore(nllmthreads)  # cap simultaneous LLM calls
+
 hostoutfile = "hosts.json"
 cur_dir = os.getcwd()
 script_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
-# os.chdir(script_dir)
-# os.chdir("/tmp")
+
+# --- Lookup tables loaded once at startup (see init_lookup_tables()) ---
+# Keyed (port_int, "tcp"/"udp") -> description string
+port_desc_map: dict = {}
+# Keyed by uppercase MAC prefix (e.g. "00:1A:2B") -> vendor name
+mac_vendor_map: dict = {}
+
+# --- GeoIP reader opened once and reused across all packets ---
+# Protected by geoip_cache_lock for the cache; the Reader itself is thread-safe.
+geoip_reader = None
+geoip_cache: dict = {}
+geoip_cache_lock = threading.Lock()
+
+# --- Banner cache: (ip, port) -> banner dict, avoids redundant socket probes ---
+checked_ips: dict = {}
+checked_ips_lock = threading.Lock()
 
 
 def llm_query(packet_infos):
@@ -86,7 +106,7 @@ def llm_query(packet_infos):
     with llm_call_lock:
         try:
             if ollama and use_llm and packet_infos:
-                # these are for retreies
+                # Attempt up to 2 times with exponential backoff; halve the payload on each retry
                 for resc in range(2):
                     try:
                         res = ollama.generate(
@@ -94,7 +114,9 @@ def llm_query(packet_infos):
                             prompt=f"Tell me what you can about the following network capture (encoded in json, from pcap), its payload, and any interesting or unusual traits... respond with a single paragraph around {response_length} words: {packet_infos}",
                         )
                         if res and "response" in res:
-                            summaries.append(res["response"])
+                            # Protect list append from concurrent thread writes
+                            with summaries_lock:
+                                summaries.append(res["response"])
                         else:
                             return {"Summary": ""}
                     except ResponseError as re:
@@ -129,29 +151,10 @@ def config_loader(filename="conf.yaml"):
 
 def get_port_description(port, protocol="tcp"):
     """
-    Look up the description of a port and protocol from the ICANN CSV database.
-    Returns a string description or an error message.
+    Return the IANA description for a port/protocol pair.
+    Uses the port_desc_map dict loaded once at startup for O(1) lookup.
     """
-
-    if not os.path.exists(icann_csv_path):
-        print("Error: ICANN port description database file not found!", file=sys.stderr)
-        return "ICANN port description file not found!"
-    with open(icann_csv_path, newline="", encoding="utf-8") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            if "Port Number" in row and "Service Name" in row:
-                try:
-                    if (
-                        int(row["Port Number"]) == port
-                        and row["Transport Protocol"].lower() == protocol
-                    ):
-                        return (
-                            row["Description"]
-                            if "Description" in row
-                            else "No description available"
-                        )
-                except ValueError:
-                    continue
+    return port_desc_map.get((port, protocol), "No description available")
 
 
 def reverse_dns_lookup(ip):
@@ -174,15 +177,20 @@ def reverse_dns_lookup(ip):
         }
 
 
-checked_ips = []
 
 
 def get_serv_banner(ip, port, t, hostname):
     """
     Retrieve the service banner, SSL certificate, and page title for a given IP and port.
-    Uses cache to avoid redundant lookups. Handles both HTTP and HTTPS.
-    Returns a dictionary with banner, page title, and encryption data.
+    Uses a dict cache keyed by (ip, port) to avoid redundant network probes.
+    Handles both HTTP and HTTPS. Returns a dict with banner, page title, and encryption data.
     """
+
+    cache_key = (ip, port)
+    # Fast O(1) cache hit check before doing any network work
+    with checked_ips_lock:
+        if cache_key in checked_ips:
+            return checked_ips[cache_key]
 
     socket_cert = "Unavailable"
     encrypted_with = "N/A"
@@ -197,11 +205,7 @@ def get_serv_banner(ip, port, t, hostname):
             pt = get_page_title("http://" + hostname + ":" + str(port), t)
     except Exception:
         pt = "N/A"
-    # Check cache for previous banner fetch
-    for item in checked_ips:
-        if item.get("IP") == ip and item.get("Port") == port:
-            return item
-    # Try to fetch SSL certificate
+    # Try to fetch SSL certificate info (ignore errors; port may not support TLS)
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(t)
@@ -235,10 +239,9 @@ def get_serv_banner(ip, port, t, hostname):
                 if ssl_version != "N/A"
                 else "N/A",
             }
-            checked_ips.append(bannerdata)
             s.close()
-            return bannerdata
         else:
+            # No passive banner; try an HTTP HEAD request as a fallback
             s.sendall(b"HEAD / HTTP/1.0\r\n\r\n")
             banner = s.recv(1024).decode(errors="ignore").strip()
             s.close()
@@ -254,10 +257,8 @@ def get_serv_banner(ip, port, t, hostname):
                     if ssl_version != "N/A"
                     else "N/A",
                 }
-                checked_ips.append(bannerdata)
-                return bannerdata
             else:
-                return {
+                bannerdata = {
                     "Page Title": pt,
                     "Encryption Data": {
                         "SSL Cert": socket_cert,
@@ -267,8 +268,8 @@ def get_serv_banner(ip, port, t, hostname):
                     if ssl_version != "N/A"
                     else "N/A",
                 }
-    except Exception as e:
-        nobdat = {
+    except Exception:
+        bannerdata = {
             "Page Title": pt,
             "Encryption Data": {
                 "SSL Cert": socket_cert,
@@ -278,8 +279,10 @@ def get_serv_banner(ip, port, t, hostname):
             if ssl_version != "N/A"
             else "N/A",
         }
-        checked_ips.append(nobdat)
-        return nobdat
+    # Store in cache so repeated calls for the same (ip, port) are free
+    with checked_ips_lock:
+        checked_ips[cache_key] = bannerdata
+    return bannerdata
 
 
 def get_page_title(url, t):
@@ -303,42 +306,38 @@ def get_page_title(url, t):
 
 def write_testcase(data, output_dir, pdir, index):
     """
-    Write raw packet data to a testcase file in the specified output directory.
-    Creates the directory if it does not exist.
+    Write raw packet payload bytes to a testcase file.
+    Creates the per-port sub-directory on first use; errors there are non-fatal.
+    Uses a context manager so the file descriptor is always released.
     """
-
-    if not os.path.exists(output_dir + "/" + pdir):
+    dest_dir = output_dir + "/" + pdir
+    if not os.path.exists(dest_dir):
         try:
-            os.mkdir(output_dir + "/" + pdir)
+            os.mkdir(dest_dir)
         except Exception:
             print("Error: Nonfatal: Could not create minor dir.")
-    out = open(
-        output_dir + "/" + pdir + "/pcap.data_packet." + str(index) + ".dat", "wb"
-    )
-    out.write(data)
+    with open(dest_dir + "/pcap.data_packet." + str(index) + ".dat", "wb") as out:
+        out.write(data)
 
-
-all_info = []
 
 
 def join_info(output_dir, pdir, index, dt_json, pkt_json, host):
     """
-    Merge and write packet info and extra info as a JSON file.
-    Appends the merged info to the global all_info list.
+    Merge packet-level info with extra analysis info and write as a JSON file.
+    Thread-safe: uses all_info_lock when appending to the shared all_info list.
     """
-
-    out = open(
-        output_dir + "/" + pdir + "/pcap.info_packet." + str(index) + ".json", "wb+"
-    )
     merge_json = {
         "Packet Info": json.loads(pkt_json),
         "Extra Info": json.loads(dt_json),
     }
-    out.write(json.dumps(merge_json).encode())
-    out.close()
+    path = output_dir + "/" + pdir + "/pcap.info_packet." + str(index) + ".json"
+    with open(path, "wb+") as out:
+        out.write(json.dumps(merge_json).encode())
     if verbose >= 2:
         print(json.dumps(merge_json, indent=2))
-    all_info.append({"Host": host, "Packet": merge_json})
+    # Protect the shared list from concurrent thread writes
+    with all_info_lock:
+        all_info.append({"Host": host, "Packet": merge_json})
     return merge_json
 
 
@@ -367,54 +366,27 @@ def sort_and_index_packets(by_host_dict):
 
 def by_host(out, final_summary):
     """
-    Organize all_info packets by host and write to a summary JSON file.
+    Organise all_info entries by destination host and write the result to hosts.json.
+    Bug fix: the original code created the empty list but then only appended on the
+    *else* branch, silently dropping the first packet for every unique host.
+    Now every packet is always appended.
     """
     global by_host_dict
-    for host in all_info:
-        if host.get("Host") not in by_host_dict:
-            by_host_dict[host.get("Host")] = []
-        else:
-            by_host_dict[host.get("Host")].append(host.get("Packet"))
+    for entry in all_info:
+        host = entry.get("Host")
+        if host not in by_host_dict:
+            by_host_dict[host] = []
+        # Always append — previously the first packet per host was lost
+        by_host_dict[host].append(entry.get("Packet"))
 
     by_host_dict = sort_and_index_packets(by_host_dict)
-    # all_packets =
-    #     for host, packets in by_host_dict["Host"].items():
-    #         for pkt in packets:
-    #             all_packets.append(pkt)
-    #     all_packets_sorted = sorted(
-    #         all_packets,
-    #         key=lambda p: datetime.strptime(
-    #             p["Packet Info"]["Packet Timestamp"], "%Y-%m-%d %H:%M:%S.%f"
-    #         ),
-    #     )
-    #     for i, pkt in enumerate(all_packets_sorted, start=1):
-    #         pkt["Packet Info"]["Global Index"] = i
-    # for host, packets in by_host_dict["Host"].items():
-    #     # Sort packets for this host by timestamp
-    #     packets.sort(
-    #         key=lambda p: datetime.strptime(
-    #             p["Packet Info"]["Packet Timestamp"], "%Y-%m-%d %H:%M:%S.%f"
-    #         )
-    #     )
-    #
-    #     # Add chronological index
-    #     for i, pkt in enumerate(packets, start=1):
-    #         pkt["Packet Info"]["Chronological Order"] = i
-    #
-    #
-    # for h, packets in by_host_dict["Host"].items():
-    #     by_host_dict["Host"][h] = sorted(
-    #     packets,
-    #     key=lambda p: datetime.strptime(
-    #         p["Packet Info"]["Packet Timestamp"], "%Y-%m-%d %H:%M:%S.%f"
-    #     ),
-    # )
-    # for i, pkt in enumerate(by_host_dict, start=1):
-    # pkt["Packet Info"]["Index"] = i
 
-    open(out + "/" + hostoutfile, "w+").write(
-        json.dumps({"Host": by_host_dict, "Final Summary": final_summary}, indent=2)
-    )
+    # Write the consolidated hosts file; use a context manager to guarantee flush/close
+    with open(out + "/" + hostoutfile, "w+", encoding="utf-8") as f:
+        f.write(
+            json.dumps({"Host": by_host_dict, "Final Summary": final_summary}, indent=2)
+        )
+
 
 
 def get_netclass(ip):
@@ -460,43 +432,55 @@ def safe_decompress(compressed_data):
 def get_geoip_info(ip, sord):
     """
     Look up GeoIP information (country, city, postal code, timezone) for an IP address.
+    Uses geoip_reader opened once at startup and a per-session cache dict so that
+    repeated lookups for the same IP cost nothing beyond a dict read.
     Returns a dictionary with location data or error message.
     """
-
-    if not os.path.exists(geodat_path):
+    if geoip_reader is None:
         return {"Location": "Error: GeoIP database not found!"}
-    try:
-        with geoip2.database.Reader(geodat_path) as reader:
-            response = reader.city(ip)
-            if sord == "src":
-                return {
-                    "Country": response.country.name,
-                    "loc.src.country": response.country.name,
-                    "City": response.city.name,
-                    "loc.src.city": response.city.name,
-                    "Postal Code": response.postal.code,  # type: ignore
-                    "loc.src.postal": response.postal.code,  # type: ignore
-                    "Time Zone": response.location.time_zone,  # type: ignore
-                    "loc.src.tz": response.location.time_zone,  # type: ignore
-                    "loc.src.timezone": response.location.time_zone,  # type: ignore
-                }
-            if sord == "dst":
-                return {
-                    "Country": response.country.name,
-                    "loc.dst.country": response.country.name,
-                    "City": response.city.name,
-                    "loc.dst.city": response.city.name,
-                    "Postal Code": response.postal.code,  # type: ignore
-                    "loc.dst.postal": response.postal.code,  # type: ignore
-                    "Time Zone": response.location.time_zone,  # type: ignore
-                    "loc.dst.tz": response.location.time_zone,  # type: ignore
-                    "loc.dst.timezone": response.location.time_zone,  # type: ignore
-                }
 
+    # Check cache first (lock only for the brief check/insert, not for the DB query)
+    cache_key = (ip, sord)
+    with geoip_cache_lock:
+        if cache_key in geoip_cache:
+            return geoip_cache[cache_key]
+
+    try:
+        response = geoip_reader.city(ip)
+        if sord == "src":
+            result = {
+                "Country": response.country.name,
+                "loc.src.country": response.country.name,
+                "City": response.city.name,
+                "loc.src.city": response.city.name,
+                "Postal Code": response.postal.code,  # type: ignore
+                "loc.src.postal": response.postal.code,  # type: ignore
+                "Time Zone": response.location.time_zone,  # type: ignore
+                "loc.src.tz": response.location.time_zone,  # type: ignore
+                "loc.src.timezone": response.location.time_zone,  # type: ignore
+            }
+        else:  # sord == "dst"
+            result = {
+                "Country": response.country.name,
+                "loc.dst.country": response.country.name,
+                "City": response.city.name,
+                "loc.dst.city": response.city.name,
+                "Postal Code": response.postal.code,  # type: ignore
+                "loc.dst.postal": response.postal.code,  # type: ignore
+                "Time Zone": response.location.time_zone,  # type: ignore
+                "loc.dst.tz": response.location.time_zone,  # type: ignore
+                "loc.dst.timezone": response.location.time_zone,  # type: ignore
+            }
     except geoip2.errors.AddressNotFoundError:  # type: ignore
-        return {"Location": "Localnet"}
+        result = {"Location": "Localnet"}
     except Exception as e:
-        return {"Location": "Error: " + str(e)}
+        result = {"Location": "Error: " + str(e)}
+
+    # Store in cache so subsequent calls for this IP are instant
+    with geoip_cache_lock:
+        geoip_cache[cache_key] = result
+    return result
+
 
 
 def get_datatypes(data, dport, srcip, destip, tmout):
@@ -633,27 +617,24 @@ def get_traits(data, dport, srcip, destip, timeout):
 
 def mac_addr_to_vendor(mac):
     """
-    Look up the vendor name for a MAC address using the MAC vendor CSV database.
-    Returns the vendor name or an error message.
+    Return the vendor name for a MAC address.
+    Uses mac_vendor_map dict loaded once at startup for O(1) prefix lookup.
+    MAC prefixes are stored as the first 8 characters of the normalised address (e.g. "00:1A:2B").
     """
-
-    if not os.path.exists(mac_vendors_path):
-        print("Error: MAC vendor database file not found!", file=sys.stderr)
-        return "Error: MAC vendor file not found!"
-    with open(mac_vendors_path, newline="", encoding="utf-8") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            if "Mac Prefix" in row and "Vendor Name" in row:
-                if mac.upper().startswith(row["Mac Prefix"].upper()):
-                    return row["Vendor Name"]
+    prefix = mac[:8].upper()
+    return mac_vendor_map.get(prefix, "Unknown Vendor")
 
 
-def packet_loop(p, from_p, pcap_path, srcp, dstp, tmout):
+def packet_loop(p, pkt_index, srcp, dstp, tmout):
     """
-    Process a single packet: extract TCP payload, write testcase, gather info, and merge results.
-    Returns merged info for the processed packet.
+    Process a single scapy packet: extract TCP payload, write the raw testcase file,
+    gather analysis data (MIME, entropy, geoip, etc.) and merge everything into a
+    single JSON output file.
+
+    pkt_index is the 0-based position of this packet in the full capture, used as
+    the filename index so files from concurrent threads do not collide.
+    Returns the merged info dict, or None if the packet should be skipped.
     """
-    s = from_p
     mac_addr_src = p.src if p.haslayer("Ethernet") else "N/A"
     mac_addr_dst = p.dst if p.haslayer("Ethernet") else "N/A"
     mac_vendor_src = (
@@ -666,134 +647,138 @@ def packet_loop(p, from_p, pcap_path, srcp, dstp, tmout):
         return None
     if not p.haslayer("TCP"):
         return None
-    if p.haslayer("TCP"):
-        raw_d = p["TCP"].payload.original
-        sport = p["TCP"].sport
-        dport = p["TCP"].dport
-        dport_dir = str(dport)
-        if (srcp is None or sport == srcp) and (dstp is None or dport == dstp):
-            if raw_d is not None and len(raw_d) > 0:
-                write_testcase(raw_d, outd, dport_dir, s)
-                dt_struct = get_datatypes(raw_d, dport, p["IP"].src, p["IP"].dst, tmout)
-                timestamp = datetime.fromtimestamp(float(Decimal(p.time))).strftime(
-                    "%Y-%m-%d %H:%M:%S.%f"
-                )
-                flag_data = ""
-                if p["TCP"].flags.S:
-                    flag_data += "SYN|"
-                if p["TCP"].flags.A:
-                    flag_data += "ACK|"
-                if p["TCP"].flags.F:
-                    flag_data += "FIN|"
-                if p["TCP"].flags.R:
-                    flag_data += "RST|"
-                if p["TCP"].flags.P:
-                    flag_data += "PSH|"
-                if p["TCP"].flags.U:
-                    flag_data += "URG|"
-                if p["TCP"].flags.ECE:
-                    flag_data += "ECE|"
-                if p["TCP"].flags.CWR:
-                    flag_data += "CWR|"
-                if flag_data.endswith("|"):
-                    flag_data = flag_data[:-1]
-                pkt_struct = {
-                    "Packet Processed": int(s),
-                    "Packet Timestamp": timestamp,
-                    "packet.timestamp": timestamp,
-                    "Ethernet Frame": {
-                        "MAC Source": mac_addr_src,
-                        "ether.src.mac.addr": mac_addr_src,
-                        "MAC Destination": mac_addr_dst,
-                        "ether.dst.mac.addr": mac_addr_dst,
-                        "MAC Source Vendor": mac_vendor_src,
-                        "ether.src.mac.vendor": mac_vendor_src,
-                        "MAC Destination Vendor": mac_vendor_dst,
-                        "ether.dst.mac.vendor": mac_vendor_dst,
-                    }
-                    if get_geoip_info(p["IP"].src, "src").get("Location") == "Localnet"
-                    and get_geoip_info(p["IP"].dst, "dst").get("Location") == "Localnet"
-                    else "N/A",
-                    "IP": {
-                        "Source IP": str(p["IP"].src),
-                        "ip.src.addr": str(p["IP"].src),
-                        "Destination IP": str(p["IP"].dst),
-                        "ip.dst.addr": str(p["IP"].dst),
-                        "IP Checksum": hex(int(p["IP"].chksum)),
-                        "ip.chksum": hex(int(p["IP"].chksum)),
-                        "IP layer length": int(p["IP"].len),
-                        "ip.len": int(p["IP"].len),
-                    },
-                    "TCP": {
-                        "Source port": int(sport),
-                        "tcp.src.port": int(sport),
-                        "Destination port": int(dport),
-                        "tcp.dst.port": int(dport),
-                        "TCP checksum": hex(int(p["TCP"].chksum)),
-                        "tcp.chksum": hex(int(p["TCP"].chksum)),
-                        "Urgent flag": bool(p["TCP"].urgptr),
-                        "tcp.urgptr": bool(p["TCP"].urgptr),
-                        "TCP Flag Data": {
-                            "Flags": flag_data if flag_data else "None",
-                            "tcp.flags": flag_data if flag_data else "None",
-                        },
-                        "Options": list(p["TCP"].options),
-                        "tcp.options": list(p["TCP"].options),
-                        "TCP layer length": int(p["TCP"].dataofs * 4),
-                        "tcp.len": int(p["TCP"].dataofs * 4),
-                        "Wire length": len(p["TCP"]),
-                        "wire.len": len(p["TCP"]),
-                    },
-                    "Raw data": {
-                        "Payload": {
-                            "Hex Encoded": raw_d.hex(),
-                            "payload.hex": raw_d.hex(),
-                            "ASCII Encoded": raw_d.decode(errors="ignore"),
-                            "payload.ascii": raw_d.decode(errors="ignore"),
-                        },
-                        "Packet": bytes(p).hex(),
-                        "packet.hex": bytes(p).hex(),
-                        "Payload Length": len(raw_d),
-                        "payload.len": len(raw_d),
-                    },
-                }
-                data_back = join_info(
-                    outd,
-                    dport_dir,
-                    s,
-                    json.dumps(dt_struct).encode(),
-                    json.dumps(pkt_struct).encode(),
-                    p["IP"].dst
-                    if get_geoip_info(p["IP"].dst, "dst").get("Location") != "Localnet"
-                    else p["IP"].src,
-                )
-                s = s + 1
-                return data_back
 
-
-def parse_pcap(pcap_path, srcp, dstp, tmout, from_p, to_p, thread_id):
-    """
-    Parse a pcap file and process packets in the specified range.
-    Used as the target for packet processing threads.
-    """
-    with pprocess_lock:
-        if verbose >= 2:
-            print(
-                "Starting thread "
-                + str(thread_id)
-                + " for packets "
-                + str(from_p)
-                + " to "
-                + str(to_p),
-                file=sys.stderr,
+    raw_d = p["TCP"].payload.original
+    sport = p["TCP"].sport
+    dport = p["TCP"].dport
+    dport_dir = str(dport)
+    if (srcp is None or sport == srcp) and (dstp is None or dport == dstp):
+        if raw_d is not None and len(raw_d) > 0:
+            write_testcase(raw_d, outd, dport_dir, pkt_index)
+            dt_struct = get_datatypes(raw_d, dport, p["IP"].src, p["IP"].dst, tmout)
+            timestamp = datetime.fromtimestamp(float(Decimal(p.time))).strftime(
+                "%Y-%m-%d %H:%M:%S.%f"
             )
-        packets = scapy.rdpcap(pcap_path)  # type: ignore
-        # if thread_id == 0:
-        #   for p in tqdm(packets[int(from_p) : int(to_p)]):
-        # packet_loop(p, from_p, pcap_path, srcp, dstp, tmout)
-        # else:
-        for p in packets[int(from_p) : int(to_p)]:
-            packet_loop(p, from_p, pcap_path, srcp, dstp, tmout)
+            # Build TCP flag string once
+            flag_data = ""
+            if p["TCP"].flags.S:
+                flag_data += "SYN|"
+            if p["TCP"].flags.A:
+                flag_data += "ACK|"
+            if p["TCP"].flags.F:
+                flag_data += "FIN|"
+            if p["TCP"].flags.R:
+                flag_data += "RST|"
+            if p["TCP"].flags.P:
+                flag_data += "PSH|"
+            if p["TCP"].flags.U:
+                flag_data += "URG|"
+            if p["TCP"].flags.ECE:
+                flag_data += "ECE|"
+            if p["TCP"].flags.CWR:
+                flag_data += "CWR|"
+            if flag_data.endswith("|"):
+                flag_data = flag_data[:-1]
+
+            # Resolve geoip once per packet so we don't hit the cache (or DB) twice
+            # for the same IP within a single packet.
+            src_geo = get_geoip_info(p["IP"].src, "src")
+            dst_geo = get_geoip_info(p["IP"].dst, "dst")
+            is_local = (
+                src_geo.get("Location") == "Localnet"
+                and dst_geo.get("Location") == "Localnet"
+            )
+
+            pkt_struct = {
+                "Packet Processed": int(pkt_index),
+                "Packet Timestamp": timestamp,
+                "packet.timestamp": timestamp,
+                # Only include Ethernet MAC data for LAN-local traffic
+                "Ethernet Frame": {
+                    "MAC Source": mac_addr_src,
+                    "ether.src.mac.addr": mac_addr_src,
+                    "MAC Destination": mac_addr_dst,
+                    "ether.dst.mac.addr": mac_addr_dst,
+                    "MAC Source Vendor": mac_vendor_src,
+                    "ether.src.mac.vendor": mac_vendor_src,
+                    "MAC Destination Vendor": mac_vendor_dst,
+                    "ether.dst.mac.vendor": mac_vendor_dst,
+                }
+                if is_local
+                else "N/A",
+                "IP": {
+                    "Source IP": str(p["IP"].src),
+                    "ip.src.addr": str(p["IP"].src),
+                    "Destination IP": str(p["IP"].dst),
+                    "ip.dst.addr": str(p["IP"].dst),
+                    "IP Checksum": hex(int(p["IP"].chksum)),
+                    "ip.chksum": hex(int(p["IP"].chksum)),
+                    "IP layer length": int(p["IP"].len),
+                    "ip.len": int(p["IP"].len),
+                },
+                "TCP": {
+                    "Source port": int(sport),
+                    "tcp.src.port": int(sport),
+                    "Destination port": int(dport),
+                    "tcp.dst.port": int(dport),
+                    "TCP checksum": hex(int(p["TCP"].chksum)),
+                    "tcp.chksum": hex(int(p["TCP"].chksum)),
+                    "Urgent flag": bool(p["TCP"].urgptr),
+                    "tcp.urgptr": bool(p["TCP"].urgptr),
+                    "TCP Flag Data": {
+                        "Flags": flag_data if flag_data else "None",
+                        "tcp.flags": flag_data if flag_data else "None",
+                    },
+                    "Options": list(p["TCP"].options),
+                    "tcp.options": list(p["TCP"].options),
+                    "TCP layer length": int(p["TCP"].dataofs * 4),
+                    "tcp.len": int(p["TCP"].dataofs * 4),
+                    "Wire length": len(p["TCP"]),
+                    "wire.len": len(p["TCP"]),
+                },
+                "Raw data": {
+                    "Payload": {
+                        "Hex Encoded": raw_d.hex(),
+                        "payload.hex": raw_d.hex(),
+                        "ASCII Encoded": raw_d.decode(errors="ignore"),
+                        "payload.ascii": raw_d.decode(errors="ignore"),
+                    },
+                    "Packet": bytes(p).hex(),
+                    "packet.hex": bytes(p).hex(),
+                    "Payload Length": len(raw_d),
+                    "payload.len": len(raw_d),
+                },
+            }
+            # Use the non-local IP as the host key; fall back to src for LAN captures
+            host_key = (
+                p["IP"].dst
+                if dst_geo.get("Location") != "Localnet"
+                else p["IP"].src
+            )
+            data_back = join_info(
+                outd,
+                dport_dir,
+                pkt_index,
+                json.dumps(dt_struct).encode(),
+                json.dumps(pkt_struct).encode(),
+                host_key,
+            )
+            return data_back
+
+
+
+
+def process_packet_at_index(pkt_index, srcp, dstp, tmout):
+    """
+    Thin wrapper used by ThreadPoolExecutor.map so we can pass a single (index, packet)
+    task without pickling scapy packet objects.  The global `packets` list is already
+    loaded in memory, so this is just a cheap indexed lookup + the real per-packet work.
+    """
+    if stop_event.is_set():
+        return None
+    p = packets[pkt_index]
+    return packet_loop(p, pkt_index, srcp, dstp, tmout)
+
 
 
 summaries_batch = []
@@ -844,8 +829,11 @@ def pop_dict_key(obj, key_to_remove):
 
 
 def llm_brief(jsonobj):
-    dict = jsonobj
-    final = pop_dict_key(dict, "Raw data")
+    """
+    Strip raw payload bytes (to keep the prompt short) and send a batch of packet
+    metadata to the LLM for summarisation.  Appends the response to summaries.
+    """
+    final = pop_dict_key(jsonobj, "Raw data")
     packet_infos = json.dumps(final)
     res = ollama.generate(
         model=llm_model,
@@ -853,55 +841,51 @@ def llm_brief(jsonobj):
         + packet_infos,
     )
     if res and "response" in res:
-        summaries.append(res["response"])
+        with summaries_lock:
+            summaries.append(res["response"])
         return res["response"]
 
 
 def start_threading():
-
-    print("Started packet processing threads...")
     """
-    Start multiple threads to process packets in parallel.
-    Divides the total packets among the configured number of threads.
+    Process all TCP packets from the pre-loaded `packets` list using a ThreadPoolExecutor.
+
+    Rather than re-reading the pcap file in every thread (which was the old behaviour),
+    this submits one lightweight task per packet index.  ThreadPoolExecutor handles
+    work-stealing, so threads stay busy even if individual packets take different amounts
+    of time (e.g. when active-recon network calls vary in latency).
     """
     if __name__ == "__main__":
         print(
-            "Spooling up " + str(nthreads) + " threads to process packets...",
+            f"Spooling up {nthreads} worker threads to process {totalp} packets...",
             file=sys.stderr,
         )
-        for c in range(nthreads):
-            if stop_event.is_set():
-                break
-            step = int(totalp / nthreads)
-            start = int(c * step) if c != 0 else 0
-            end = int((c + 1) * step) if c != nthreads - 1 else totalp
-            t = threading.Thread(
-                target=parse_pcap,
-                args=(
-                    args.pcap_file,
+        # Build the list of packet indices that belong to TCP packets
+        tcp_indices = [i for i, p in enumerate(packets) if p.haslayer("TCP")]
+
+        with ThreadPoolExecutor(max_workers=nthreads) as executor:
+            futures = {
+                executor.submit(
+                    process_packet_at_index,
+                    idx,
                     args.source_port,
                     args.dest_port,
                     args.timeout,
-                    start,
-                    end,
-                    c,
-                ),
-                name="Packet Processing Thread " + str(c),
-                daemon=True,
-            )
-            threads.append(t)
-            t.start()
-        for t in threads:
-            t.join(timeout=120)
-            if t.is_alive():
-                if verbose >= 1:
-                    print(
-                        f"Thread {t.name} is taking too long and will be terminated.",
-                        file=sys.stderr,
-                    )
-                stop_event.set()
-                t.join()
-                break
+                ): idx
+                for idx in tcp_indices
+            }
+            for future in as_completed(futures):
+                if stop_event.is_set():
+                    break
+                try:
+                    future.result()
+                except Exception as exc:
+                    if verbose >= 1:
+                        print(
+                            f"Packet {futures[future]} raised an exception: {exc}",
+                            file=sys.stderr,
+                        )
+
 
 
 parser = argparse.ArgumentParser(
@@ -969,7 +953,7 @@ parser.add_argument(
     default=0,
 )
 verbose = parser.parse_args().verbose
-args = parser.parse_args()
+args = parser.parse_args()  # parse once; verbose is needed by functions defined above
 try:
     config = config_loader(args.conf if args.conf else "conf.yaml")
     # this next exception handles if ther is no config file
@@ -989,12 +973,43 @@ except Exception:
         "final_summary": True,
     }
 pcap_path = args.pcap_file
-# if not pcap_path.startswith("/"):
-#    print("Give me a full path for pcap.")
-#    sys.exit(1)
 geodat_path = script_dir + "common/GeoLite2-City.mmdb"
 mac_vendors_path = script_dir + "common/mac-vendors-export.csv"
 icann_csv_path = script_dir + "common/service-names-port-numbers.csv"
+
+# --- Open the GeoIP database once for the lifetime of the process.
+# The geoip2 Reader is documented as thread-safe for concurrent city() calls.
+if os.path.exists(geodat_path):
+    geoip_reader = geoip2.database.Reader(geodat_path)
+else:
+    print("Warning: GeoIP database not found at " + geodat_path, file=sys.stderr)
+
+# --- Load ICANN port-description CSV into a dict for O(1) per-packet lookups.
+# Without this, every call to get_port_description() would scan the full CSV.
+if os.path.exists(icann_csv_path):
+    with open(icann_csv_path, newline="", encoding="utf-8") as _f:
+        for _row in csv.DictReader(_f):
+            try:
+                _port = int(_row.get("Port Number", ""))
+                _proto = _row.get("Transport Protocol", "").strip().lower()
+                _desc = _row.get("Description", "No description available")
+                if _port and _proto:
+                    port_desc_map[(_port, _proto)] = _desc
+            except (ValueError, TypeError):
+                pass
+else:
+    print("Warning: ICANN port CSV not found at " + icann_csv_path, file=sys.stderr)
+
+# --- Load MAC vendor CSV into a dict for O(1) per-packet lookups.
+# Without this, every call to mac_addr_to_vendor() would scan the full CSV.
+if os.path.exists(mac_vendors_path):
+    with open(mac_vendors_path, newline="", encoding="utf-8") as _f:
+        for _row in csv.DictReader(_f):
+            if "Mac Prefix" in _row and "Vendor Name" in _row:
+                mac_vendor_map[_row["Mac Prefix"].upper()] = _row["Vendor Name"]
+else:
+    print("Warning: MAC vendor CSV not found at " + mac_vendors_path, file=sys.stderr)
+
 totalp = 0
 packets = scapy.rdpcap(args.pcap_file)  # type: ignore
 total_packets = len(packets)
@@ -1011,7 +1026,6 @@ if args.output and args.output != "testcases":
     print("Using output directory: " + args.output, file=sys.stderr)
 if "output_dir" in config:
     outd = cur_dir + "/" + config["output_dir"]
-    print("Using output directory from config: " + outd, file=sys.stderr)
     print("Using output directory from config: " + outd, file=sys.stderr)
 if not args.active_recon:
     if config["active_recon"]:
@@ -1086,11 +1100,12 @@ try:
     except Exception:
         final_s = start_threading()
 finally:
-    final_brief = ""
     final_summary = ""
     if config["ollama"]["llm_brief"] != True and use_llm:
         info_distiller(bs)
     else:
+        # Strip raw payload bytes before sending to the LLM to keep the prompt small,
+        # then restore the full all_info for the hosts.json output.
         all_info_orig = all_info.copy()
         all_info_new = pop_dict_key(all_info, "Raw data")
         all_info = all_info_new
@@ -1108,18 +1123,20 @@ finally:
                 + drilldown,
             )
             final_summary = final_res["response"]
-            # this needs to be here to address the final summary
-            # needing to be in the by_host output, which is the
-            # final output of the program
+            # by_host() writes hosts.json which must include the final summary,
+            # so it is called after the summary text is available.
             by_host(outd, final_summary)
-            open(outd + "/final_summary.txt", "w", encoding="utf-8").write(
-                final_summary
-            )
+            with open(outd + "/final_summary.txt", "w", encoding="utf-8") as _sf:
+                _sf.write(final_summary)
             print("\n" + final_summary)
             print("\nFinal summary saved to: " + outd + "/final_summary.txt")
-
         except Exception as e:
             print("\nLLM Final summary generation error: " + str(e))
+
+    # Close the GeoIP reader now that all packets have been processed
+    if geoip_reader is not None:
+        geoip_reader.close()
+
     print(
         "Processing complete. Generated testcases and info files are located in: "
         + outd,
