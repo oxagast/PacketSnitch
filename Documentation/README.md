@@ -1,10 +1,11 @@
-# PacketSnitch
-
-![PacketSnitch Logo](https://raw.githubusercontent.com/oxagast/PacketSnitch/refs/heads/main/Logo/logo-packetsnitch.webp)
+![PacketSnitch by oxasploits](https://raw.githubusercontent.com/oxasploits/PacketSnitch/main/Logo/packet-snitch-tag-transp-whitetext.png)
 
 ## Overview
 
 PacketSnitch is a Python tool for extracting payloads and rich metadata from network packet capture (`.pcap`) files. It generates testcases for fuzzing, protocol analysis, and research by saving raw packet data and detailed information about each packet, including protocol, entropy, geoip, banners, and more. The tool optionally performs active reconnaissance to enrich output with server banners, SSL certificate info, and web page titles.
+
+![Screenshot 24](https://private-user-images.githubusercontent.com/11489666/577063561-b3e0b70a-f787-4601-b958-b025cb580657.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzYwMTQ1MTgsIm5iZiI6MTc3NjAxNDIxOCwicGF0aCI6Ii8xMTQ4OTY2Ni81NzcwNjM1NjEtYjNlMGI3MGEtZjc4Ny00NjAxLWI5NTgtYjAyNWNiNTgwNjU3LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA0MTIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNDEyVDE3MTY1OFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTk4N2EwYzdkNjgyNTAwMWMwNDhiYTJiZTY5ZmViMTFhMjIzZTI3OWYxN2RkNmM2ZWFmNGMxNTg2MTc4MDg0YjMmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.0vgUPHBEkJ-UU-IYyAtgzRVfC_9FbAKJf0n3Mayi_tY)
+
 
 ## Features
 
@@ -49,7 +50,7 @@ PacketSnitch is a Python tool for extracting payloads and rich metadata from net
   - ICANN port description CSV
 
 
-## Usage
+## Backend Usage
 
 (Dev)
 
@@ -83,23 +84,12 @@ python3 gen_testcase.py traffic.pcap -o output_dir -T 5 -a -v
 
 - `output_dir/<dest_port>/pcap.data_packet.<index>.dat`: Raw payloads
 - `output_dir/<dest_port>/pcap.info_packet.<index>.json`: Metadata for each testcase
-- `all_testcases_info.json`: Consolidated info for all testcases
+- `hosts.json`: Consolidated info for all testcases
 
-## Configuration
+## Frontend Usage
 
-Edit `conf.yaml` to specify database locations:
-
-```yaml
-active_recon: true
-output_dir: "testcases"
-ollama:
-  use_llm: true
-#  model: "deepseek-r1:latest"
-  model: "minimax-m2.5:cloud"
-  response_length: 200
-  pcap_percentage: 10
-threads: 4
-```
+Windows: `packetsnitch.exe`
+Linux: `packetsnitch`
 
 ## Searchable Attributes
 
