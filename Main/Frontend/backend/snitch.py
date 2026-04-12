@@ -177,8 +177,6 @@ def reverse_dns_lookup(ip):
         }
 
 
-
-
 def get_serv_banner(ip, port, t, hostname):
     """
     Retrieve the service banner, SSL certificate, and page title for a given IP and port.
@@ -320,7 +318,6 @@ def write_testcase(data, output_dir, pdir, index):
         out.write(data)
 
 
-
 def join_info(output_dir, pdir, index, dt_json, pkt_json, host):
     """
     Merge packet-level info with extra analysis info and write as a JSON file.
@@ -386,7 +383,6 @@ def by_host(out, final_summary):
         f.write(
             json.dumps({"Host": by_host_dict, "Final Summary": final_summary}, indent=2)
         )
-
 
 
 def get_netclass(ip):
@@ -480,7 +476,6 @@ def get_geoip_info(ip, sord):
     with geoip_cache_lock:
         geoip_cache[cache_key] = result
     return result
-
 
 
 def get_datatypes(data, dport, srcip, destip, tmout):
@@ -751,9 +746,7 @@ def packet_loop(p, pkt_index, srcp, dstp, tmout):
             }
             # Use the non-local IP as the host key; fall back to src for LAN captures
             host_key = (
-                p["IP"].dst
-                if dst_geo.get("Location") != "Localnet"
-                else p["IP"].src
+                p["IP"].dst if dst_geo.get("Location") != "Localnet" else p["IP"].src
             )
             data_back = join_info(
                 outd,
@@ -766,8 +759,6 @@ def packet_loop(p, pkt_index, srcp, dstp, tmout):
             return data_back
 
 
-
-
 def process_packet_at_index(pkt_index, srcp, dstp, tmout):
     """
     Thin wrapper used by ThreadPoolExecutor.map so we can pass a single (index, packet)
@@ -778,7 +769,6 @@ def process_packet_at_index(pkt_index, srcp, dstp, tmout):
         return None
     p = packets[pkt_index]
     return packet_loop(p, pkt_index, srcp, dstp, tmout)
-
 
 
 summaries_batch = []
@@ -887,7 +877,6 @@ def start_threading():
                         )
 
 
-
 parser = argparse.ArgumentParser(
     prog="snitch.py",
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -969,7 +958,7 @@ except Exception:
             "server_call_threads": 5,
             "batch_size": 4,
         },
-        "threads": 96,
+        "threads": 16,
         "final_summary": True,
     }
 pcap_path = args.pcap_file
