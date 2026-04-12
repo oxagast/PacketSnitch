@@ -260,6 +260,7 @@ document
     packetsForHost = packets["Host"][host];
     bookmark["Host"] = host;
     bookmark["Packet"] = index;
+    host_filter.value = host;
     if (host == undefined || index == undefined) {
       statusUpdate("Invalid bookmark selection, missing host or packet index");
       doError("Invalid bookmark selection, missing host or packet index!");
@@ -316,12 +317,6 @@ function handlePacketNavigation(btn, bookmark) {
   ps = packets["Host"][host_filter.value];
   if (btn === "filtered") {
     ps = [];
-    //    for (fpacket in filteredPackets) {
-    //      pak = 0;
-    //      for (pak in filteredPackets[fpacket]) {
-    //       packetsForHost.push(filteredPackets[fpacket]);
-    //      //     host_filter.value = packetsForHost["Packet Info"]["IP"]["Source IP"];
-    //
     document.getElementById("filter-returned").textContent =
       "Filtered Packets: " + filteredPackets.length;
     ps = filteredPackets;
@@ -336,7 +331,10 @@ function handlePacketNavigation(btn, bookmark) {
       index = bookmark["Packet"] - 1;
 
       statusUpdate(
-        "Navigating to bookmark: " + bookmark["Host"] + " packet " + index - 1,
+        "Navigating to bookmark: " +
+          bookmark["Host"] +
+          " packet " +
+          bookmark["Packet"],
       );
     }
   }
