@@ -221,7 +221,7 @@ function initializeDataView() {
 document.getElementById("prev-btn").addEventListener("click", function () {
   statusUpdate("Status: Displaying capture analysis summary");
   //highlightTab("prev-btn");
-  if (index > 0) {
+  if (index > 1) {
     index--;
 
     ip = packetsForHost[index]["Packet Info"]["IP"]["Source IP"];
@@ -257,7 +257,6 @@ document
   .addEventListener("click", function () {
     host = document.getElementById("selectBookmark").value.split(":")[0];
     index = document.getElementById("selectBookmark").value.split(":")[1];
-    host_filter.value = host;
     packetsForHost = packets["Host"][host];
     bookmark["Host"] = host;
     bookmark["Packet"] = index;
@@ -310,7 +309,7 @@ function handlePacketNavigation(btn, bookmark) {
 
   document.getElementById("total-packets").innerHTML =
     "Total Packets: " + totalPacketCount();
-  index = 0;
+  index = 1;
   if (btn === undefined) {
     handlePacketNavigation("first-load");
   }
@@ -334,11 +333,11 @@ function handlePacketNavigation(btn, bookmark) {
       doError("Invalid bookmark data, missing host or packet index!");
       handlePacketNavigation("first-load");
     } else {
-      index = bookmark["Packet"];
+      index = bookmark["Packet"] - 1;
+
       statusUpdate(
-        "Navigating to bookmark: " + bookmark["Host"] + " packet " + index,
+        "Navigating to bookmark: " + bookmark["Host"] + " packet " + index - 1,
       );
-      document.getElementById("host_filter").value = bookmark["Host"];
     }
   }
   if (!ps || ps.length === 0) {
@@ -361,7 +360,7 @@ function handlePacketNavigation(btn, bookmark) {
     return;
   } else {
     ip = ps[index]["Packet Info"]["IP"]["Source IP"];
-    curPacket = ip + ":" + index;
+    curPacket = ip + ":" + ps[index]["Packet Info"]["Index"];
     console.log(ps[index]);
     hexPayload = ps[index]["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"];
     infoPanel(ps);
