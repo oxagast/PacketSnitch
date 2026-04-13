@@ -942,7 +942,7 @@ parser.add_argument(
     default=0,
 )
 parser.add_argument(
-    "--no-llm",
+    "--nollm",
     help="Disable LLM summarisation regardless of configuration.",
     action="store_true",
 )
@@ -1046,8 +1046,19 @@ if "ollama" in config and config["ollama"].get("model"):
     response_length = config["ollama"].get("response_length", 200)
     bs = config["ollama"].get("batch_size", 5)
     use_llm = config["ollama"].get("use_llm", False)
-if args.no_llm:
+if args.nollm:
     use_llm = False
+    config = {
+        "active_recon": True,
+        "ollama": {
+            "use_llm": False,
+            "llm_brief": False,
+        },
+        "threads": 16,
+        "final_summary": False,
+    }
+
+
 if llm_model and use_llm:
     if llm_model.endswith(":cloud"):
         if verbose >= 2:
@@ -1105,8 +1116,8 @@ finally:
         all_info_orig = all_info.copy()
         all_info_new = pop_dict_key(all_info, "Raw data")
         all_info = all_info_new
-        print("Generating LLM brief for batch of packets...")
-        if all_info:
+        if all_info and use_llm:
+            print("Generating LLM brief for batch of packets...")
             info_distiller(50)
         all_info = all_info_orig
 

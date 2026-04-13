@@ -23,7 +23,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
     appPath = path.join(basePath, "\\backend\\snitch.exe");
   }
 
-  command = `"${appPath}" "${filename}" -a -o "${testcasesDir}"${useLLM ? "" : " --no-llm"}`;
+  command = `"${appPath}" "${filename}" -a -o "${testcasesDir}"${useLLM ? "" : " --nollm"}`;
 
   console.log("Command to run:", command);
 
