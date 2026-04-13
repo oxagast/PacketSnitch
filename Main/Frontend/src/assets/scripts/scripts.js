@@ -432,7 +432,7 @@ function populateDataTypes(p) {
     items.push(proto + " protocol data");
   }
 
-  mtype.textContent = "\u03B1 MIME type: " + mimet;
+  mtype.textContent = "MIME type: " + mimet;
   charset = charset == "" ? "Unknown" : charset;
   encoding = encoding == "" ? "Unknown" : encoding;
   if (encoding !== undefined) {
@@ -440,7 +440,7 @@ function populateDataTypes(p) {
       "\u0950 Payload Encoding: " + encoding.replace(/"/g, "");
   }
   if (lang !== undefined) {
-    language.textContent = "\u03C9 Payload Language: " + lang.replace(/"/g, "");
+    language.textContent = "Payload Language: " + lang.replace(/"/g, "");
   }
   items.forEach((item) => {
     const listItem = document.createElement("li");
@@ -699,33 +699,33 @@ function infoPanel(pk) {
       "Protocol Name: " + proto + "<br>Protocol Description: " + protod;
   }
   const chkd = [
-    { name: "IP Checksum \u060F", value: ipchksum },
-    { name: "TCP Checksum \u2643", value: tcpchksum },
-    { name: "Flags \u0D79", value: flags },
-    { name: "IP Length \u2366", value: iplayrelen },
-    { name: "TCP Length \u263F", value: tcplayrelen },
-    { name: "Wire Length \u2123", value: wirelen },
-    { name: "Payload Length \u0905", value: payloadlen },
+    { name: "IP Checksum", value: ipchksum },
+    { name: "TCP Checksum", value: tcpchksum },
+    { name: "Flags", value: flags },
+    { name: "IP Length", value: iplayrelen },
+    { name: "TCP Length", value: tcplayrelen },
+    { name: "Wire Length", value: wirelen },
+    { name: "Payload Length", value: payloadlen },
   ];
   const chkh = ["Protocol data", "Details"];
   createTable(chkd, chkh, "sidedatatable");
   const iph = ["Packet", "Data"];
   const ipds = [
-    { name: "IP:Port \u25ce", value: sourcepair },
-    { name: "MAC \u03C3", value: macsrc },
-    { name: "MAC Vendor \u03b3", value: macsrcvendor },
-    { name: "Network Class \u097E", value: snetclass },
+    { name: "IP:Port", value: sourcepair },
+    { name: "MAC", value: macsrc },
+    { name: "MAC Vendor", value: macsrcvendor },
+    { name: "Network Class", value: snetclass },
   ];
   createTable(ipds, iph, "protoInfoSrc");
   const ipdd = [
-    { name: "IP:Port \u25ce", value: destpair },
-    { name: "MAC \u03C3", value: macdest },
-    { name: "MAC Vendor \u03B3", value: macdestvendor },
-    { name: "Network Class \u097E", value: dnetclass },
+    { name: "IP:Port", value: destpair },
+    { name: "MAC", value: macdest },
+    { name: "MAC Vendor", value: macdestvendor },
+    { name: "Network Class", value: dnetclass },
   ];
   createTable(ipdd, iph, "protoInfoDest");
   entropy = einfo["Traits"]["Shannon Entropy"];
-  document.getElementById("timestamp").textContent = "Timestamp \u221E " + ts;
+  document.getElementById("timestamp").textContent = "Timestamp " + ts;
   //document.getElementById("ip2ip").textContent = sourcepair + " ~ " + destpair;
   document.getElementById("sideloctable").textContent = "";
   document.getElementById("entropybox").textContent =
@@ -748,22 +748,22 @@ function infoPanel(pk) {
     einfo["Traits"]["Network Data"]["Source IP"]["Location"]["City"] ==
     undefined
   ) {
-    const nodata = [{ name: "Location \u2205", value: "Localnet" }];
+    const nodata = [{ name: "Location", value: "Localnet" }];
     const nodatah = ["Source Host", "Location"];
     createTable(nodata, nodatah, "sideloctable");
   } else {
     const locds = [
       {
-        name: "Country \u096D",
+        name: "Country",
         value:
           einfo["Traits"]["Network Data"]["Source IP"]["Location"]["Country"],
       },
       {
-        name: "City \u2211",
+        name: "City",
         value: einfo["Traits"]["Network Data"]["Source IP"]["Location"]["City"],
       },
       {
-        name: "Timezone \u221E",
+        name: "Timezone",
         value:
           einfo["Traits"]["Network Data"]["Source IP"]["Location"]["Time Zone"],
       },
@@ -775,25 +775,25 @@ function infoPanel(pk) {
     einfo["Traits"]["Network Data"]["Destination IP"]["Location"]["City"] ==
     undefined
   ) {
-    const nodata = [{ name: "Location \u2205", value: "Localnet" }];
+    const nodata = [{ name: "Location", value: "Localnet" }];
     const nodatah = ["Destination Host", "Location"];
     createTable(nodata, nodatah, "sideloctable");
   } else {
     const locdd = [
       {
-        name: "Country \u096D",
+        name: "Country",
         value:
           einfo["Traits"]["Network Data"]["Destination IP"]["Location"][
             "Country"
           ],
       },
       {
-        name: "City \u2211",
+        name: "City",
         value:
           einfo["Traits"]["Network Data"]["Destination IP"]["Location"]["City"],
       },
       {
-        name: "Timezone \u221E",
+        name: "Timezone",
 
         value:
           einfo["Traits"]["Network Data"]["Destination IP"]["Location"][
@@ -864,7 +864,7 @@ function hideAllData() {
   document.getElementById("active-recon").style.display = "none";
   document.getElementById("prev-btn").style.opacity = "0";
   document.getElementById("next-btn").style.opacity = "0";
-  popHexGrid("00".repeat(256));
+  popHexGrid("00".repeat(1));
 }
 function showAllData() {
   document.getElementById("prev-btn").style.opacity = "1";
