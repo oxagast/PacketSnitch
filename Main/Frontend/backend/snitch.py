@@ -1112,15 +1112,16 @@ finally:
                 + drilldown,
             )
             final_summary = final_res["response"]
-            # by_host() writes hosts.json which must include the final summary,
-            # so it is called after the summary text is available.
-            by_host(outd, final_summary)
             with open(outd + "/final_summary.txt", "w", encoding="utf-8") as _sf:
                 _sf.write(final_summary)
             print("\n" + final_summary)
             print("\nFinal summary saved to: " + outd + "/final_summary.txt")
         except Exception as e:
             print("\nLLM Final summary generation error: " + str(e))
+
+    # Always write hosts.json so the frontend can load data regardless of
+    # whether LLM summarisation was enabled or succeeded.
+    by_host(outd, final_summary)
 
     # Close the GeoIP reader now that all packets have been processed
     if geoip_reader is not None:
