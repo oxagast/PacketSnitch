@@ -76,6 +76,7 @@ function fileLoaded(loaded) {
     document.getElementById("next-btn").style.opacity = "1";
     document.getElementById("json-lab").style.display = "none";
     document.getElementById("pcap-lab").style.display = "none";
+    document.getElementById("llm-toggle").style.display = "none";
   } else {
     document.getElementById("json-lab").style.display = "block";
     document.getElementById("pcap-lab").style.display = "block";
@@ -832,7 +833,9 @@ function runSnitch(file) {
   document.getElementById("error-container").style.display = "none";
   startTime = performance.now();
   const useLLM = document.getElementById("use-llm").checked;
-  const ret = window.snitchapi.runBackendCommand(file, useLLM).then((output) => {});
+  const ret = window.snitchapi
+    .runBackendCommand(file, useLLM)
+    .then((output) => {});
 }
 
 function doError(message) {
