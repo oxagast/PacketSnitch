@@ -831,7 +831,8 @@ function runSnitch(file) {
     "Status: Running snitch backend, this may take a few minutes...";
   document.getElementById("error-container").style.display = "none";
   startTime = performance.now();
-  const ret = window.snitchapi.runBackendCommand(file).then((output) => {});
+  const useLLM = document.getElementById("use-llm").checked;
+  const ret = window.snitchapi.runBackendCommand(file, useLLM).then((output) => {});
 }
 
 function doError(message) {

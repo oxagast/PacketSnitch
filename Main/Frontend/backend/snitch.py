@@ -941,6 +941,11 @@ parser.add_argument(
     action="count",
     default=0,
 )
+parser.add_argument(
+    "--no-llm",
+    help="Disable LLM summarisation regardless of configuration.",
+    action="store_true",
+)
 verbose = parser.parse_args().verbose
 args = parser.parse_args()  # parse once; verbose is needed by functions defined above
 try:
@@ -1041,6 +1046,8 @@ if "ollama" in config and config["ollama"].get("model"):
     response_length = config["ollama"].get("response_length", 200)
     bs = config["ollama"].get("batch_size", 5)
     use_llm = config["ollama"].get("use_llm", False)
+if args.no_llm:
+    use_llm = False
 if llm_model and use_llm:
     if llm_model.endswith(":cloud"):
         if verbose >= 2:

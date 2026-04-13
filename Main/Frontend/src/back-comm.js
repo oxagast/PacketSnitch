@@ -6,7 +6,7 @@ const path = require("path");
 const fs = require("fs");
 tempDir = os.tmpdir();
 testcasesDir = path.join(tempDir, "testcases");
-ipcMain.handle("run-backend-command", async (event, filename) => {
+ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   console.log(`Received pcap: ${filename}`);
   const isDev = !require("electron").app.isPackaged;
   const basePath = isDev
@@ -23,7 +23,7 @@ ipcMain.handle("run-backend-command", async (event, filename) => {
     appPath = path.join(basePath, "\\backend\\snitch.exe");
   }
 
-  command = `"${appPath}" "${filename}" -a -o "${testcasesDir}"`;
+  command = `"${appPath}" "${filename}" -a -o "${testcasesDir}"${useLLM ? "" : " --no-llm"}`;
 
   console.log("Command to run:", command);
 
