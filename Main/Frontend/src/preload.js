@@ -9,8 +9,8 @@ contextBridge.exposeInMainWorld("jsonapi", {
 });
 
 contextBridge.exposeInMainWorld("snitchapi", {
-  runBackendCommand: (filename) =>
-    ipcRenderer.invoke("run-backend-command", filename),
+  runBackendCommand: (filename, useLLM) =>
+    ipcRenderer.invoke("run-backend-command", filename, useLLM),
 });
 
 contextBridge.exposeInMainWorld("getfileapi", {

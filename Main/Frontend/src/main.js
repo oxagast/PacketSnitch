@@ -61,9 +61,8 @@ checkOllama().then((isInstalled) => {
     console.log("Ollama is installed, proceeding with app launch...");
   } else {
     console.log(
-      "Ollama is not installed. Please install Ollama to use PacketSnitch.",
+      "Ollama is not installed. LLM summarisation will be unavailable.",
     );
-    killProcess();
   }
 });
 

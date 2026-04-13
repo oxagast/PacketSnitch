@@ -100,12 +100,7 @@ function processFile(file) {
     document.getElementById("error-container").style.display = "none";
     packets = JSON.parse(event.target.result);
     json_cap = JSON.stringify(packets, null, 2);
-    final_summary = packets["Final Summary"];
-    if (final_summary == undefined) {
-      doError("Final Summary not found in JSON!");
-      statusUpdate("Status: Error: Final Summary not found in JSON.");
-      return;
-    }
+    final_summary = packets["Final Summary"] ?? "";
     document.getElementById("target_hosts").hidden = false;
     document.getElementById("summary-btn").style.display = "block";
     // Populate host dropdown with hosts from JSON
@@ -185,7 +180,8 @@ function writeSummary() {
     container = document.getElementById("main");
     document.getElementById("packetInfoPane").style.display = "none";
     document.getElementById("packetPayloadPane").style.display = "none";
-    document.getElementById("summary_content").textContent = final_summary;
+    document.getElementById("summary_content").textContent =
+      final_summary || "No LLM summary available.";
     document.getElementById("summary_box").style.display = "block";
     fileLoaded(true);
   }
@@ -835,7 +831,8 @@ function runSnitch(file) {
     "Status: Running snitch backend, this may take a few minutes...";
   document.getElementById("error-container").style.display = "none";
   startTime = performance.now();
-  const ret = window.snitchapi.runBackendCommand(file).then((output) => {});
+  const useLLM = document.getElementById("use-llm").checked;
+  const ret = window.snitchapi.runBackendCommand(file, useLLM).then((output) => {});
 }
 
 function doError(message) {

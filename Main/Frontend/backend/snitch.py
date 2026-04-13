@@ -941,6 +941,11 @@ parser.add_argument(
     action="count",
     default=0,
 )
+parser.add_argument(
+    "--nollm",
+    help="Disable LLM summarisation regardless of configuration.",
+    action="store_true",
+)
 verbose = parser.parse_args().verbose
 args = parser.parse_args()  # parse once; verbose is needed by functions defined above
 try:
@@ -1041,6 +1046,19 @@ if "ollama" in config and config["ollama"].get("model"):
     response_length = config["ollama"].get("response_length", 200)
     bs = config["ollama"].get("batch_size", 5)
     use_llm = config["ollama"].get("use_llm", False)
+if args.nollm:
+    use_llm = False
+    config = {
+        "active_recon": True,
+        "ollama": {
+            "use_llm": False,
+            "llm_brief": False,
+        },
+        "threads": 16,
+        "final_summary": False,
+    }
+
+
 if llm_model and use_llm:
     if llm_model.endswith(":cloud"):
         if verbose >= 2:
@@ -1098,8 +1116,8 @@ finally:
         all_info_orig = all_info.copy()
         all_info_new = pop_dict_key(all_info, "Raw data")
         all_info = all_info_new
-        print("Generating LLM brief for batch of packets...")
-        if all_info:
+        if all_info and use_llm:
+            print("Generating LLM brief for batch of packets...")
             info_distiller(50)
         all_info = all_info_orig
 
@@ -1112,15 +1130,16 @@ finally:
                 + drilldown,
             )
             final_summary = final_res["response"]
-            # by_host() writes hosts.json which must include the final summary,
-            # so it is called after the summary text is available.
-            by_host(outd, final_summary)
             with open(outd + "/final_summary.txt", "w", encoding="utf-8") as _sf:
                 _sf.write(final_summary)
             print("\n" + final_summary)
             print("\nFinal summary saved to: " + outd + "/final_summary.txt")
         except Exception as e:
             print("\nLLM Final summary generation error: " + str(e))
+
+    # Always write hosts.json so the frontend can load data regardless of
+    # whether LLM summarisation was enabled or succeeded.
+    by_host(outd, final_summary)
 
     # Close the GeoIP reader now that all packets have been processed
     if geoip_reader is not None:
