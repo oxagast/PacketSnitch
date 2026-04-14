@@ -123,7 +123,7 @@ app.whenReady().then(() => {
 
           fileSent = true; // Prevent sending multiple times
         }
-      }, 3000);
+      }, 1000);
       console.log("File selected:", filePaths[0]);
       filename = filePaths[0];
       return filePaths[0];

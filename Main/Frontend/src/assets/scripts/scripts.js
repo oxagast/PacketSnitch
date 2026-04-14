@@ -161,7 +161,11 @@ document.getElementById("target_hosts").addEventListener("change", function () {
 
 document.getElementById("target_hosts").addEventListener("click", function () {
   const selected = document.getElementById("target_hosts").value;
-  handlePacketNavigation("first-load");
+  filteredPackets = filterPackets(
+    packets,
+    "ip.src.addr: " + selected + "|| ip.dst.addr: " + selected,
+  );
+  handlePacketNavigation("filtered", null);
 });
 
 // Show summary when summary button is clicked
@@ -454,8 +458,7 @@ function populateDataTypes(p) {
   charset = charset == "" ? "Unknown" : charset;
   encoding = encoding == "" ? "Unknown" : encoding;
   if (encoding !== undefined) {
-    encode.textContent =
-      "\u0950 Payload Encoding: " + encoding.replace(/"/g, "");
+    encode.textContent = "Payload Encoding: " + encoding.replace(/"/g, "");
   }
   if (lang !== undefined) {
     language.textContent = "Payload Language: " + lang.replace(/"/g, "");
@@ -586,10 +589,6 @@ function createTable(data, headers, containerId) {
 
   document.getElementById(containerId).appendChild(table);
 }
-
-/**
- * Updates the info panel with details about the current packet.
- */
 
 // probably should break this function up into smaller pieces,
 // but it works for now, it takes the current packet info and
