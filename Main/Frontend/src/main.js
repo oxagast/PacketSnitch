@@ -100,6 +100,11 @@ app.whenReady().then(() => {
       if (canceled) return null;
       console.log("Accepted pcapng.. Checking for json existence...");
       isBackendLoaded = true;
+      isFileSent = false; // Reset so new JSON data will be sent for each load
+      // Remove stale output directory so snitch always starts with a clean slate
+      if (fs.existsSync(testcaseTempDir)) {
+        fs.rmSync(testcaseTempDir, { recursive: true, force: true });
+      }
       setInterval(() => {
         if (!isFileSent && fs.existsSync(hostsJsonFilePath)) {
           // here we read the file in

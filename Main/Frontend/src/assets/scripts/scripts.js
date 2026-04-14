@@ -28,8 +28,8 @@ document
       startTime = performance.now();
       statusUpdate("Processing file: " + file.name);
       processFile(file);
-
       isFileLoaded = true;
+      event.target.value = ""; // Reset so the same file can be loaded again
     }
   });
 
@@ -104,21 +104,28 @@ function processFile(file) {
     finalSummary = capturedPackets["Final Summary"] ?? "";
     document.getElementById("target_hosts").hidden = false;
     document.getElementById("summary-btn").style.display = "block";
-    // Populate host dropdown with hostsList from JSON
-    for (const host in capturedPackets["Host"]) {
-      if (!hostsList.includes(host)) {
-        hostsList.push(host);
-        const targetHostsDropdown = document.getElementById("target_hosts");
-        const newhost = document.createElement("option");
-        newhost.textContent = host;
-        newhost.value = host;
-        targetHostsDropdown.appendChild(newhost);
-        isFileLoaded = true;
-
-        writeSummary();
-        initializeDataView();
-      }
+    // Reset host list and dropdowns for the new file
+    hostsList = ["0.0.0.0"];
+    const targetHostsDropdown = document.getElementById("target_hosts");
+    while (targetHostsDropdown.options.length > 0) {
+      targetHostsDropdown.remove(0);
     }
+    bookmarkList = [];
+    const selectBookmarkEl = document.getElementById("selectBookmark");
+    while (selectBookmarkEl.options.length > 1) {
+      selectBookmarkEl.remove(1);
+    }
+    // Populate host dropdown with hosts from JSON
+    for (const host in capturedPackets["Host"]) {
+      hostsList.push(host);
+      const newhost = document.createElement("option");
+      newhost.textContent = host;
+      newhost.value = host;
+      targetHostsDropdown.appendChild(newhost);
+      isFileLoaded = true;
+    }
+    writeSummary();
+    initializeDataView();
   };
   reader.onerror = (error) => {
     status.textContent = "Status: Error reading file: " + error;

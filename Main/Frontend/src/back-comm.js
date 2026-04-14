@@ -25,6 +25,12 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
 
   backendCommand = `"${snitchExePath}" "${filename}" -a -o "${testcaseOutputDir}"${useLLM ? "" : " --nollm"}`;
 
+  // Always start with a clean output directory so snitch never hits the
+  // interactive overwrite prompt on second (and later) runs.
+  if (fs.existsSync(testcaseOutputDir)) {
+    fs.rmSync(testcaseOutputDir, { recursive: true, force: true });
+  }
+
   console.log("Command to run:", backendCommand);
 
   function sendError(message) {

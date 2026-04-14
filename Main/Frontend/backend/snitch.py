@@ -1079,32 +1079,16 @@ print(
 if not os.path.exists(args.pcap_file):
     print("The .pcap file does not exist.", file=sys.stderr)
     sys.exit(1)
-if not os.path.exists(outputDir):
-    try:
-        os.mkdir(outputDir)
-        threadingResult = startThreading()
-        # byHost(outputDir, threadingResult)
-    except Exception:
-        threadingResult = startThreading()
-        # byHost(outputDir, threadingResult)
-else:
-    if (
-        input(
-            "Output directory already exists. Do you want to continue and potentially overwrite files? (y/n): "
-        ).lower()
-        != "y"
-    ):
-        print("Exiting to prevent overwriting files.", file=sys.stderr)
-        sys.exit(1)
 try:
     if os.path.isdir(outputDir):
         shutil.rmtree(outputDir, ignore_errors=True)
     # Small delay to ensure file system has completed deletions
     time.sleep(1)
+    os.makedirs(outputDir, exist_ok=True)
     try:
-        os.mkdir(outputDir)
         threadingResult = startThreading()
-    except Exception:
+    except Exception as startErr:
+        print(f"Warning: startThreading raised an exception ({startErr}); retrying.", file=sys.stderr)
         threadingResult = startThreading()
 finally:
     finalSummary = ""
