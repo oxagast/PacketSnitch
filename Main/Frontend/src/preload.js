@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld("snitchapi", {
     ipcRenderer.invoke("run-backend-command", filename, useLLM),
 });
 
+contextBridge.exposeInMainWorld("savejsonapi", {
+  saveJson: (jsonData) => ipcRenderer.invoke("save-json", jsonData),
+});
+
 contextBridge.exposeInMainWorld("getfileapi", {
   selectFile: () => ipcRenderer.invoke("select-file"),
 });
