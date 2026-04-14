@@ -4,10 +4,10 @@ const path = require("path");
 const { exec } = require("child_process");
 const os = require("os");
 const platform = os.platform();
-const testcaseDir = path.join(os.tmpdir(), "testcases");
+const testcaseTempDir = path.join(os.tmpdir(), "testcases");
 let mainWindow;
-let filename;
-let backendLoaded = false;
+let selectedFilePath;
+let isBackendLoaded = false;
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
@@ -21,39 +21,39 @@ ipcMain.handle("save-json", async (event, jsonData) => {
   try {
     await fs.promises.writeFile(filePath, jsonData, "utf8");
     return { success: true };
-  } catch (err) {
-    console.error("Error saving JSON file:", err);
-    return { success: false, error: err.message };
+  } catch (fileError) {
+    console.error("Error saving JSON file:", fileError);
+    return { success: false, error: fileError.message };
   }
 });
 
 ipcMain.handle("file-size", async () => {
   try {
     // Get file stats asynchronously
-    const stats = await fs.promises.stat(filename); // Using promises version of stat
-    return stats.size; // Send back the file size
-  } catch (err) {
-    console.error("Error getting file stats:", err);
+    const fileStats = await fs.promises.stat(selectedFilePath); // Using promises version of stat
+    return fileStats.size; // Send back the file size
+  } catch (fileError) {
+    console.error("Error getting file stats:", fileError);
     return 0; // Return 0 if there's an error
   }
 });
 
-hostsFilePath = path.join(testcaseDir, "hosts.json");
+hostsJsonFilePath = path.join(testcaseTempDir, "hosts.json");
 // make sure we have a fresh temp dir
-fs.rmSync(testcaseDir, { recursive: true, force: true }, (err) => {
-  if (err) console.error(err);
+fs.rmSync(testcaseTempDir, { recursive: true, force: true }, (fileError) => {
+  if (fileError) console.error(fileError);
 });
 
 function killBackendProcess() {
   console.log("Killing backend proc...");
   if (platform === "win32") {
-    exec("taskkill /IM snitch.exe /T /F", (err) => {
-      if (err) console.error(err);
+    exec("taskkill /IM snitch.exe /T /F", (fileError) => {
+      if (fileError) console.error(fileError);
     });
   }
   if (platform === "linux") {
-    exec('pkill -f "testcases"', (err) => {
-      if (err) console.error(err);
+    exec('pkill -f "testcases"', (fileError) => {
+      if (fileError) console.error(fileError);
     });
   }
 }
@@ -61,13 +61,13 @@ function killBackendProcess() {
 function killProcess() {
   console.log("Killing backend proc...");
   if (platform === "win32") {
-    exec("taskkill /IM packetsnitch.exe /T /F", (err) => {
-      if (err) console.error(err);
+    exec("taskkill /IM packetsnitch.exe /T /F", (fileError) => {
+      if (fileError) console.error(fileError);
     });
   }
   if (platform === "linux") {
-    exec('pkill -f "packetsnitch"', (err) => {
-      if (err) console.error(err);
+    exec('pkill -f "packetsnitch"', (fileError) => {
+      if (fileError) console.error(fileError);
     });
   }
 }
@@ -105,7 +105,7 @@ app.whenReady().then(() => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
     console.log("App ready, waiting for file selection...");
-    let fileSent = false;
+    let isFileSent = false;
     // start the process that listens for the file selection and runs the backend command
     require("./back-comm");
     ipcMain.handle("select-file", async () => {
@@ -114,18 +114,18 @@ app.whenReady().then(() => {
       });
       if (canceled) return null;
       console.log("Accepted pcapng.. Checking for json existence...");
-      backendLoaded = true;
+      isBackendLoaded = true;
       setInterval(() => {
-        if (!fileSent && fs.existsSync(hostsFilePath)) {
+        if (!isFileSent && fs.existsSync(hostsJsonFilePath)) {
           // here we read the file in
-          const data = fs.readFileSync(hostsFilePath, "utf8");
-          mainWindow.webContents.send("json-data", data);
+          const hostsJsonData = fs.readFileSync(hostsJsonFilePath, "utf8");
+          mainWindow.webContents.send("json-data", hostsJsonData);
 
-          fileSent = true; // Prevent sending multiple times
+          isFileSent = true; // Prevent sending multiple times
         }
       }, 1000);
       console.log("File selected:", filePaths[0]);
-      filename = filePaths[0];
+      selectedFilePath = filePaths[0];
       return filePaths[0];
     });
   });
@@ -133,8 +133,8 @@ app.whenReady().then(() => {
 
 function checkOllama() {
   return new Promise((resolve) => {
-    exec("ollama --version", (err, stdout, stderr) => {
-      if (err) {
+    exec("ollama --version", (fileError, stdout, stderr) => {
+      if (fileError) {
         resolve(false); // not installed or not in PATH
       } else {
         resolve(true);
@@ -145,7 +145,7 @@ function checkOllama() {
 
 app.on("before-quit", () => {
   // make sure the backend snitch process dies!
-  if (backendLoaded) {
+  if (isBackendLoaded) {
     killBackendProcess();
   }
 });
