@@ -116,9 +116,9 @@ app.whenReady().then(() => {
       console.log("Accepted pcapng.. Checking for json existence...");
       isBackendLoaded = true;
       isFileSent = false; // Reset so new JSON data will be sent for each load
-      // Remove stale hosts.json so the interval doesn't send data from a previous run
-      if (fs.existsSync(hostsJsonFilePath)) {
-        fs.unlinkSync(hostsJsonFilePath);
+      // Remove stale output directory so snitch always starts with a clean slate
+      if (fs.existsSync(testcaseTempDir)) {
+        fs.rmSync(testcaseTempDir, { recursive: true, force: true });
       }
       setInterval(() => {
         if (!isFileSent && fs.existsSync(hostsJsonFilePath)) {
