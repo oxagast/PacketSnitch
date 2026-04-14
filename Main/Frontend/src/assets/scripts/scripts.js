@@ -174,23 +174,6 @@ document.getElementById("summary-btn").addEventListener("click", function () {
   writeSummary();
 });
 
-// Save JSON data to file when save button is clicked
-document.getElementById("save-json-btn").addEventListener("click", function () {
-  if (jsonCapture === "") {
-    statusUpdate("Status: No JSON file loaded, please upload a file first");
-    doError("No file loaded! Upload one of JSON or PCAP first!");
-  } else {
-    window.savejsonapi.saveJson(jsonCapture).then((result) => {
-      if (result && result.success) {
-        statusUpdate("Status: JSON file saved successfully");
-      } else if (result && result.error) {
-        statusUpdate("Status: Error saving file: " + result.error);
-      } else {
-        statusUpdate("Status: Save cancelled");
-      }
-    });
-  }
-});
 
 // Displays the summary section from the loaded JSON.
 
