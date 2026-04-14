@@ -961,7 +961,7 @@ except Exception:
             "model": "minimax-m2.5:cloud",
             "response_length": 340,
             "server_call_threads": 5,
-            "batch_size": 4,
+            "batch_size": 65,
         },
         "threads": 16,
         "final_summary": True,
@@ -1044,7 +1044,7 @@ if "ollama" in config and config["ollama"].get("model"):
                 file=sys.stderr,
             )
     response_length = config["ollama"].get("response_length", 200)
-    bs = config["ollama"].get("batch_size", 5)
+    bs = config["ollama"].get("batch_size", 65)
     use_llm = config["ollama"].get("use_llm", False)
 if args.nollm:
     use_llm = False
