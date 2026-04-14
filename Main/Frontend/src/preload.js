@@ -2,8 +2,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("jsonapi", {
   onJsonData: (callback) => {
-    ipcRenderer.on("json-data", (event, data) => {
-      callback(data);
+    ipcRenderer.on("json-data", (event, hostsJsonData) => {
+      callback(hostsJsonData);
     });
   },
 });

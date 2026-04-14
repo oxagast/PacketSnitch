@@ -11,8 +11,8 @@ const compare = (a, b, op) => (operators[op] || operators["=="])(a, b);
 
 const getPacketKey = (p) => {
   const hostKey = Object.keys(p.Host)[0];
-  const packet = p.Host[hostKey][0];
-  return `${hostKey}-${packet["Packet Info"]["Packet Processed"]}`;
+  const packetItem = p.Host[hostKey][0];
+  return `${hostKey}-${packetItem["Packet Info"]["Packet Processed"]}`;
 };
 
 const unionBy = (arr, keyFn) => {
@@ -43,9 +43,9 @@ function getDataType(data) {
 }
 
 function searchFullKey(obj, targetKey) {
-  for (const key in obj) {
-    if (key === targetKey) return obj[key];
-    const val = obj[key];
+  for (const objKey in obj) {
+    if (objKey === targetKey) return obj[objKey];
+    const val = obj[objKey];
     if (val && typeof val === "object") {
       const res = searchFullKey(val, targetKey);
       if (res !== undefined) return res;
@@ -56,14 +56,14 @@ function searchFullKey(obj, targetKey) {
 function getLeafKeys(obj) {
   const result = [];
   const walk = (o) => {
-    for (const key in o) {
-      const val = o[key];
+    for (const objKey in o) {
+      const val = o[objKey];
 
       if (val && typeof val === "object" && !Array.isArray(val)) {
         walk(val);
       } else {
         result.push({
-          [key]: key.toLowerCase().replace(/ /g, "-"),
+          [objKey]: objKey.toLowerCase().replace(/ /g, "-"),
           type: getDataType(val),
         });
       }
@@ -75,89 +75,89 @@ function getLeafKeys(obj) {
 }
 
 function filterChunk(data, filter) {
-  const hosts = typeof data === "string" ? JSON.parse(data) : data;
-  const results = [];
-  const modifiers = [">=", "<=", ">", "<", "==", "!="];
+  const parsedHosts = typeof data === "string" ? JSON.parse(data) : data;
+  const matchedPackets = [];
+  const comparisonOps = [">=", "<=", ">", "<", "==", "!="];
 
-  for (const host in hosts.Host) {
-    const packets = hosts.Host[host];
-    const sample = packets[0];
-    const leafKeys = getLeafKeys(sample);
-    const keys = leafKeys.map((k) => Object.values(k)[0]);
-    const rawKeys = leafKeys.map((k) => Object.keys(k)[0]);
+  for (const host in parsedHosts.Host) {
+    const hostPackets = parsedHosts.Host[host];
+    const firstPacket = hostPackets[0];
+    const leafKeyList = getLeafKeys(firstPacket);
+    const normalizedKeys = leafKeyList.map((k) => Object.values(k)[0]);
+    const originalKeys = leafKeyList.map((k) => Object.keys(k)[0]);
     if (!filter || !filter.includes(":")) continue;
-    const [key, valRaw] = filter.split(":").map((s) => s.trim());
-    if (!keys.includes(key)) continue;
-    const mod = modifiers.find((m) => valRaw.includes(m));
-    const val = valRaw.replace(mod, "").trim();
-    for (const packet of packets) {
-      const packetVal = searchFullKey(packet, rawKeys[keys.indexOf(key)]);
-      if (packetVal === undefined) continue;
-      if (mod && compare(packetVal, val, mod)) {
-        results.push({ Host: { [host]: [packet] } });
+    const [filterKey, filterValRaw] = filter.split(":").map((s) => s.trim());
+    if (!normalizedKeys.includes(filterKey)) continue;
+    const filterModifier = comparisonOps.find((m) => filterValRaw.includes(m));
+    const filterValue = filterValRaw.replace(filterModifier, "").trim();
+    for (const packetItem of hostPackets) {
+      const fieldValue = searchFullKey(packetItem, originalKeys[normalizedKeys.indexOf(filterKey)]);
+      if (fieldValue === undefined) continue;
+      if (filterModifier && compare(fieldValue, filterValue, filterModifier)) {
+        matchedPackets.push({ Host: { [host]: [packetItem] } });
         continue;
       } else {
-        if (compare(packetVal, val, "==")) {
-          results.push({ Host: { [host]: [packet] } });
+        if (compare(fieldValue, filterValue, "==")) {
+          matchedPackets.push({ Host: { [host]: [packetItem] } });
         }
       }
-      const type = getDataType(packetVal);
+      const type = getDataType(fieldValue);
       if (["ASCII", "HEX", "IP", "MAC"].includes(type)) {
-        if (String(packetVal).toLowerCase() === val.toLowerCase()) {
-          results.push({ Host: { [host]: [packet] } });
+        if (String(fieldValue).toLowerCase() === filterValue.toLowerCase()) {
+          matchedPackets.push({ Host: { [host]: [packetItem] } });
         }
       }
     }
   }
-  return results;
+  return matchedPackets;
 }
 
 function tokenizeQuery(query) {
-  const tokens = [];
+  const tokenList = [];
   let i = 0;
   while (i < query.length) {
     if (/\s/.test(query[i])) { i++; continue; }
-    if (query[i] === "(") { tokens.push({ type: "LPAREN" }); i++; continue; }
-    if (query[i] === ")") { tokens.push({ type: "RPAREN" }); i++; continue; }
-    if (query.startsWith("||", i)) { tokens.push({ type: "OR" }); i += 2; continue; }
-    if (query.startsWith("&&", i)) { tokens.push({ type: "AND" }); i += 2; continue; }
-    let j = i;
+    if (query[i] === "(") { tokenList.push({ type: "LPAREN" }); i++; continue; }
+    if (query[i] === ")") { tokenList.push({ type: "RPAREN" }); i++; continue; }
+    if (query.startsWith("||", i)) { tokenList.push({ type: "OR" }); i += 2; continue; }
+    if (query.startsWith("&&", i)) { tokenList.push({ type: "AND" }); i += 2; continue; }
+    let exprEnd = i;
     while (
-      j < query.length &&
-      !query.startsWith("||", j) &&
-      !query.startsWith("&&", j) &&
-      query[j] !== "(" &&
-      query[j] !== ")"
+      exprEnd < query.length &&
+      !query.startsWith("||", exprEnd) &&
+      !query.startsWith("&&", exprEnd) &&
+      query[exprEnd] !== "(" &&
+      query[exprEnd] !== ")"
     ) {
-      j++;
+      exprEnd++;
     }
-    const expr = query.slice(i, j).trim();
-    if (expr) tokens.push({ type: "EXPR", value: expr });
-    i = j;
+    const tokenExpr = query.slice(i, exprEnd).trim();
+    if (tokenExpr) tokenList.push({ type: "EXPR", value: tokenExpr });
+    i = exprEnd;
   }
-  return tokens;
+  return tokenList;
 }
 
 function runQuery(data, query) {
-  const tokens = tokenizeQuery(query);
+  const tokenList = tokenizeQuery(query);
   let pos = 0;
 
-  function peek() { return tokens[pos]; }
+  function peek() { return tokenList[pos]; }
   function consume(type) {
-    const tok = tokens[pos];
-    if (type && (!tok || tok.type !== type)) {
-      throw new Error(`Expected ${type} but got ${tok ? tok.type : "EOF"}`);
+    const currentToken = tokenList[pos];
+    if (type && (!currentToken || currentToken.type !== type)) {
+      throw new Error(`Expected ${type} but got ${currentToken ? currentToken.type : "EOF"}`);
     }
     pos++;
-    return tok;
+    return currentToken;
   }
 
   function parseOr() {
     let result = parseAnd();
     while (peek() && peek().type === "OR") {
       consume("OR");
-      const right = parseAnd();
-      result = unionBy([...result, ...right], getPacketKey);
+      const rightResult = parseAnd();
+      result = unionBy([...result, ...rightResult], getPacketKey);
     }
     return result;
   }
@@ -166,23 +166,23 @@ function runQuery(data, query) {
     let result = parseTerm();
     while (peek() && peek().type === "AND") {
       consume("AND");
-      const right = parseTerm();
-      result = intersectBy(result, right, getPacketKey);
+      const rightResult = parseTerm();
+      result = intersectBy(result, rightResult, getPacketKey);
     }
     return result;
   }
 
   function parseTerm() {
-    const tok = peek();
-    if (tok && tok.type === "LPAREN") {
+    const currentToken = peek();
+    if (currentToken && currentToken.type === "LPAREN") {
       consume("LPAREN");
       const result = parseOr();
       consume("RPAREN");
       return result;
     }
-    if (tok && tok.type === "EXPR") {
+    if (currentToken && currentToken.type === "EXPR") {
       consume("EXPR");
-      return filterChunk(data, tok.value);
+      return filterChunk(data, currentToken.value);
     }
     return [];
   }
@@ -191,15 +191,15 @@ function runQuery(data, query) {
 }
 
 function filterPackets(data, query) {
-  let results;
+  let matchedPackets;
   if (query.trim() === "") {
-    // dummy funtion so we can return all packets in the right format
-    results = runQuery(data, "wire-length:>=0"); // dummy filter that matches all packets
+    // dummy function so we can return all packets in the right format
+    matchedPackets = runQuery(data, "wire-length:>=0"); // dummy filter that matches all packets
   } else {
-    results = runQuery(data, query);
+    matchedPackets = runQuery(data, query);
   }
 
-  return results.map((p) => {
+  return matchedPackets.map((p) => {
     const hostKey = Object.keys(p.Host)[0];
     return p.Host[hostKey][0];
   });

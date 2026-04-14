@@ -4,38 +4,38 @@ const os = require("os");
 const platform = os.platform();
 const path = require("path");
 const fs = require("fs");
-tempDir = os.tmpdir();
-testcasesDir = path.join(tempDir, "testcases");
+systemTempDir = os.tmpdir();
+testcaseOutputDir = path.join(systemTempDir, "testcases");
 ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   console.log(`Received pcap: ${filename}`);
   const isDev = !require("electron").app.isPackaged;
   const basePath = isDev
     ? path.join(__dirname, "../..")
     : process.resourcesPath;
-  let appPath;
+  let snitchExePath;
 
   if (platform === "win32") {
-    appPath = path.join(basePath, "\\backend\\snitch.exe");
+    snitchExePath = path.join(basePath, "\\backend\\snitch.exe");
   }
   if (platform === "linux") {
-    appPath = path.join(basePath, "/backend/snitch");
+    snitchExePath = path.join(basePath, "/backend/snitch");
   } else {
-    appPath = path.join(basePath, "\\backend\\snitch.exe");
+    snitchExePath = path.join(basePath, "\\backend\\snitch.exe");
   }
 
-  command = `"${appPath}" "${filename}" -a -o "${testcasesDir}"${useLLM ? "" : " --nollm"}`;
+  backendCommand = `"${snitchExePath}" "${filename}" -a -o "${testcaseOutputDir}"${useLLM ? "" : " --nollm"}`;
 
-  console.log("Command to run:", command);
+  console.log("Command to run:", backendCommand);
 
   function sendError(message) {
-    const win = BrowserWindow.getAllWindows()[0]; // or track your main window
-    if (win) {
-      win.webContents.send("backend-error", message);
+    const mainWin = BrowserWindow.getAllWindows()[0]; // or track your main window
+    if (mainWin) {
+      mainWin.webContents.send("backend-error", message);
     }
   }
 
   return new Promise((resolve, reject) => {
-    exec(command, (error, stdout, stderr) => {
+    exec(backendCommand, (error, stdout, stderr) => {
       resolve(stdout);
       console.log("Backend output:", stdout);
       console.log("Backend error output:", stderr);

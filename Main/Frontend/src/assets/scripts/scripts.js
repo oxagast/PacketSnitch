@@ -1,22 +1,22 @@
 const { filterPackets } = require("./filter");
 const { getDataType } = require("./filter");
 // Global variables for DOM elements and state
-const contentTarget = document.getElementById("json-upload"); // File input for JSON upload
-let packets = {}; // Stores parsed packet data from JSON
-let json_cap = ""; // Stringified JSON capture for pretty display
-let final_summary = ""; // Stores the summary section from JSON
+const jsonUploadInput = document.getElementById("json-upload"); // File input for JSON upload
+let capturedPackets = {}; // Stores parsed packet data from JSON
+let jsonCapture = ""; // Stringified JSON capture for pretty display
+let finalSummary = ""; // Stores the summary section from JSON
 const status = document.getElementById("status"); // Status bar element
-let hosts = ["0.0.0.0"]; // List of hosts found in capture
-let host_filter = document.getElementById("host_filter"); // Host filter dropdown
+let hostsList = ["0.0.0.0"]; // List of hosts found in capture
+let hostFilterEl = document.getElementById("host_filter"); // Host filter dropdown
 let packetsForHost = []; // Packets for the currently selected host
 let index = 0; // Navigation index for packets
 let bookmarkList = []; // List of bookmarks (host:packet index)
-let bookmark = {}; // Current bookmark obje22
-let firstRun = true; // Flag for first run to initialize hex grid
-let loaded = false;
+let activeBookmark = {}; // Current bookmark object
+let isFirstRun = true; // Flag for first run to initialize hex grid
+let isFileLoaded = false;
 let jsonOfPackets;
 let filteredPackets;
-let curPacket;
+let currentPacketKey;
 let startTime;
 popHexGrid("00".repeat(256));
 // Set up file upload handler for JSON capture
@@ -29,7 +29,7 @@ document
       statusUpdate("Processing file: " + file.name);
       processFile(file);
 
-      loaded = true;
+      isFileLoaded = true;
     }
   });
 
@@ -42,9 +42,9 @@ document
           .getFSize()
           .then((fileSize) => {
             // Update the UI with the file size
-            fSizeInKB = (fileSize / 1024).toFixed(2);
+            fileSizeKb = (fileSize / 1024).toFixed(2);
             document.getElementById("pcap-size").textContent =
-              `PCAP size: ${fSizeInKB}kb`;
+              `PCAP size: ${fileSizeKb}kb`;
           })
           .catch((error) => {
             // Handle any errors (e.g., file not found)
@@ -65,11 +65,11 @@ function isValidJSON(str) {
   }
 }
 
-function fileLoaded(loaded) {
-  if (loaded) {
-    retTime = performance.now();
+function fileLoaded(isLoaded) {
+  if (isLoaded) {
+    loadEndTime = performance.now();
     document.getElementById("load-time").textContent =
-      "Load time: " + ((retTime - startTime) / 1000).toFixed(2) + " seconds";
+      "Load time: " + ((loadEndTime - startTime) / 1000).toFixed(2) + " seconds";
     document.getElementById("filterStr").disabled = false;
     document.getElementById("tab-btns").style.opacity = "1";
     document.getElementById("prev-btn").style.opacity = "1";
@@ -89,7 +89,7 @@ function fileLoaded(loaded) {
 function processFile(file) {
   const reader = new FileReader();
   reader.onload = (event) => {
-    const main_panel = document.getElementById("main");
+    const mainPanel = document.getElementById("main");
     if (isValidJSON(event.target.result) == false) {
       console.log("Invalid JSON file");
       doError("Invalid JSON file, please upload a valid JSON capture!");
@@ -99,21 +99,21 @@ function processFile(file) {
     fileLoaded(true);
     jsonOfPackets = event.target.result;
     document.getElementById("error-container").style.display = "none";
-    packets = JSON.parse(event.target.result);
-    json_cap = JSON.stringify(packets, null, 2);
-    final_summary = packets["Final Summary"] ?? "";
+    capturedPackets = JSON.parse(event.target.result);
+    jsonCapture = JSON.stringify(capturedPackets, null, 2);
+    finalSummary = capturedPackets["Final Summary"] ?? "";
     document.getElementById("target_hosts").hidden = false;
     document.getElementById("summary-btn").style.display = "block";
-    // Populate host dropdown with hosts from JSON
-    for (const host in packets["Host"]) {
-      if (!hosts.includes(host)) {
-        hosts.push(host);
-        const targets_list = document.getElementById("target_hosts");
+    // Populate host dropdown with hostsList from JSON
+    for (const host in capturedPackets["Host"]) {
+      if (!hostsList.includes(host)) {
+        hostsList.push(host);
+        const targetHostsDropdown = document.getElementById("target_hosts");
         const newhost = document.createElement("option");
         newhost.textContent = host;
         newhost.value = host;
-        targets_list.appendChild(newhost);
-        loaded = true;
+        targetHostsDropdown.appendChild(newhost);
+        isFileLoaded = true;
 
         writeSummary();
         initializeDataView();
@@ -138,12 +138,12 @@ function statusUpdate(message) {
 }
 
 /**
- * Loads all packets for a given host IP into packetsForHost.
+ * Loads all capturedPackets for a given host IP into packetsForHost.
  */
-function hostPacketInfo(ip) {
-  const selected = ip;
+function hostPacketInfo(currentIp) {
+  const selected = currentIp;
   packetsForHost = [];
-  const hostPackets = packets["Host"][selected];
+  const hostPackets = capturedPackets["Host"][selected];
   for (const packet in hostPackets) {
     packetsForHost.push(hostPackets[packet]);
   }
@@ -152,17 +152,17 @@ function hostPacketInfo(ip) {
 // Update host filter when a new host is selected from dropdown
 document.getElementById("target_hosts").addEventListener("change", function () {
   const selected = document.getElementById("target_hosts").value;
-  let host_filter = document.getElementById("host_filter");
-  packet_info = [];
-  if (host_filter.value !== selected) {
-    host_filter.value = selected;
+  let hostFilterEl = document.getElementById("host_filter");
+  filteredPackets = []; // reset filter when host changes
+  if (hostFilterEl.value !== selected) {
+    hostFilterEl.value = selected;
   }
 });
 
 document.getElementById("target_hosts").addEventListener("click", function () {
   const selected = document.getElementById("target_hosts").value;
   filteredPackets = filterPackets(
-    packets,
+    capturedPackets,
     "ip.src.addr: " + selected + "|| ip.dst.addr: " + selected,
   );
   handlePacketNavigation("filtered", null);
@@ -176,11 +176,11 @@ document.getElementById("summary-btn").addEventListener("click", function () {
 
 // Save JSON data to file when save button is clicked
 document.getElementById("save-json-btn").addEventListener("click", function () {
-  if (json_cap === "") {
+  if (jsonCapture === "") {
     statusUpdate("Status: No JSON file loaded, please upload a file first");
     doError("No file loaded! Upload one of JSON or PCAP first!");
   } else {
-    window.savejsonapi.saveJson(json_cap).then((result) => {
+    window.savejsonapi.saveJson(jsonCapture).then((result) => {
       if (result && result.success) {
         statusUpdate("Status: JSON file saved successfully");
       } else if (result && result.error) {
@@ -196,15 +196,15 @@ document.getElementById("save-json-btn").addEventListener("click", function () {
 
 function writeSummary() {
   statusUpdate("Status: Displaying capture analysis summary");
-  //highlightTab("summary-btn");
-  if (json_cap == "") {
+  //highlightTab("summary-navAction");
+  if (jsonCapture == "") {
     statusUpdate("Status: No JSON file loaded, please upload a file first");
   } else {
-    container = document.getElementById("main");
+    summaryContainer = document.getElementById("main");
     document.getElementById("packetInfoPane").style.display = "none";
     document.getElementById("packetPayloadPane").style.display = "none";
     document.getElementById("summary_content").textContent =
-      final_summary || "No LLM summary available.";
+      finalSummary || "No LLM summary available.";
     document.getElementById("summary_box").style.display = "block";
     fileLoaded(true);
   }
@@ -212,24 +212,24 @@ function writeSummary() {
 
 // Show host data when data button is clicked
 document.getElementById("data-btn").addEventListener("click", function () {
-  //highlightTab("data-btn");
+  //highlightTab("data-navAction");
   initializeDataView();
 });
 
 function initializeDataView() {
   statusUpdate(
-    "Status: Displaying packet information for " + host_filter.value,
+    "Status: Displaying packet information for " + hostFilterEl.value,
   );
-  if (json_cap == "") {
+  if (jsonCapture == "") {
     statusUpdate("Status: No JSON file loaded, please upload a file first");
     doError("No file loaded! Upload one of JSON or PCAP first!");
   } else {
     document.getElementById("prev-btn").style.display = "block";
     document.getElementById("next-btn").style.display = "block";
     document.getElementById("welcome").style.display = "none";
-    //hostPacketInfostPacketInfo(host_filter.value);
+    //hostPacketInfostPacketInfo(hostFilterEl.value);
     if (document.getElementById("host_filter").value == "") {
-      document.getElementById("host_filter").value = hosts[1];
+      document.getElementById("host_filter").value = hostsList[1];
     }
 
     handlePacketNavigation("first-load");
@@ -239,12 +239,12 @@ function initializeDataView() {
 // Navigation for previous packet
 document.getElementById("prev-btn").addEventListener("click", function () {
   statusUpdate("Status: Displaying capture analysis summary");
-  //highlightTab("prev-btn");
+  //highlightTab("prev-navAction");
   if (index > 1) {
     index--;
 
-    ip = packetsForHost[index]["Packet Info"]["IP"]["Source IP"];
-    curPacket = ip + ":" + packetsForHost[index]["Packet Info"]["Index"];
+    currentIp = packetsForHost[index]["Packet Info"]["IP"]["Source IP"];
+    currentPacketKey = currentIp + ":" + packetsForHost[index]["Packet Info"]["Index"];
     infoPanel(packetsForHost);
     popHexGrid(
       packetsForHost[index]["Packet Info"]["Raw data"]["Payload"][
@@ -260,8 +260,8 @@ document.getElementById("next-btn").addEventListener("click", function () {
   statusUpdate("Status: Displaying capture analysis summary");
   if (index < packetsForHost.length - 1) {
     index++;
-    ip = packetsForHost[index]["Packet Info"]["IP"]["Source IP"];
-    curPacket = ip + ":" + packetsForHost[index]["Packet Info"]["Index"];
+    currentIp = packetsForHost[index]["Packet Info"]["IP"]["Source IP"];
+    currentPacketKey = currentIp + ":" + packetsForHost[index]["Packet Info"]["Index"];
   }
   infoPanel(packetsForHost);
   popHexGrid(
@@ -274,51 +274,51 @@ document.getElementById("next-btn").addEventListener("click", function () {
 document
   .getElementById("selectBookmark")
   .addEventListener("click", function () {
-    host = document.getElementById("selectBookmark").value.split(":")[0];
+    bookmarkHost = document.getElementById("selectBookmark").value.split(":")[0];
     index = document.getElementById("selectBookmark").value.split(":")[1];
-    packetsForHost = packets["Host"][host];
-    bookmark["Host"] = host;
-    bookmark["Packet"] = index;
-    host_filter.value = host;
-    if (host == undefined || index == undefined) {
+    packetsForHost = capturedPackets["Host"][bookmarkHost];
+    activeBookmark["Host"] = bookmarkHost;
+    activeBookmark["Packet"] = index;
+    hostFilterEl.value = bookmarkHost;
+    if (bookmarkHost == undefined || index == undefined) {
       statusUpdate("Invalid bookmark selection, missing host or packet index");
       doError("Invalid bookmark selection, missing host or packet index!");
     } else {
-      document.getElementById("target_hosts").value = host;
+      document.getElementById("target_hosts").value = bookmarkHost;
     }
-    handlePacketNavigation("bookmark", bookmark);
+    handlePacketNavigation("bookmark", activeBookmark);
   });
 
 // Add current packet as a bookmark
 document.getElementById("setBookmark").addEventListener("click", function () {
-  if (!bookmarkList.includes(curPacket)) {
-    if (curPacket != undefined) {
-      bookmarkList.push(curPacket);
+  if (!bookmarkList.includes(currentPacketKey)) {
+    if (currentPacketKey != undefined) {
+      bookmarkList.push(currentPacketKey);
       document
         .getElementById("selectBookmark")
-        .appendChild(new Option(curPacket, curPacket));
+        .appendChild(new Option(currentPacketKey, currentPacketKey));
     }
   }
 });
 
-// funtion tht returns the total number of packets in the entire capture
+// function that returns the total number of packets in the entire capture
 function totalPacketCount() {
-  totalPackets = 0;
-  if (packets["Host"] != undefined) {
-    for (const host in packets["Host"]) {
-      totalPackets += packets["Host"][host].length;
+  totalCount = 0;
+  if (capturedPackets["Host"] != undefined) {
+    for (const host in capturedPackets["Host"]) {
+      totalCount += capturedPackets["Host"][host].length;
     }
   } else {
     return 0;
   }
-  return totalPackets;
+  return totalCount;
 }
 
 /**
- * Handles navigation between packets (next, prev, bookmark, first-load).
+ * Handles navigation between capturedPackets (next, prev, activeBookmark, first-load).
  * Updates UI and packet info accordingly.
  */
-function handlePacketNavigation(btn, bookmark) {
+function handlePacketNavigation(navAction, navBookmark) {
   document.getElementById("loading-container").style.display = "none";
   document.getElementById("summary_box").style.display = "none";
   document.getElementById("packetInfoPane").style.display = "block";
@@ -330,38 +330,38 @@ function handlePacketNavigation(btn, bookmark) {
   document.getElementById("total-packets").innerHTML =
     "Total Packets: " + totalPacketCount();
   index = 1;
-  if (btn === undefined) {
+  if (navAction === undefined) {
     handlePacketNavigation("first-load");
   }
-  ps = packets["Host"][host_filter.value];
-  if (btn === "filtered") {
-    ps = [];
+  packetSet = capturedPackets["Host"][hostFilterEl.value];
+  if (navAction === "filtered") {
+    packetSet = [];
     document.getElementById("filter-returned").textContent =
       "Filtered Packets: " + filteredPackets.length;
-    ps = filteredPackets;
+    packetSet = filteredPackets;
   }
 
-  if (btn === "bookmark") {
-    if (bookmark["Host"] == undefined || bookmark["Packet"] == undefined) {
+  if (navAction === "navBookmark") {
+    if (navBookmark["Host"] == undefined || navBookmark["Packet"] == undefined) {
       statusUpdate("Status: Invalid bookmark data, reverting to first packet");
       doError("Invalid bookmark data, missing host or packet index!");
       handlePacketNavigation("first-load");
     } else {
-      index = bookmark["Packet"] - 1;
+      index = navBookmark["Packet"] - 1;
 
       statusUpdate(
         "Navigating to bookmark: " +
-          bookmark["Host"] +
+          navBookmark["Host"] +
           " packet " +
-          bookmark["Packet"],
+          navBookmark["Packet"],
       );
     }
   }
-  if (!ps || ps.length === 0) {
+  if (!packetSet || packetSet.length === 0) {
     statusUpdate("Status: No packets");
     return;
   }
-  if (ps != undefined && (ps.length == 0 || ps[0] == undefined)) {
+  if (packetSet != undefined && (packetSet.length == 0 || packetSet[0] == undefined)) {
     statusUpdate("Status: No packet information found for this host");
     document.getElementById("main").innerHTML = "Please select a json file!";
   }
@@ -371,68 +371,67 @@ function handlePacketNavigation(btn, bookmark) {
   // packetsForHost[index] is an array of all packet info
   // for the current host, we want to be able to navigate
   // through it with next and prev buttons
-  if (ps == undefined || ps[index] == undefined) {
+  if (packetSet == undefined || packetSet[index] == undefined) {
     statusUpdate("Status: No packet information found for this host");
     doError("No packet information found for this host!");
     return;
   } else {
-    ip = ps[index]["Packet Info"]["IP"]["Source IP"];
-    curPacket = ip + ":" + ps[index]["Packet Info"]["Index"];
-    console.log(ps[index]);
-    hexPayload = ps[index]["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"];
-    infoPanel(ps);
+    currentIp = packetSet[index]["Packet Info"]["IP"]["Source IP"];
+    currentPacketKey = currentIp + ":" + packetSet[index]["Packet Info"]["Index"];
+    console.log(packetSet[index]);
+    hexPayload = packetSet[index]["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"];
+    infoPanel(packetSet);
     popHexGrid(hexPayload);
-    populateDataTypes(ps);
+    populateDataTypes(packetSet);
   }
 }
-
 function populateDataTypes(p) {
-  list = document.getElementById("types-list");
-  list.textContent = "";
-  mtype = document.getElementById("mime-type");
-  chars = document.getElementById("charset");
-  encode = document.getElementById("encoding");
-  language = document.getElementById("language");
-  encode.textContent = "";
-  language.textContent = "";
-  encoding = "";
-  lang = "";
-  // packetsForHost = packets["Host"][host_filter.value];
+  typesListEl = document.getElementById("types-list");
+  typesListEl.textContent = "";
+  mimeTypeEl = document.getElementById("mime-type");
+  charsetEl = document.getElementById("charset");
+  encodingEl = document.getElementById("encoding");
+  languageEl = document.getElementById("language");
+  encodingEl.textContent = "";
+  languageEl.textContent = "";
+  encodingText = "";
+  languageText = "";
+  // packetsForHost = capturedPackets["Host"][hostFilterEl.value];
   packetsForHost = p;
-  charset = JSON.parse(
+  charsetText = JSON.parse(
     JSON.stringify(
       packetsForHost[index]["Extra Info"]["Traits"]["Characters"]["Charset"],
     ),
   );
   if (
     packetsForHost[index]["Extra Info"]["Traits"]["Characters"]["Encoding]"] ==
-    "Unavailble for high entropy data"
+    "Unavailable for high entropy data"
   ) {
-    encoding = JSON.parse(
+    encodingText = JSON.parse(
       JSON.stringify(
         packetsForHost[index]["Extra Info"]["Traits"]["Characters"]["Encoding"],
       ),
     );
   } else {
-    encoding = JSON.stringify(
+    encodingText = JSON.stringify(
       packetsForHost[index]["Extra Info"]["Traits"]["Characters"]["Encoding"][
-        "encoding"
+        "encodingText"
       ],
     );
-    lang = JSON.stringify(
+    languageText = JSON.stringify(
       packetsForHost[index]["Extra Info"]["Traits"]["Characters"]["Encoding"][
-        "language"
+        "languageEl"
       ],
     );
   }
 
-  mimet = JSON.parse(
+  mimeTypeText = JSON.parse(
     JSON.stringify(packetsForHost[index]["Extra Info"]["MIME Type"]),
   );
-  items = JSON.parse(
+  dataItems = JSON.parse(
     JSON.stringify(packetsForHost[index]["Extra Info"]["Data Types"]),
   );
-  ssld = "";
+  sslDetails = "";
   if (
     packetsForHost[index]["Extra Info"]["Traits"]["Server Info"][
       "Encryption Data"
@@ -441,48 +440,48 @@ function populateDataTypes(p) {
       "Encryption Data"
     ] != undefined
   ) {
-    ssld =
+    sslDetails =
       packetsForHost[index]["Extra Info"]["Traits"]["Server Info"][
         "Encryption Data"
       ]["SSL Version"];
-    proto =
+    protoName =
       packetsForHost[index]["Extra Info"]["Traits"]["Network Data"][
         "Port Protcol"
       ];
-    items = [];
-    items.push(ssld + " encrypted stream");
-    items.push(proto + " protocol data");
+    dataItems = [];
+    dataItems.push(sslDetails + " encrypted stream");
+    dataItems.push(protoName + " protocol data");
   }
 
-  mtype.textContent = "MIME type: " + mimet;
-  charset = charset == "" ? "Unknown" : charset;
-  encoding = encoding == "" ? "Unknown" : encoding;
-  if (encoding !== undefined) {
-    encode.textContent = "Payload Encoding: " + encoding.replace(/"/g, "");
+  mimeTypeEl.textContent = "MIME type: " + mimeTypeText;
+  charsetText = charsetText == "" ? "Unknown" : charsetText;
+  encodingText = encodingText == "" ? "Unknown" : encodingText;
+  if (encodingText !== undefined) {
+    encodingEl.textContent = "Payload Encoding: " + encodingText.replace(/"/g, "");
   }
-  if (lang !== undefined) {
-    language.textContent = "Payload Language: " + lang.replace(/"/g, "");
+  if (languageText !== undefined) {
+    languageEl.textContent = "Payload Language: " + languageText.replace(/"/g, "");
   }
-  items.forEach((item) => {
+  dataItems.forEach((item) => {
     const listItem = document.createElement("li");
     listItem.textContent = item;
-    list.appendChild(listItem);
+    typesListEl.appendChild(listItem);
   });
 }
 // this takes a char code and returns true if it's
-// a printable ascii character, false otherwise
+// a printable ASCII character, false otherwise
 function isPrintable(charCode) {
   // ASCII printable: 32 (space) to 126 (~)
   return charCode >= 32 && charCode <= 126;
 }
 
-// this changes hex to ascii
+// this changes hex to ASCII
 function hexToAscii(hex) {
-  let ascii = "";
+  let decodedAscii = "";
   for (let i = 0; i < hex.length; i += 2) {
-    ascii += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    decodedAscii += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
   }
-  return ascii;
+  return decodedAscii;
 }
 
 // trunactes a string to a max length
@@ -507,23 +506,23 @@ function clearGridHighlights() {
  * Populates the hex grid display with the given hex string.
  */
 function popHexGrid(hex) {
-  asciibox = document.getElementById("payloadascii");
-  // swap it back to ascii for the fade box
-  ascii = hexToAscii(hex);
+  payloadAsciiBox = document.getElementById("payloadascii");
+  // swap it back to ASCII for the fade box
+  decodedAscii = hexToAscii(hex);
   document.getElementById("hexg").textContent = "";
-  const container = document.getElementById("hexg");
+  const hexGridContainer = document.getElementById("hexg");
   // this block populates the grid with boxes for hex codes
   for (x of hex.toUpperCase().match(/.{1,2}/g)) {
     const item = document.createElement("div");
     item.classList.add("griditem");
     item.textContent = x;
-    container.appendChild(item);
+    hexGridContainer.appendChild(item);
   }
   function getPrintableSequence(startIndex) {
     let result = "";
-    for (let i = startIndex; i < ascii.length; i++) {
-      if (!isPrintable(ascii.charCodeAt(i))) break;
-      result += String.fromCharCode(ascii.charCodeAt(i));
+    for (let i = startIndex; i < decodedAscii.length; i++) {
+      if (!isPrintable(decodedAscii.charCodeAt(i))) break;
+      result += String.fromCharCode(decodedAscii.charCodeAt(i));
     }
     return result;
   }
@@ -531,35 +530,35 @@ function popHexGrid(hex) {
   document.querySelectorAll(".griditem").forEach((item, idx) => {
     item.addEventListener("mouseenter", (e) => {
       //box fade in
-      offsetbox = document.getElementById("asciiOffset");
-      textbox = document.getElementById("asciiText");
-      asciibox.style.top = e.clientY + 18 + "px";
-      asciibox.style.left = e.clientX + 18 + "px";
-      asciibox.classList.add("visible");
-      textbox.innerHTML = "";
+      hexOffsetDisplay = document.getElementById("asciiOffset");
+      asciiTextBox = document.getElementById("asciiText");
+      payloadAsciiBox.style.top = e.clientY + 18 + "px";
+      payloadAsciiBox.style.left = e.clientX + 18 + "px";
+      payloadAsciiBox.classList.add("visible");
+      asciiTextBox.innerHTML = "";
       const printable = getPrintableSequence(idx);
       window.currentPrintableSequence = printable;
-      // adds only consecutive printable characters to the ascii box
-      textbox.textContent += truncate(printable, 32);
+      // adds only consecutive printable characters to the decodedAscii box
+      asciiTextBox.textContent += truncate(printable, 32);
       for (i = 0; i < truncate(printable, 32).length; i++) {
-        highlightedHex = document.querySelectorAll(".griditem")[idx + i];
-        highlightedHex.classList.add("highlight");
+        highlightedCell = document.querySelectorAll(".griditem")[idx + i];
+        highlightedCell.classList.add("highlight");
       }
-      hexlen = parseInt(truncate(printable, 32).length, 10)
+      hexLen = parseInt(truncate(printable, 32).length, 10)
         .toString(16)
         .padStart(2, "0")
         .toUpperCase();
-      hexoffset = idx.toString(16).padStart(4, "0").toUpperCase();
+      hexOffset = idx.toString(16).padStart(4, "0").toUpperCase();
       if (printable.length == 0) {
-        textbox.textContent = "0x" + item.textContent;
+        asciiTextBox.textContent = "0x" + item.textContent;
       }
-      offsetbox.textContent = "0x" + hexoffset + ":" + hexlen;
+      hexOffsetDisplay.textContent = "0x" + hexOffset + ":" + hexLen;
     });
   });
   // this fades the box back out and calls the grid clear func
   document.querySelectorAll(".griditem").forEach((item) => {
     item.addEventListener("mouseleave", () => {
-      asciibox.classList.remove("visible");
+      payloadAsciiBox.classList.remove("visible");
       clearGridHighlights();
     });
   });
@@ -594,82 +593,82 @@ function createTable(data, headers, containerId) {
 // but it works for now, it takes the current packet info and
 // populates the info panel with it, including the side tables
 // and the main info table, also updates the timestamp and
-// ip:port info at the top
+// currentIp:port info at the top
 function infoPanel(pk) {
-  infoPane = document.getElementById("packetInfoPane");
+  infoPaneEl = document.getElementById("packetInfoPane");
   document.getElementById("rightside").style.display = "block";
   document.getElementById("leftside").style.display = "block";
-  infoPaneOrig = infoPane.innerHTML;
-  infoPane.style.display = "block";
+  infoPaneOrigHtml = infoPaneEl.innerHTML;
+  infoPaneEl.style.display = "block";
   p = pk[index];
-  pinfo = p["Packet Info"];
-  einfo = p["Extra Info"];
-  ts = pinfo["Packet Timestamp"];
-  ipchksum = pinfo["IP"]["IP Checksum"];
-  tcpchksum = pinfo["TCP"]["TCP checksum"];
-  sourcepair = pinfo["IP"]["Source IP"] + ":" + pinfo["TCP"]["Source port"];
-  destpair =
-    pinfo["IP"]["Destination IP"] + ":" + pinfo["TCP"]["Destination port"];
-  macsrc = pinfo["Ethernet Frame"]["MAC Source"];
-  macdest = pinfo["Ethernet Frame"]["MAC Destination"];
-  macsrcvendor = pinfo["Ethernet Frame"]["MAC Source Vendor"];
-  macdestvendor = pinfo["Ethernet Frame"]["MAC Destination Vendor"];
-  flags = pinfo["TCP"]["TCP Flag Data"]["Flags"];
-  iplayrelen = pinfo["IP"]["IP layer length"];
-  tcplayrelen = pinfo["TCP"]["TCP layer length"];
-  wirelen = pinfo["TCP"]["Wire length"];
-  payloadlen = pinfo["Raw data"]["Payload Length"];
-  sslcert = "";
-  sslver = "";
-  sslalgos = "";
+  packetInfoData = p["Packet Info"];
+  extraInfoData = p["Extra Info"];
+  packetTimestamp = packetInfoData["Packet Timestamp"];
+  ipChecksum = packetInfoData["IP"]["IP Checksum"];
+  tcpChecksum = packetInfoData["TCP"]["TCP checksum"];
+  sourceIpPort = packetInfoData["IP"]["Source IP"] + ":" + packetInfoData["TCP"]["Source port"];
+  destIpPort =
+    packetInfoData["IP"]["Destination IP"] + ":" + packetInfoData["TCP"]["Destination port"];
+  srcMac = packetInfoData["Ethernet Frame"]["MAC Source"];
+  dstMac = packetInfoData["Ethernet Frame"]["MAC Destination"];
+  srcMacVendor = packetInfoData["Ethernet Frame"]["MAC Source Vendor"];
+  dstMacVendor = packetInfoData["Ethernet Frame"]["MAC Destination Vendor"];
+  tcpFlags = packetInfoData["TCP"]["TCP Flag Data"]["Flags"];
+  ipLayerLen = packetInfoData["IP"]["IP layer length"];
+  tcpLayerLen = packetInfoData["TCP"]["TCP layer length"];
+  wireLen = packetInfoData["TCP"]["Wire length"];
+  payloadLen = packetInfoData["Raw data"]["Payload Length"];
+  sslCert = "";
+  sslVersion = "";
+  sslAlgos = "";
   if (
-    einfo["Traits"]["Server Info"]["Encryption Data"] == "N/A" ||
-    einfo["Traits"]["Server Info"].hasOwnProperty("Encryption Data") == false
+    extraInfoData["Traits"]["Server Info"]["Encryption Data"] == "N/A" ||
+    extraInfoData["Traits"]["Server Info"].hasOwnProperty("Encryption Data") == false
   ) {
-    sslcert = "Not encrypted";
-    sslver = "Not encrypted";
-    sslalgos = "";
+    sslCert = "Not encrypted";
+    sslVersion = "Not encrypted";
+    sslAlgos = "";
   } else {
-    sslcert =
-      einfo["Traits"]["Server Info"]["Encryption Data"]["SSL Cert"] ??
+    sslCert =
+      extraInfoData["Traits"]["Server Info"]["Encryption Data"]["SSL Cert"] ??
       "Not available";
-    sslver =
-      einfo["Traits"]["Server Info"]["Encryption Data"]["SSL Version"] ??
+    sslVersion =
+      extraInfoData["Traits"]["Server Info"]["Encryption Data"]["SSL Version"] ??
       "Not available";
-    sslalgos =
-      einfo["Traits"]["Server Info"]["Encryption Data"]["Encrypted With"].join(
+    sslAlgos =
+      extraInfoData["Traits"]["Server Info"]["Encryption Data"]["Encrypted With"].join(
         "<br>Extra algo info: ",
       ) ?? "No algorithm information available";
   }
-  decompressed = einfo["Decompressed"]["Decompressed"];
-  function removeIPs(list) {
+  isDecompressed = extraInfoData["Decompressed"]["Decompressed"];
+  function removeIPs(ipList) {
     const ipRegex =
       /\b((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\b/;
-    return list.filter((item) => !ipRegex.test(item));
+    return ipList.filter((item) => !ipRegex.test(item));
   }
 
-  if (einfo["Traits"]["Network Data"]["Hostnames"]["Hostnames"] == undefined) {
-    dnshosts = "localhost";
+  if (extraInfoData["Traits"]["Network Data"]["Hostnames"]["Hostnames"] == undefined) {
+    dnsHostsHtml = "localhost";
   } else {
-    dnshosts =
+    dnsHostsHtml =
       "localhost<br>" +
-      einfo["Traits"]["Network Data"]["Hostnames"]["Hostnames"].join("<br>");
+      extraInfoData["Traits"]["Network Data"]["Hostnames"]["Hostnames"].join("<br>");
   }
-  newdnshosts = removeIPs(dnshosts.split("<br>")).join("<br>");
-  dnshosts = newdnshosts == "" ? "localhost" : newdnshosts;
+  filteredDnsHosts = removeIPs(dnsHostsHtml.split("<br>")).join("<br>");
+  dnsHostsHtml = filteredDnsHosts == "" ? "localhost" : filteredDnsHosts;
 
-  pagetitle = einfo["Traits"]["Server Info"]["Page Title"];
-  encrypted = einfo["Traits"]["Server Info"]["Encrypted"];
-  proto = einfo["Traits"]["Network Data"]["Port Protcol"];
-  protod = einfo["Traits"]["Network Data"]["Port Description"];
-  snetclass = einfo["Traits"]["Network Data"]["Source IP"]["Class"];
-  dnetclass = einfo["Traits"]["Network Data"]["Destination IP"]["Class"];
+  pageTitle = extraInfoData["Traits"]["Server Info"]["Page Title"];
+  isEncrypted = extraInfoData["Traits"]["Server Info"]["Encrypted"];
+  protoName = extraInfoData["Traits"]["Network Data"]["Port Protcol"];
+  protoDescription = extraInfoData["Traits"]["Network Data"]["Port Description"];
+  srcNetClass = extraInfoData["Traits"]["Network Data"]["Source IP"]["Class"];
+  dstNetClass = extraInfoData["Traits"]["Network Data"]["Destination IP"]["Class"];
   document.getElementById("sidedatatable").textContent = "";
   document.getElementById("protoInfoSrc").textContent = "Source";
   document.getElementById("protoInfoDest").textContent = "Destination";
   document.getElementById("comp").textContent = "Unknown";
-  if (decompressed == false || decompressed == undefined) {
-    types = einfo["Data Types"];
+  if (isDecompressed == false || isDecompressed == undefined) {
+    types = extraInfoData["Data Types"];
 
     types.forEach((type) => {
       if (type.includes("Zlib") || type.includes("zlib")) {
@@ -685,75 +684,75 @@ function infoPanel(pk) {
       }
     });
   }
-  if (decompressed == true && decompressed == undefined) {
+  if (isDecompressed == true && isDecompressed == undefined) {
     document.getElementById("comp").textContent =
       "Not regonized as compressed data";
   }
-  //  wirelen
-  if (pagetitle == undefined || pagetitle == "N/A") {
+  //  wireLen
+  if (pageTitle == undefined || pageTitle == "N/A") {
     document.getElementById("website").textContent =
       "Not available for this server";
   } else {
-    document.getElementById("website").textContent = pagetitle;
+    document.getElementById("website").textContent = pageTitle;
   }
-  //document.getElementById("crypt").textContent = encrypted;
-  const dnsCollapsedList = dnshosts.replace(/(<br\s*\/?>\s*)+/gi, "<br>");
+  //document.getElementById("crypt").textContent = isEncrypted;
+  const dnsCollapsedList = dnsHostsHtml.replace(/(<br\s*\/?>\s*)+/gi, "<br>");
   document.getElementById("dns").innerHTML = dnsCollapsedList;
-  if (sslalgos == undefined || sslalgos == "") {
-    //document.getElementById("crypt").innerHTML = sslcert
-    //  ? "Encrypted with: " + sslver + "<br>" + sslalgos
+  if (sslAlgos == undefined || sslAlgos == "") {
+    //document.getElementById("crypt").innerHTML = sslCert
+    //  ? "Encrypted with: " + sslVersion + "<br>" + sslAlgos
     //  : "Not Encrypted";
     document.getElementById("crypt").innerHTML = "Not encrypted";
   } else {
     document.getElementById("crypt").innerHTML =
-      "Encrypted with: " + sslver + "<br>" + sslalgos;
+      "Encrypted with: " + sslVersion + "<br>" + sslAlgos;
   }
 
-  if (proto == "Unknown") {
+  if (protoName == "Unknown") {
     document.getElementById("protocols").innerHTML = "Unknown";
   } else {
     document.getElementById("protocols").innerHTML =
-      "Protocol Name: " + proto + "<br>Protocol Description: " + protod;
+      "Protocol Name: " + protoName + "<br>Protocol Description: " + protoDescription;
   }
-  const chkd = [
-    { name: "IP Checksum", value: ipchksum },
-    { name: "TCP Checksum", value: tcpchksum },
-    { name: "Flags", value: flags },
-    { name: "IP Length", value: iplayrelen },
-    { name: "TCP Length", value: tcplayrelen },
-    { name: "Wire Length", value: wirelen },
-    { name: "Payload Length", value: payloadlen },
+  const checksumData = [
+    { name: "IP Checksum", value: ipChecksum },
+    { name: "TCP Checksum", value: tcpChecksum },
+    { name: "Flags", value: tcpFlags },
+    { name: "IP Length", value: ipLayerLen },
+    { name: "TCP Length", value: tcpLayerLen },
+    { name: "Wire Length", value: wireLen },
+    { name: "Payload Length", value: payloadLen },
   ];
-  const chkh = ["Protocol data", "Details"];
-  createTable(chkd, chkh, "sidedatatable");
-  const iph = ["Packet", "Data"];
-  const ipds = [
-    { name: "IP:Port", value: sourcepair },
-    { name: "MAC", value: macsrc },
-    { name: "MAC Vendor", value: macsrcvendor },
-    { name: "Network Class", value: snetclass },
+  const checksumHeaders = ["Protocol data", "Details"];
+  createTable(checksumData, checksumHeaders, "sidedatatable");
+  const ipTableHeaders = ["Packet", "Data"];
+  const srcIpData = [
+    { name: "IP:Port", value: sourceIpPort },
+    { name: "MAC", value: srcMac },
+    { name: "MAC Vendor", value: srcMacVendor },
+    { name: "Network Class", value: srcNetClass },
   ];
-  createTable(ipds, iph, "protoInfoSrc");
-  const ipdd = [
-    { name: "IP:Port", value: destpair },
-    { name: "MAC", value: macdest },
-    { name: "MAC Vendor", value: macdestvendor },
-    { name: "Network Class", value: dnetclass },
+  createTable(srcIpData, ipTableHeaders, "protoInfoSrc");
+  const dstIpData = [
+    { name: "IP:Port", value: destIpPort },
+    { name: "MAC", value: dstMac },
+    { name: "MAC Vendor", value: dstMacVendor },
+    { name: "Network Class", value: dstNetClass },
   ];
-  createTable(ipdd, iph, "protoInfoDest");
-  entropy = einfo["Traits"]["Shannon Entropy"];
-  document.getElementById("timestamp").textContent = "Timestamp " + ts;
-  //document.getElementById("ip2ip").textContent = sourcepair + " ~ " + destpair;
+  createTable(dstIpData, ipTableHeaders, "protoInfoDest");
+  entropyValue = extraInfoData["Traits"]["Shannon Entropy"];
+  document.getElementById("timestamp").textContent = "Timestamp " + packetTimestamp;
+  //document.getElementById("ip2ip").textContent = sourceIpPort + " ~ " + destIpPort;
   document.getElementById("sideloctable").textContent = "";
   document.getElementById("entropybox").textContent =
-    "\u096F " + entropy.toFixed(2);
-  ebox = document.getElementById("entropybox");
-  if (entropy >= 6.8) {
-    ebox.className = "high";
-  } else if (entropy >= 4.5) {
-    ebox.className = "med";
+    "\u096F " + entropyValue.toFixed(2);
+  entropyBoxEl = document.getElementById("entropybox");
+  if (entropyValue >= 6.8) {
+    entropyBoxEl.className = "high";
+  } else if (entropyValue >= 4.5) {
+    entropyBoxEl.className = "med";
   } else {
-    ebox.className = "low";
+    entropyBoxEl.className = "low";
   }
   const secondColumnCells = document.querySelectorAll(
     "table tr td:nth-child(1), table tr th:nth-child(1)",
@@ -762,64 +761,64 @@ function infoPanel(pk) {
     cell.style.width = "23%";
   });
   if (
-    einfo["Traits"]["Network Data"]["Source IP"]["Location"]["City"] ==
+    extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"]["City"] ==
     undefined
   ) {
-    const nodata = [{ name: "Location", value: "Localnet" }];
-    const nodatah = ["Source Host", "Location"];
-    createTable(nodata, nodatah, "sideloctable");
+    const localnetData = [{ name: "Location", value: "Localnet" }];
+    const localnetHeaders = ["Source Host", "Location"];
+    createTable(localnetData, localnetHeaders, "sideloctable");
   } else {
-    const locds = [
+    const srcLocData = [
       {
         name: "Country",
         value:
-          einfo["Traits"]["Network Data"]["Source IP"]["Location"]["Country"],
+          extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"]["Country"],
       },
       {
         name: "City",
-        value: einfo["Traits"]["Network Data"]["Source IP"]["Location"]["City"],
+        value: extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"]["City"],
       },
       {
         name: "Timezone",
         value:
-          einfo["Traits"]["Network Data"]["Source IP"]["Location"]["Time Zone"],
+          extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"]["Time Zone"],
       },
     ];
-    const lochs = ["Source Host", "Location"];
-    createTable(locds, lochs, "sideloctable");
+    const srcLocHeaders = ["Source Host", "Location"];
+    createTable(srcLocData, srcLocHeaders, "sideloctable");
   }
   if (
-    einfo["Traits"]["Network Data"]["Destination IP"]["Location"]["City"] ==
+    extraInfoData["Traits"]["Network Data"]["Destination IP"]["Location"]["City"] ==
     undefined
   ) {
-    const nodata = [{ name: "Location", value: "Localnet" }];
-    const nodatah = ["Destination Host", "Location"];
-    createTable(nodata, nodatah, "sideloctable");
+    const localnetData = [{ name: "Location", value: "Localnet" }];
+    const localnetHeaders = ["Destination Host", "Location"];
+    createTable(localnetData, localnetHeaders, "sideloctable");
   } else {
-    const locdd = [
+    const dstLocData = [
       {
         name: "Country",
         value:
-          einfo["Traits"]["Network Data"]["Destination IP"]["Location"][
+          extraInfoData["Traits"]["Network Data"]["Destination IP"]["Location"][
             "Country"
           ],
       },
       {
         name: "City",
         value:
-          einfo["Traits"]["Network Data"]["Destination IP"]["Location"]["City"],
+          extraInfoData["Traits"]["Network Data"]["Destination IP"]["Location"]["City"],
       },
       {
         name: "Timezone",
 
         value:
-          einfo["Traits"]["Network Data"]["Destination IP"]["Location"][
+          extraInfoData["Traits"]["Network Data"]["Destination IP"]["Location"][
             "Time Zone"
           ],
       },
     ];
-    const lochd = ["Destination Host", "Location"];
-    createTable(locdd, lochd, "sideloctable");
+    const dstLocHeaders = ["Destination Host", "Location"];
+    createTable(dstLocData, dstLocHeaders, "sideloctable");
   }
 }
 
@@ -835,9 +834,9 @@ window.jsonapi.onJsonData((jsonData) => {
     new File([jsonData], "capture.json", { type: "application/json" }),
   );
   document.getElementById("loading-container").style.display = "none";
-  retTime = performance.now();
+  loadEndTime = performance.now();
   document.getElementById("load-time").textContent =
-    "Load time: " + ((retTime - startTime) / 1000).toFixed(2) + " seconds";
+    "Load time: " + ((loadEndTime - startTime) / 1000).toFixed(2) + " seconds";
 });
 
 // here we create the backend process and hook it to the handler
@@ -850,22 +849,22 @@ function runSnitch(file) {
   document.getElementById("error-container").style.display = "none";
   startTime = performance.now();
   const useLLM = document.getElementById("use-llm").checked;
-  const ret = window.snitchapi
+  window.snitchapi
     .runBackendCommand(file, useLLM)
     .then((output) => {});
 }
 
 function doError(message) {
   console.error("Error from backend:", message);
-  loadcontainer = document.getElementById("loading-container");
-  econtainer = document.getElementById("error-container");
+  loadingContainerEl = document.getElementById("loading-container");
+  errorContainerEl = document.getElementById("error-container");
   document.getElementById("summary_content").textContent = "";
-  loadcontainer.style.display = "none";
-  econtainer.style.display = "block";
-  econtainer.textContent = message;
-  econtainer.addEventListener("click", () => {
-    econtainer.style.display = "none";
-    loadcontainer.style.display = "none";
+  loadingContainerEl.style.display = "none";
+  errorContainerEl.style.display = "block";
+  errorContainerEl.textContent = message;
+  errorContainerEl.addEventListener("click", () => {
+    errorContainerEl.style.display = "none";
+    loadingContainerEl.style.display = "none";
   });
 }
 
@@ -898,8 +897,8 @@ document
   .getElementById("filterStr")
   .addEventListener("keydown", function (event) {
     if (event.key === "Enter") {
-      filterBy = document.getElementById("filterStr").value;
-      filteredPackets = filterPackets(packets, filterBy);
+      filterQuery = document.getElementById("filterStr").value;
+      filteredPackets = filterPackets(capturedPackets, filterQuery);
 
       if (filteredPackets == undefined || filteredPackets.length == 0) {
         hideAllData();
