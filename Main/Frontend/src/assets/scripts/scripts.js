@@ -341,7 +341,7 @@ function handlePacketNavigation(navAction, navBookmark) {
     packetSet = filteredPackets;
   }
 
-  if (navAction === "navBookmark") {
+  if (navAction === "bookmark") {
     if (navBookmark["Host"] == undefined || navBookmark["Packet"] == undefined) {
       statusUpdate("Status: Invalid bookmark data, reverting to first packet");
       doError("Invalid bookmark data, missing host or packet index!");
@@ -415,12 +415,12 @@ function populateDataTypes(p) {
   } else {
     encodingText = JSON.stringify(
       packetsForHost[index]["Extra Info"]["Traits"]["Characters"]["Encoding"][
-        "encodingText"
+        "encoding"
       ],
     );
     languageText = JSON.stringify(
       packetsForHost[index]["Extra Info"]["Traits"]["Characters"]["Encoding"][
-        "languageEl"
+        "language"
       ],
     );
   }

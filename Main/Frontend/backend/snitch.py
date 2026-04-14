@@ -778,7 +778,7 @@ def info_distiller(batchSize):
     """
     lines: iterable of input data
     worker_fn: function that takes a list (batch) and processes it
-    batchSize: num:withber of items per batch
+    batchSize: number of items per batch
     maxWorkers: number of threads
     """
     print("Starting LLM calls...")
@@ -887,7 +887,7 @@ This software analyzes pcap network captures. It extracts mostly TCP packet data
 writes testcases, and gathers extra information such as MIME types, entropy, geoip,
 network class, banners, and more. Optionally, it performs active reconnaissance
 to enrich the output with additional network and server information.  A full capture
-summary is generated using a large languuage model to provide insights into the data.
+summary is generated using a large language model to provide insights into the data.
         Outputs:
           - Testcase files: outputDirPath/<dest_port>/pcap.data_packet.<index>.dat
           - Testcase info: outputDirPath/<dest_port>/pcap.info_packet.<index>.json
@@ -1130,10 +1130,10 @@ finally:
                 + joinedSummaries,
             )
             finalSummary = finalLlmResponse["response"]
-            with open(outputDir + "/finalSummary.txt", "w", encoding="utf-8") as summaryFile:
+            with open(outputDir + "/final_summary.txt", "w", encoding="utf-8") as summaryFile:
                 summaryFile.write(finalSummary)
             print("\n" + finalSummary)
-            print("\nFinal summary saved to: " + outputDir + "/finalSummary.txt")
+            print("\nFinal summary saved to: " + outputDir + "/final_summary.txt")
         except Exception as e:
             print("\nLLM Final summary generation error: " + str(e))
 
