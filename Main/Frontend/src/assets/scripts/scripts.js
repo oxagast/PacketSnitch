@@ -56,7 +56,7 @@ document
     });
   });
 
-function isValidJSON(str) {
+function isValidJson(str) {
   try {
     JSON.parse(str);
     return true;
@@ -90,7 +90,7 @@ function processFile(file) {
   const reader = new FileReader();
   reader.onload = (event) => {
     const mainPanel = document.getElementById("main");
-    if (isValidJSON(event.target.result) == false) {
+    if (isValidJson(event.target.result) == false) {
       console.log("Invalid JSON file");
       doError("Invalid JSON file, please upload a valid JSON capture!");
       fileLoaded(false);
@@ -641,7 +641,7 @@ function infoPanel(pk) {
       ) ?? "No algorithm information available";
   }
   isDecompressed = extraInfoData["Decompressed"]["Decompressed"];
-  function removeIPs(ipList) {
+  function removeIps(ipList) {
     const ipRegex =
       /\b((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\b/;
     return ipList.filter((item) => !ipRegex.test(item));
@@ -654,7 +654,7 @@ function infoPanel(pk) {
       "localhost<br>" +
       extraInfoData["Traits"]["Network Data"]["Hostnames"]["Hostnames"].join("<br>");
   }
-  filteredDnsHosts = removeIPs(dnsHostsHtml.split("<br>")).join("<br>");
+  filteredDnsHosts = removeIps(dnsHostsHtml.split("<br>")).join("<br>");
   dnsHostsHtml = filteredDnsHosts == "" ? "localhost" : filteredDnsHosts;
 
   pageTitle = extraInfoData["Traits"]["Server Info"]["Page Title"];
