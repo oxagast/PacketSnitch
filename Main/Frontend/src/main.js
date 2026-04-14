@@ -11,21 +11,6 @@ let isBackendLoaded = false;
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
-ipcMain.handle("save-json", async (event, jsonData) => {
-  const { canceled, filePath } = await dialog.showSaveDialog({
-    title: "Save JSON Capture",
-    defaultPath: "capture.json",
-    filters: [{ name: "JSON Files", extensions: ["json"] }],
-  });
-  if (canceled || !filePath) return { success: false };
-  try {
-    await fs.promises.writeFile(filePath, jsonData, "utf8");
-    return { success: true };
-  } catch (fileError) {
-    console.error("Error saving JSON file:", fileError);
-    return { success: false, error: fileError.message };
-  }
-});
 
 ipcMain.handle("file-size", async () => {
   try {
