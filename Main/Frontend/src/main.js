@@ -115,6 +115,11 @@ app.whenReady().then(() => {
       if (canceled) return null;
       console.log("Accepted pcapng.. Checking for json existence...");
       isBackendLoaded = true;
+      isFileSent = false; // Reset so new JSON data will be sent for each load
+      // Remove stale hosts.json so the interval doesn't send data from a previous run
+      if (fs.existsSync(hostsJsonFilePath)) {
+        fs.unlinkSync(hostsJsonFilePath);
+      }
       setInterval(() => {
         if (!isFileSent && fs.existsSync(hostsJsonFilePath)) {
           // here we read the file in
