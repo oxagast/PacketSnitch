@@ -30,5 +30,5 @@ contextBridge.exposeInMainWorld("fsize", {
 });
 
 contextBridge.exposeInMainWorld("saveapi", {
-  saveJson: (jsonData) => ipcRenderer.invoke("save-json", jsonData),
+  saveJson: () => ipcRenderer.invoke("save-json"),
 });

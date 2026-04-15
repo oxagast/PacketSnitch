@@ -134,7 +134,7 @@ function checkOllama() {
   });
 }
 
-ipcMain.handle("save-json", async (event, jsonData) => {
+ipcMain.handle("save-json", async () => {
   const { canceled, filePath } = await dialog.showSaveDialog({
     title: "Save JSON Capture",
     defaultPath: "capture.json",
@@ -145,7 +145,7 @@ ipcMain.handle("save-json", async (event, jsonData) => {
   return new Promise((resolve) => {
     const workerPath = path.join(__dirname, "save-worker.js");
     const worker = new Worker(workerPath, {
-      workerData: { filePath, jsonData },
+      workerData: { srcPath: hostsJsonFilePath, destPath: filePath },
     });
     worker.on("message", (result) => {
       worker.terminate();

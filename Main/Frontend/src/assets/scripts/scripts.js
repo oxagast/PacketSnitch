@@ -818,7 +818,7 @@ document.getElementById("save-json-btn").addEventListener("click", function () {
     statusUpdate("Status: No data loaded to save");
     return;
   }
-  window.saveapi.saveJson(jsonCapture).then((result) => {
+  window.saveapi.saveJson().then((result) => {
     if (result.canceled) {
       statusUpdate("Status: Save cancelled");
     } else if (result.success) {
