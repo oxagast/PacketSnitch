@@ -238,7 +238,6 @@ document.getElementById("prev-btn").addEventListener("click", function () {
     currentPacketKey =
       currentIp + ":" + packetsForHost[index]["Packet Info"]["Index"];
     infoPanel(packetsForHost);
-    const proto = packetsForHost[index]["Packet Info"]["Protocol"] || "TCP";
     popHexGrid(
       packetsForHost[index]["Packet Info"]["Raw data"]["Payload"][
         "Hex Encoded"
@@ -378,7 +377,6 @@ function handlePacketNavigation(navAction, navBookmark) {
     doError("No packet information found for this host!");
     return;
   } else {
-    const proto = packetSet[index]["Packet Info"]["Protocol"] || "TCP";
     currentIp = packetSet[index]["Packet Info"]["IP"]["Source IP"];
     currentPacketKey =
       currentIp + ":" + packetSet[index]["Packet Info"]["Index"];
