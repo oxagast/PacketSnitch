@@ -69,7 +69,9 @@ function fileLoaded(isLoaded) {
   if (isLoaded) {
     loadEndTime = performance.now();
     document.getElementById("load-time").textContent =
-      "Load time: " + ((loadEndTime - startTime) / 1000).toFixed(2) + " seconds";
+      "Load time: " +
+      ((loadEndTime - startTime) / 1000).toFixed(2) +
+      " seconds";
     document.getElementById("filterStr").disabled = false;
     document.getElementById("tab-btns").style.opacity = "1";
     document.getElementById("prev-btn").style.opacity = "1";
@@ -181,7 +183,6 @@ document.getElementById("summary-btn").addEventListener("click", function () {
   writeSummary();
 });
 
-
 // Displays the summary section from the loaded JSON.
 
 function writeSummary() {
@@ -234,7 +235,8 @@ document.getElementById("prev-btn").addEventListener("click", function () {
     index--;
 
     currentIp = packetsForHost[index]["Packet Info"]["IP"]["Source IP"];
-    currentPacketKey = currentIp + ":" + packetsForHost[index]["Packet Info"]["Index"];
+    currentPacketKey =
+      currentIp + ":" + packetsForHost[index]["Packet Info"]["Index"];
     infoPanel(packetsForHost);
     popHexGrid(
       packetsForHost[index]["Packet Info"]["Raw data"]["Payload"][
@@ -251,7 +253,8 @@ document.getElementById("next-btn").addEventListener("click", function () {
   if (index < packetsForHost.length - 1) {
     index++;
     currentIp = packetsForHost[index]["Packet Info"]["IP"]["Source IP"];
-    currentPacketKey = currentIp + ":" + packetsForHost[index]["Packet Info"]["Index"];
+    currentPacketKey =
+      currentIp + ":" + packetsForHost[index]["Packet Info"]["Index"];
   }
   infoPanel(packetsForHost);
   popHexGrid(
@@ -264,7 +267,9 @@ document.getElementById("next-btn").addEventListener("click", function () {
 document
   .getElementById("selectBookmark")
   .addEventListener("click", function () {
-    bookmarkHost = document.getElementById("selectBookmark").value.split(":")[0];
+    bookmarkHost = document
+      .getElementById("selectBookmark")
+      .value.split(":")[0];
     index = document.getElementById("selectBookmark").value.split(":")[1];
     packetsForHost = capturedPackets["Host"][bookmarkHost];
     activeBookmark["Host"] = bookmarkHost;
@@ -332,7 +337,10 @@ function handlePacketNavigation(navAction, navBookmark) {
   }
 
   if (navAction === "bookmark") {
-    if (navBookmark["Host"] == undefined || navBookmark["Packet"] == undefined) {
+    if (
+      navBookmark["Host"] == undefined ||
+      navBookmark["Packet"] == undefined
+    ) {
       statusUpdate("Status: Invalid bookmark data, reverting to first packet");
       doError("Invalid bookmark data, missing host or packet index!");
       handlePacketNavigation("first-load");
@@ -351,7 +359,10 @@ function handlePacketNavigation(navAction, navBookmark) {
     statusUpdate("Status: No packets");
     return;
   }
-  if (packetSet != undefined && (packetSet.length == 0 || packetSet[0] == undefined)) {
+  if (
+    packetSet != undefined &&
+    (packetSet.length == 0 || packetSet[0] == undefined)
+  ) {
     statusUpdate("Status: No packet information found for this host");
     document.getElementById("main").innerHTML = "Please select a json file!";
   }
@@ -367,9 +378,11 @@ function handlePacketNavigation(navAction, navBookmark) {
     return;
   } else {
     currentIp = packetSet[index]["Packet Info"]["IP"]["Source IP"];
-    currentPacketKey = currentIp + ":" + packetSet[index]["Packet Info"]["Index"];
+    currentPacketKey =
+      currentIp + ":" + packetSet[index]["Packet Info"]["Index"];
     console.log(packetSet[index]);
-    hexPayload = packetSet[index]["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"];
+    hexPayload =
+      packetSet[index]["Packet Info"]["Raw data"]["Payload"]["Hex Encoded"];
     infoPanel(packetSet);
     popHexGrid(hexPayload);
     populateDataTypes(packetSet);
@@ -447,10 +460,12 @@ function populateDataTypes(p) {
   charsetText = charsetText == "" ? "Unknown" : charsetText;
   encodingText = encodingText == "" ? "Unknown" : encodingText;
   if (encodingText !== undefined) {
-    encodingEl.textContent = "Payload Encoding: " + encodingText.replace(/"/g, "");
+    encodingEl.textContent =
+      "Payload Encoding: " + encodingText.replace(/"/g, "");
   }
   if (languageText !== undefined) {
-    languageEl.textContent = "Payload Language: " + languageText.replace(/"/g, "");
+    languageEl.textContent =
+      "Payload Language: " + languageText.replace(/"/g, "");
   }
   dataItems.forEach((item) => {
     const listItem = document.createElement("li");
@@ -596,9 +611,14 @@ function infoPanel(pk) {
   packetTimestamp = packetInfoData["Packet Timestamp"];
   ipChecksum = packetInfoData["IP"]["IP Checksum"];
   tcpChecksum = packetInfoData["TCP"]["TCP checksum"];
-  sourceIpPort = packetInfoData["IP"]["Source IP"] + ":" + packetInfoData["TCP"]["Source port"];
+  sourceIpPort =
+    packetInfoData["IP"]["Source IP"] +
+    ":" +
+    packetInfoData["TCP"]["Source port"];
   destIpPort =
-    packetInfoData["IP"]["Destination IP"] + ":" + packetInfoData["TCP"]["Destination port"];
+    packetInfoData["IP"]["Destination IP"] +
+    ":" +
+    packetInfoData["TCP"]["Destination port"];
   srcMac = packetInfoData["Ethernet Frame"]["MAC Source"];
   dstMac = packetInfoData["Ethernet Frame"]["MAC Destination"];
   srcMacVendor = packetInfoData["Ethernet Frame"]["MAC Source Vendor"];
@@ -613,7 +633,8 @@ function infoPanel(pk) {
   sslAlgos = "";
   if (
     extraInfoData["Traits"]["Server Info"]["Encryption Data"] == "N/A" ||
-    extraInfoData["Traits"]["Server Info"].hasOwnProperty("Encryption Data") == false
+    extraInfoData["Traits"]["Server Info"].hasOwnProperty("Encryption Data") ==
+      false
   ) {
     sslCert = "Not encrypted";
     sslVersion = "Not encrypted";
@@ -623,12 +644,13 @@ function infoPanel(pk) {
       extraInfoData["Traits"]["Server Info"]["Encryption Data"]["SSL Cert"] ??
       "Not available";
     sslVersion =
-      extraInfoData["Traits"]["Server Info"]["Encryption Data"]["SSL Version"] ??
-      "Not available";
+      extraInfoData["Traits"]["Server Info"]["Encryption Data"][
+        "SSL Version"
+      ] ?? "Not available";
     sslAlgos =
-      extraInfoData["Traits"]["Server Info"]["Encryption Data"]["Encrypted With"].join(
-        "<br>Extra algo info: ",
-      ) ?? "No algorithm information available";
+      extraInfoData["Traits"]["Server Info"]["Encryption Data"][
+        "Encrypted With"
+      ].join("<br>Extra algo info: ") ?? "No algorithm information available";
   }
   isDecompressed = extraInfoData["Decompressed"]["Decompressed"];
   function removeIps(ipList) {
@@ -637,12 +659,17 @@ function infoPanel(pk) {
     return ipList.filter((item) => !ipRegex.test(item));
   }
 
-  if (extraInfoData["Traits"]["Network Data"]["Hostnames"]["Hostnames"] == undefined) {
+  if (
+    extraInfoData["Traits"]["Network Data"]["Hostnames"]["Hostnames"] ==
+    undefined
+  ) {
     dnsHostsHtml = "localhost";
   } else {
     dnsHostsHtml =
       "localhost<br>" +
-      extraInfoData["Traits"]["Network Data"]["Hostnames"]["Hostnames"].join("<br>");
+      extraInfoData["Traits"]["Network Data"]["Hostnames"]["Hostnames"].join(
+        "<br>",
+      );
   }
   filteredDnsHosts = removeIps(dnsHostsHtml.split("<br>")).join("<br>");
   dnsHostsHtml = filteredDnsHosts == "" ? "localhost" : filteredDnsHosts;
@@ -650,9 +677,11 @@ function infoPanel(pk) {
   pageTitle = extraInfoData["Traits"]["Server Info"]["Page Title"];
   isEncrypted = extraInfoData["Traits"]["Server Info"]["Encrypted"];
   protoName = extraInfoData["Traits"]["Network Data"]["Port Protcol"];
-  protoDescription = extraInfoData["Traits"]["Network Data"]["Port Description"];
+  protoDescription =
+    extraInfoData["Traits"]["Network Data"]["Port Description"];
   srcNetClass = extraInfoData["Traits"]["Network Data"]["Source IP"]["Class"];
-  dstNetClass = extraInfoData["Traits"]["Network Data"]["Destination IP"]["Class"];
+  dstNetClass =
+    extraInfoData["Traits"]["Network Data"]["Destination IP"]["Class"];
   document.getElementById("sidedatatable").textContent = "";
   document.getElementById("protoInfoSrc").textContent = "Source";
   document.getElementById("protoInfoDest").textContent = "Destination";
@@ -702,7 +731,10 @@ function infoPanel(pk) {
     document.getElementById("protocols").innerHTML = "Unknown";
   } else {
     document.getElementById("protocols").innerHTML =
-      "Protocol Name: " + protoName + "<br>Protocol Description: " + protoDescription;
+      "Protocol Name: " +
+      protoName +
+      "<br>Protocol Description: " +
+      protoDescription;
   }
   const checksumData = [
     { name: "IP Checksum", value: ipChecksum },
@@ -731,7 +763,8 @@ function infoPanel(pk) {
   ];
   createTable(dstIpData, ipTableHeaders, "protoInfoDest");
   entropyValue = extraInfoData["Traits"]["Shannon Entropy"];
-  document.getElementById("timestamp").textContent = "Timestamp " + packetTimestamp;
+  document.getElementById("timestamp").textContent =
+    "Timestamp " + packetTimestamp;
   //document.getElementById("ip2ip").textContent = sourceIpPort + " ~ " + destIpPort;
   document.getElementById("sideloctable").textContent = "";
   document.getElementById("entropybox").textContent =
@@ -762,24 +795,32 @@ function infoPanel(pk) {
       {
         name: "Country",
         value:
-          extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"]["Country"],
+          extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"][
+            "Country"
+          ],
       },
       {
         name: "City",
-        value: extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"]["City"],
+        value:
+          extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"][
+            "City"
+          ],
       },
       {
         name: "Timezone",
         value:
-          extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"]["Time Zone"],
+          extraInfoData["Traits"]["Network Data"]["Source IP"]["Location"][
+            "Time Zone"
+          ],
       },
     ];
     const srcLocHeaders = ["Source Host", "Location"];
     createTable(srcLocData, srcLocHeaders, "sideloctable");
   }
   if (
-    extraInfoData["Traits"]["Network Data"]["Destination IP"]["Location"]["City"] ==
-    undefined
+    extraInfoData["Traits"]["Network Data"]["Destination IP"]["Location"][
+      "City"
+    ] == undefined
   ) {
     const localnetData = [{ name: "Location", value: "Localnet" }];
     const localnetHeaders = ["Destination Host", "Location"];
@@ -796,7 +837,9 @@ function infoPanel(pk) {
       {
         name: "City",
         value:
-          extraInfoData["Traits"]["Network Data"]["Destination IP"]["Location"]["City"],
+          extraInfoData["Traits"]["Network Data"]["Destination IP"]["Location"][
+            "City"
+          ],
       },
       {
         name: "Timezone",
@@ -824,7 +867,9 @@ document.getElementById("save-json-btn").addEventListener("click", function () {
     } else if (result.success) {
       statusUpdate("Status: JSON saved successfully");
     } else {
-      statusUpdate("Status: Save failed – " + (result.error || "unknown error"));
+      statusUpdate(
+        "Status: Save failed – " + (result.error || "unknown error"),
+      );
       console.error("Save failed:", result.error);
     }
   });
@@ -857,9 +902,7 @@ function runSnitch(file) {
   document.getElementById("error-container").style.display = "none";
   startTime = performance.now();
   const useLLM = document.getElementById("use-llm").checked;
-  window.snitchapi
-    .runBackendCommand(file, useLLM)
-    .then((output) => {});
+  window.snitchapi.runBackendCommand(file, useLLM).then((output) => {});
 }
 
 function doError(message) {

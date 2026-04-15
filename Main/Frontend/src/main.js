@@ -44,20 +44,6 @@ function killBackendProcess() {
   }
 }
 
-function killProcess() {
-  console.log("Killing backend proc...");
-  if (platform === "win32") {
-    exec("taskkill /IM packetsnitch.exe /T /F", (fileError) => {
-      if (fileError) console.error(fileError);
-    });
-  }
-  if (platform === "linux") {
-    exec('pkill -f "packetsnitch"', (fileError) => {
-      if (fileError) console.error(fileError);
-    });
-  }
-}
-
 checkOllama().then((isInstalled) => {
   if (isInstalled) {
     console.log("Ollama is installed, proceeding with app launch...");
@@ -143,7 +129,7 @@ ipcMain.handle("save-json", async () => {
   if (canceled || !filePath) return { success: false, canceled: true };
 
   return new Promise((resolve) => {
-    const workerPath = path.join(__dirname, "save-worker.js");
+    const workerPath = "./src/save-worker.js";
     const worker = new Worker(workerPath, {
       workerData: { srcPath: hostsJsonFilePath, destPath: filePath },
     });
