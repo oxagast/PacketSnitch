@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { Worker } = require("worker_threads");
 const fs = require("fs");
 const path = require("path");
 const { exec } = require("child_process");
@@ -38,20 +39,6 @@ function killBackendProcess() {
   }
   if (platform === "linux") {
     exec('pkill -f "testcases"', (fileError) => {
-      if (fileError) console.error(fileError);
-    });
-  }
-}
-
-function killProcess() {
-  console.log("Killing backend proc...");
-  if (platform === "win32") {
-    exec("taskkill /IM packetsnitch.exe /T /F", (fileError) => {
-      if (fileError) console.error(fileError);
-    });
-  }
-  if (platform === "linux") {
-    exec('pkill -f "packetsnitch"', (fileError) => {
       if (fileError) console.error(fileError);
     });
   }
@@ -132,6 +119,31 @@ function checkOllama() {
     });
   });
 }
+
+ipcMain.handle("save-json", async () => {
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    title: "Save JSON Capture",
+    defaultPath: path.join(app.getPath("documents"), "capture.json"),
+    filters: [{ name: "JSON Files", extensions: ["json"] }],
+  });
+  if (canceled || !filePath) return { success: false, canceled: true };
+
+  return new Promise((resolve) => {
+    const workerPath = "./src/save-worker.js";
+    const worker = new Worker(workerPath, {
+      workerData: { srcPath: hostsJsonFilePath, destPath: filePath },
+    });
+    worker.on("message", (result) => {
+      worker.terminate();
+      resolve(result);
+    });
+    worker.on("error", (err) => {
+      console.error("Save worker error:", err);
+      worker.terminate();
+      resolve({ success: false, error: err.message });
+    });
+  });
+});
 
 app.on("before-quit", () => {
   // make sure the backend snitch process dies!
