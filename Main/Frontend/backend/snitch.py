@@ -1,15 +1,20 @@
-## snitch.py: Analyze pcap network captures, extract TCP and UDP packet data, and gather extra information.
+## snitch.py: Analyze pcap network captures, extract TCP, UDP, and ICMP packet data, and gather extra information.
 #
-# This script processes .pcap files, extracting TCP and UDP packet payloads and metadata,
-# and generates testcases and info files for each packet. It enriches the output with
-# MIME types, entropy, geoip, network class, banners, and more. DNS packets (UDP/53) are
-# decoded and the query/answer records are included in the output JSON. Optionally, it
-# performs active reconnaissance to gather additional network and server information.
+# This script processes .pcap files, extracting TCP, UDP, and ICMP packet payloads and
+# metadata, and generates testcases and info files for each packet. It enriches the
+# output with MIME types, entropy, geoip, network class, banners, and more. DNS packets
+# (UDP/53) are decoded and the query/answer records are included in the output JSON.
+# SNMP (UDP/TCP 161/162), DHCP (UDP 67/68), NTP (UDP 123), and SIP (UDP/TCP 5060/5061)
+# packets are also decoded and their protocol-specific fields included. ICMP packets are
+# fully supported with type, code, ID, and sequence fields. Optionally, it performs
+# active reconnaissance to gather additional network and server information.
 # Summaries and final reports can be generated using a large language model (LLM).
 #
 # Features:
-#   - Extracts TCP and UDP packet data and metadata from .pcap files.
+#   - Extracts TCP, UDP, and ICMP packet data and metadata from .pcap files.
 #   - Decodes DNS queries and responses from UDP port 53 packets.
+#   - Decodes SNMP, DHCP, NTP, and SIP protocol-specific fields.
+#   - Decodes ICMP type, code, ID, and sequence fields.
 #   - Writes raw payloads and info files to output directories.
 #   - Determines MIME types, entropy, geoip, network class, banners, and more.
 #   - Optionally performs active reconnaissance (reverse DNS, banners, SSL info, etc.).
@@ -626,12 +631,207 @@ def macAddrToVendor(macAddr):
     return macVendorMap.get(macPrefix, "Unknown Vendor")
 
 
+def decodeSNMP(p):
+    """
+    Decode SNMP layer fields from a scapy packet.
+    Returns a dict with both display-friendly keys (e.g., 'Version') and
+    dot-notation keys (e.g., 'snmp.version') for version, community, and PDU type,
+    or None if the packet does not contain an SNMP layer or decoding fails.
+    """
+    if not p.haslayer("SNMP"):
+        return None
+    snmpLayer = p["SNMP"]
+    try:
+        version = int(snmpLayer.version)
+        versionMap = {0: "SNMPv1", 1: "SNMPv2c", 3: "SNMPv3"}
+        versionStr = versionMap.get(version, f"Unknown({version})")
+        community = ""
+        if hasattr(snmpLayer, "community") and snmpLayer.community is not None:
+            community = (
+                snmpLayer.community.decode(errors="ignore")
+                if isinstance(snmpLayer.community, bytes)
+                else str(snmpLayer.community)
+            )
+        pduType = "Unknown"
+        if hasattr(snmpLayer, "PDU") and snmpLayer.PDU is not None:
+            pduType = snmpLayer.PDU.__class__.__name__
+        return {
+            "Version": versionStr,
+            "snmp.version": versionStr,
+            "Community": community,
+            "snmp.community": community,
+            "PDU Type": pduType,
+            "snmp.pdu_type": pduType,
+        }
+    except Exception:
+        return None
+
+
+def decodeDHCP(p):
+    """
+    Decode DHCP/BOOTP layer fields from a scapy packet.
+    Returns a dict with both display-friendly keys and dot-notation keys for message
+    type, transaction ID, and IP fields (Client IP, Your IP, Server IP), or None if
+    the packet does not contain a DHCP layer or decoding fails.
+    """
+    if not p.haslayer("DHCP"):
+        return None
+    dhcpLayer = p["DHCP"]
+    bootpLayer = p["BOOTP"] if p.haslayer("BOOTP") else None
+    try:
+        msgType = "Unknown"
+        msgTypeMap = {
+            1: "Discover",
+            2: "Offer",
+            3: "Request",
+            4: "Decline",
+            5: "ACK",
+            6: "NAK",
+            7: "Release",
+            8: "Inform",
+        }
+        for opt in dhcpLayer.options:
+            if isinstance(opt, tuple) and opt[0] == "message-type" and len(opt) > 1:
+                msgType = msgTypeMap.get(opt[1], str(opt[1]))
+                break
+        result = {
+            "Message Type": msgType,
+            "dhcp.msg_type": msgType,
+        }
+        if bootpLayer:
+            try:
+                xid = hex(int(bootpLayer.xid)) if hasattr(bootpLayer, "xid") else "N/A"
+            except (TypeError, ValueError):
+                xid = "N/A"
+            ciaddr = str(bootpLayer.ciaddr) if hasattr(bootpLayer, "ciaddr") else "N/A"
+            yiaddr = str(bootpLayer.yiaddr) if hasattr(bootpLayer, "yiaddr") else "N/A"
+            siaddr = str(bootpLayer.siaddr) if hasattr(bootpLayer, "siaddr") else "N/A"
+            result["Transaction ID"] = xid
+            result["dhcp.xid"] = xid
+            result["Client IP"] = ciaddr
+            result["dhcp.ciaddr"] = ciaddr
+            result["Your IP"] = yiaddr
+            result["dhcp.yiaddr"] = yiaddr
+            result["Server IP"] = siaddr
+            result["dhcp.siaddr"] = siaddr
+        return result
+    except Exception:
+        return None
+
+
+def decodeNTP(p):
+    """
+    Decode NTP layer fields from a scapy packet.
+    Returns a dict with both display-friendly keys and dot-notation keys for leap
+    indicator, version, mode, stratum, and reference ID, or None if the packet does
+    not contain an NTP layer or decoding fails.
+    """
+    if not p.haslayer("NTP"):
+        return None
+    ntpLayer = p["NTP"]
+    modeMap = {
+        0: "Reserved", 1: "Symmetric Active", 2: "Symmetric Passive",
+        3: "Client", 4: "Server", 5: "Broadcast",
+        6: "NTP Control", 7: "Private",
+    }
+    try:
+        leap = int(ntpLayer.leap) if hasattr(ntpLayer, "leap") else 0
+        version = int(ntpLayer.version) if hasattr(ntpLayer, "version") else 0
+        mode = int(ntpLayer.mode) if hasattr(ntpLayer, "mode") else 0
+        stratum = int(ntpLayer.stratum) if hasattr(ntpLayer, "stratum") else 0
+        modeStr = modeMap.get(mode, f"Unknown({mode})")
+        refId = str(ntpLayer.id) if hasattr(ntpLayer, "id") else "N/A"
+        return {
+            "Leap Indicator": leap,
+            "ntp.leap": leap,
+            "Version": version,
+            "ntp.version": version,
+            "Mode": modeStr,
+            "ntp.mode": modeStr,
+            "Stratum": stratum,
+            "ntp.stratum": stratum,
+            "Reference ID": refId,
+            "ntp.ref_id": refId,
+        }
+    except Exception:
+        return None
+
+
+def decodeSIP(rawPayload):
+    """
+    Decode SIP message fields from raw payload bytes.
+    Parses the first line and common headers (From, To, Call-ID).
+    Returns a dict with both display-friendly keys and dot-notation keys for message
+    type, method/status, and headers, or None if the payload is not a SIP message or
+    decoding fails.
+    """
+    sipMethods = {
+        "INVITE", "ACK", "BYE", "CANCEL", "REGISTER",
+        "OPTIONS", "SUBSCRIBE", "NOTIFY", "REFER", "INFO", "UPDATE", "PRACK",
+    }
+    try:
+        text = rawPayload.decode(errors="ignore")
+        lines = text.split("\r\n") if "\r\n" in text else text.split("\n")
+        if not lines:
+            return None
+        firstLine = lines[0].strip()
+        isSipResponse = firstLine.startswith("SIP/")
+        isSipRequest = firstLine.split(" ")[0] in sipMethods if " " in firstLine else False
+        if not isSipResponse and not isSipRequest:
+            return None
+        headers = {}
+        for line in lines[1:]:
+            if ": " in line:
+                key, _, val = line.partition(": ")
+                headers[key.strip()] = val.strip()
+        if isSipRequest:
+            parts = firstLine.split(" ", 2)
+            method = parts[0]
+            requestUri = parts[1] if len(parts) > 1 else "Unknown"
+            return {
+                "Type": "Request",
+                "sip.type": "Request",
+                "Method": method,
+                "sip.method": method,
+                "Request URI": requestUri,
+                "sip.uri": requestUri,
+                "From": headers.get("From", "Unknown"),
+                "sip.from": headers.get("From", "Unknown"),
+                "To": headers.get("To", "Unknown"),
+                "sip.to": headers.get("To", "Unknown"),
+                "Call-ID": headers.get("Call-ID", "Unknown"),
+                "sip.call_id": headers.get("Call-ID", "Unknown"),
+            }
+        else:
+            parts = firstLine.split(" ", 2)
+            statusCode = parts[1] if len(parts) > 1 else "Unknown"
+            statusMsg = parts[2] if len(parts) > 2 else "Unknown"
+            return {
+                "Type": "Response",
+                "sip.type": "Response",
+                "Status Code": statusCode,
+                "sip.status_code": statusCode,
+                "Status Message": statusMsg,
+                "sip.status_msg": statusMsg,
+                "From": headers.get("From", "Unknown"),
+                "sip.from": headers.get("From", "Unknown"),
+                "To": headers.get("To", "Unknown"),
+                "sip.to": headers.get("To", "Unknown"),
+                "Call-ID": headers.get("Call-ID", "Unknown"),
+                "sip.call_id": headers.get("Call-ID", "Unknown"),
+            }
+    except Exception:
+        return None
+
+
 def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
     """
-    Process a single scapy packet: extract TCP or UDP payload, write the raw testcase
-    file, gather analysis data (MIME, entropy, geoip, etc.) and merge everything into a
-    single JSON output file.  For UDP packets on port 53 the DNS layer is also decoded
-    and included in the output.
+    Process a single scapy packet: extract TCP, UDP, or ICMP payload, write the raw
+    testcase file, gather analysis data (MIME, entropy, geoip, etc.) and merge
+    everything into a single JSON output file.  For UDP packets on port 53 the DNS
+    layer is decoded.  SNMP (161/162), DHCP (67/68), NTP (123), and SIP (5060/5061)
+    packets are also decoded and included in the output.  ICMP packets are fully
+    supported as a separate transport type.
 
     packetIndex is the 0-based position of this packet in the full capture, used as
     the filename index so files from concurrent threads do not collide.
@@ -650,7 +850,8 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
 
     isTcp = p.haslayer("TCP")
     isUdp = p.haslayer("UDP")
-    if not isTcp and not isUdp:
+    isIcmp = p.haslayer("ICMP")
+    if not isTcp and not isUdp and not isIcmp:
         return None
 
     if isTcp:
@@ -658,13 +859,21 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
         srcPort = p["TCP"].sport
         dstPort = p["TCP"].dport
         transportProtocol = "tcp"
-    else:
+        dstPortStr = str(dstPort)
+    elif isUdp:
         rawPayload = p["UDP"].payload.original
         srcPort = p["UDP"].sport
         dstPort = p["UDP"].dport
         transportProtocol = "udp"
+        dstPortStr = str(dstPort)
+    else:
+        # ICMP: use the full ICMP layer bytes as the payload
+        rawPayload = bytes(p["ICMP"])
+        srcPort = 0
+        dstPort = 0
+        transportProtocol = "icmp"
+        dstPortStr = "icmp"
 
-    dstPortStr = str(dstPort)
     if (srcPortFilter is None or srcPort == srcPortFilter) and (dstPortFilter is None or dstPort == dstPortFilter):
         if rawPayload is not None and len(rawPayload) > 0:
             writeTestcase(rawPayload, outputDir, dstPortStr, packetIndex)
@@ -724,8 +933,18 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                     "Wire length": len(p["TCP"]),
                     "wire.len": len(p["TCP"]),
                 }
+                # Decode SIP on TCP ports 5060/5061
+                if dstPort in (5060, 5061) or srcPort in (5060, 5061):
+                    sipSection = decodeSIP(rawPayload)
+                    if sipSection is not None:
+                        transportSection["SIP"] = sipSection
+                # Decode SNMP on TCP port 161/162 (less common but valid)
+                if dstPort in (161, 162) or srcPort in (161, 162):
+                    snmpSection = decodeSNMP(p)
+                    if snmpSection is not None:
+                        transportSection["SNMP"] = snmpSection
                 protocolKey = "TCP"
-            else:
+            elif isUdp:
                 # Build UDP section; decode DNS if present
                 dnsSection = None
                 if p.haslayer("DNS"):
@@ -790,7 +1009,70 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                 }
                 if dnsSection is not None:
                     transportSection["DNS"] = dnsSection
+                # Decode SNMP on UDP ports 161/162
+                if dstPort in (161, 162) or srcPort in (161, 162):
+                    snmpSection = decodeSNMP(p)
+                    if snmpSection is not None:
+                        transportSection["SNMP"] = snmpSection
+                # Decode DHCP on UDP ports 67/68
+                if dstPort in (67, 68) or srcPort in (67, 68):
+                    dhcpSection = decodeDHCP(p)
+                    if dhcpSection is not None:
+                        transportSection["DHCP"] = dhcpSection
+                # Decode NTP on UDP port 123
+                if dstPort == 123 or srcPort == 123:
+                    ntpSection = decodeNTP(p)
+                    if ntpSection is not None:
+                        transportSection["NTP"] = ntpSection
+                # Decode SIP on UDP ports 5060/5061
+                if dstPort in (5060, 5061) or srcPort in (5060, 5061):
+                    sipSection = decodeSIP(rawPayload)
+                    if sipSection is not None:
+                        transportSection["SIP"] = sipSection
                 protocolKey = "UDP"
+            else:
+                # ICMP transport section
+                icmpLayer = p["ICMP"]
+                icmpTypeMap = {
+                    0: "Echo Reply", 3: "Destination Unreachable", 4: "Source Quench",
+                    5: "Redirect", 8: "Echo Request", 9: "Router Advertisement",
+                    10: "Router Solicitation", 11: "Time Exceeded",
+                    12: "Parameter Problem", 13: "Timestamp", 14: "Timestamp Reply",
+                    15: "Information Request", 16: "Information Reply",
+                }
+                icmpType = int(icmpLayer.type) if hasattr(icmpLayer, "type") else 0
+                icmpCode = int(icmpLayer.code) if hasattr(icmpLayer, "code") else 0
+                icmpTypeStr = icmpTypeMap.get(icmpType, f"Type {icmpType}")
+                icmpId = "N/A"
+                icmpSeq = "N/A"
+                try:
+                    icmpId = int(icmpLayer.id)
+                except Exception:
+                    pass
+                try:
+                    icmpSeq = int(icmpLayer.seq)
+                except Exception:
+                    pass
+                icmpChksum = "N/A"
+                try:
+                    icmpChksum = hex(int(icmpLayer.chksum))
+                except Exception:
+                    pass
+                transportSection = {
+                    "Type": icmpTypeStr,
+                    "icmp.type": icmpTypeStr,
+                    "Code": icmpCode,
+                    "icmp.code": icmpCode,
+                    "ID": icmpId,
+                    "icmp.id": icmpId,
+                    "Sequence": icmpSeq,
+                    "icmp.seq": icmpSeq,
+                    "ICMP Checksum": icmpChksum,
+                    "icmp.chksum": icmpChksum,
+                    "Wire length": len(p["ICMP"]),
+                    "wire.len": len(p["ICMP"]),
+                }
+                protocolKey = "ICMP"
 
             packetInfo = {
                 "Packet Processed": int(packetIndex),
@@ -929,7 +1211,7 @@ def llmBrief(jsonBatch):
 
 def startThreading():
     """
-    Process all TCP and UDP packets from the pre-loaded `packets` list using a
+    Process all TCP, UDP, and ICMP packets from the pre-loaded `packets` list using a
     ThreadPoolExecutor.
 
     Rather than re-reading the pcap file in every thread (which was the old behaviour),
@@ -942,8 +1224,8 @@ def startThreading():
             f"Spooling up {numWorkerThreads} worker threads to process {totalPackets} packets...",
             file=sys.stderr,
         )
-        # Build the list of packet indices that belong to TCP or UDP packets
-        packetIndices = [i for i, p in enumerate(packets) if p.haslayer("TCP") or p.haslayer("UDP")]
+        # Build the list of packet indices that belong to TCP, UDP, or ICMP packets
+        packetIndices = [i for i, p in enumerate(packets) if p.haslayer("TCP") or p.haslayer("UDP") or p.haslayer("ICMP")]
 
         with ThreadPoolExecutor(max_workers=numWorkerThreads) as executor:
             taskFutures = {
@@ -1101,9 +1383,9 @@ totalPackets = 0
 packets = scapy.rdpcap(args.pcap_file)  # type: ignore
 allPacketCount = len(packets)
 llmBatchSize = 0
-totalPackets = len([p for p in packets if p.haslayer("TCP") or p.haslayer("UDP")])
+totalPackets = len([p for p in packets if p.haslayer("TCP") or p.haslayer("UDP") or p.haslayer("ICMP")])
 if totalPackets == 0:
-    print("No TCP or UDP packets found in the capture.", file=sys.stderr)
+    print("No TCP, UDP, or ICMP packets found in the capture.", file=sys.stderr)
     sys.exit(1)
 if "threads" in config and config["threads"]:
     numWorkerThreads = config["threads"]
@@ -1164,7 +1446,7 @@ if llmModelName and useLlm:
 print(
     "Preparing to process "
     + str(totalPackets)
-    + " TCP/UDP packets with "
+    + " TCP/UDP/ICMP packets with "
     + str(numWorkerThreads)
     + " threads.",
     file=sys.stderr,

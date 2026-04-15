@@ -618,11 +618,19 @@ function infoPanel(pk) {
   const transportChecksum =
     protocol === "TCP"
       ? transportData["TCP checksum"]
-      : transportData["UDP checksum"];
+      : protocol === "UDP"
+      ? transportData["UDP checksum"]
+      : protocol === "ICMP"
+      ? transportData["ICMP Checksum"]
+      : "N/A";
   const transportLayerLen =
     protocol === "TCP"
       ? transportData["TCP layer length"]
-      : transportData["UDP length"];
+      : protocol === "UDP"
+      ? transportData["UDP length"]
+      : protocol === "ICMP"
+      ? transportData["Wire length"]
+      : "N/A";
   const tcpFlags =
     protocol === "TCP" && transportData["TCP Flag Data"]
       ? transportData["TCP Flag Data"]["Flags"]
@@ -784,6 +792,71 @@ function infoPanel(pk) {
       { name: "Answers", value: dnsData["Answer Count"] },
     ];
     createTable(dnsRows, ["DNS Field", "Value"], "sidedatatable");
+  }
+
+  // ICMP info table (shown for ICMP packets)
+  if (protocol === "ICMP") {
+    const icmpRows = [
+      { name: "Type", value: transportData["Type"] ?? "—" },
+      { name: "Code", value: transportData["Code"] ?? "—" },
+      { name: "ID", value: transportData["ID"] ?? "—" },
+      { name: "Sequence", value: transportData["Sequence"] ?? "—" },
+    ];
+    createTable(icmpRows, ["ICMP Field", "Value"], "sidedatatable");
+  }
+
+  // SNMP info table (shown for SNMP packets on port 161/162)
+  const snmpData = transportData["SNMP"];
+  if (snmpData) {
+    const snmpRows = [
+      { name: "Version", value: snmpData["Version"] || "—" },
+      { name: "Community", value: snmpData["Community"] || "—" },
+      { name: "PDU Type", value: snmpData["PDU Type"] || "—" },
+    ];
+    createTable(snmpRows, ["SNMP Field", "Value"], "sidedatatable");
+  }
+
+  // DHCP info table (shown for DHCP packets on port 67/68)
+  const dhcpData = transportData["DHCP"];
+  if (dhcpData) {
+    const dhcpRows = [
+      { name: "Message Type", value: dhcpData["Message Type"] || "—" },
+      { name: "Transaction ID", value: dhcpData["Transaction ID"] || "—" },
+      { name: "Client IP", value: dhcpData["Client IP"] || "—" },
+      { name: "Your IP", value: dhcpData["Your IP"] || "—" },
+      { name: "Server IP", value: dhcpData["Server IP"] || "—" },
+    ];
+    createTable(dhcpRows, ["DHCP Field", "Value"], "sidedatatable");
+  }
+
+  // NTP info table (shown for NTP packets on port 123)
+  const ntpData = transportData["NTP"];
+  if (ntpData) {
+    const ntpRows = [
+      { name: "Version", value: ntpData["Version"] ?? "—" },
+      { name: "Mode", value: ntpData["Mode"] || "—" },
+      { name: "Stratum", value: ntpData["Stratum"] ?? "—" },
+      { name: "Reference ID", value: ntpData["Reference ID"] || "—" },
+      { name: "Leap Indicator", value: ntpData["Leap Indicator"] ?? "—" },
+    ];
+    createTable(ntpRows, ["NTP Field", "Value"], "sidedatatable");
+  }
+
+  // SIP info table (shown for SIP packets on port 5060/5061)
+  const sipData = transportData["SIP"];
+  if (sipData) {
+    const sipRows = [
+      { name: "Type", value: sipData["Type"] || "—" },
+      {
+        name: sipData["Type"] === "Request" ? "Method" : "Status Code",
+        value:
+          sipData["Method"] || sipData["Status Code"] || "—",
+      },
+      { name: "From", value: sipData["From"] || "—" },
+      { name: "To", value: sipData["To"] || "—" },
+      { name: "Call-ID", value: sipData["Call-ID"] || "—" },
+    ];
+    createTable(sipRows, ["SIP Field", "Value"], "sidedatatable");
   }
   const ipTableHeaders = ["Packet", "Data"];
   const srcIpData = [
