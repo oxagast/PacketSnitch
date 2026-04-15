@@ -28,3 +28,7 @@ contextBridge.exposeInMainWorld("api", {
 contextBridge.exposeInMainWorld("fsize", {
   getFSize: () => ipcRenderer.invoke("file-size"), // Expose this method to renderer
 });
+
+contextBridge.exposeInMainWorld("saveapi", {
+  saveJson: (jsonData) => ipcRenderer.invoke("save-json", jsonData),
+});

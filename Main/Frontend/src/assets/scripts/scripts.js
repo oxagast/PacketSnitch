@@ -812,6 +812,24 @@ function infoPanel(pk) {
   }
 }
 
+// Save the currently loaded JSON capture to a user-chosen file via a worker thread
+document.getElementById("save-json-btn").addEventListener("click", function () {
+  if (!jsonCapture) {
+    statusUpdate("Status: No data loaded to save");
+    return;
+  }
+  window.saveapi.saveJson(jsonCapture).then((result) => {
+    if (result.canceled) {
+      statusUpdate("Status: Save cancelled");
+    } else if (result.success) {
+      statusUpdate("Status: JSON saved successfully");
+    } else {
+      statusUpdate("Status: Save failed – " + (result.error || "unknown error"));
+      console.error("Save failed:", result.error);
+    }
+  });
+});
+
 // the next two have hooks into IPC handlers for main.js
 // data transactions
 
