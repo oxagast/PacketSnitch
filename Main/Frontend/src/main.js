@@ -123,7 +123,7 @@ function checkOllama() {
 ipcMain.handle("save-json", async () => {
   const { canceled, filePath } = await dialog.showSaveDialog({
     title: "Save JSON Capture",
-    defaultPath: "capture.json",
+    defaultPath: path.join(app.getPath("documents"), "capture.json"),
     filters: [{ name: "JSON Files", extensions: ["json"] }],
   });
   if (canceled || !filePath) return { success: false, canceled: true };
