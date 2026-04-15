@@ -634,7 +634,9 @@ def macAddrToVendor(macAddr):
 def decodeSNMP(p):
     """
     Decode SNMP layer fields from a scapy packet.
-    Returns a dict with version, community, and PDU type, or None if not SNMP.
+    Returns a dict with both display-friendly keys (e.g., 'Version') and
+    dot-notation keys (e.g., 'snmp.version') for version, community, and PDU type,
+    or None if the packet does not contain an SNMP layer or decoding fails.
     """
     if not p.haslayer("SNMP"):
         return None
@@ -668,7 +670,9 @@ def decodeSNMP(p):
 def decodeDHCP(p):
     """
     Decode DHCP/BOOTP layer fields from a scapy packet.
-    Returns a dict with message type, transaction ID, and IP fields, or None if not DHCP.
+    Returns a dict with both display-friendly keys and dot-notation keys for message
+    type, transaction ID, and IP fields (Client IP, Your IP, Server IP), or None if
+    the packet does not contain a DHCP layer or decoding fails.
     """
     if not p.haslayer("DHCP"):
         return None
@@ -677,8 +681,14 @@ def decodeDHCP(p):
     try:
         msgType = "Unknown"
         msgTypeMap = {
-            1: "Discover", 2: "Offer", 3: "Request", 4: "Decline",
-            5: "ACK", 6: "NAK", 7: "Release", 8: "Inform",
+            1: "Discover",
+            2: "Offer",
+            3: "Request",
+            4: "Decline",
+            5: "ACK",
+            6: "NAK",
+            7: "Release",
+            8: "Inform",
         }
         for opt in dhcpLayer.options:
             if isinstance(opt, tuple) and opt[0] == "message-type" and len(opt) > 1:
@@ -689,7 +699,10 @@ def decodeDHCP(p):
             "dhcp.msg_type": msgType,
         }
         if bootpLayer:
-            xid = hex(int(bootpLayer.xid)) if hasattr(bootpLayer, "xid") else "N/A"
+            try:
+                xid = hex(int(bootpLayer.xid)) if hasattr(bootpLayer, "xid") else "N/A"
+            except (TypeError, ValueError):
+                xid = "N/A"
             ciaddr = str(bootpLayer.ciaddr) if hasattr(bootpLayer, "ciaddr") else "N/A"
             yiaddr = str(bootpLayer.yiaddr) if hasattr(bootpLayer, "yiaddr") else "N/A"
             siaddr = str(bootpLayer.siaddr) if hasattr(bootpLayer, "siaddr") else "N/A"
@@ -709,7 +722,9 @@ def decodeDHCP(p):
 def decodeNTP(p):
     """
     Decode NTP layer fields from a scapy packet.
-    Returns a dict with leap indicator, version, mode, stratum, and reference ID, or None if not NTP.
+    Returns a dict with both display-friendly keys and dot-notation keys for leap
+    indicator, version, mode, stratum, and reference ID, or None if the packet does
+    not contain an NTP layer or decoding fails.
     """
     if not p.haslayer("NTP"):
         return None
@@ -746,7 +761,9 @@ def decodeSIP(rawPayload):
     """
     Decode SIP message fields from raw payload bytes.
     Parses the first line and common headers (From, To, Call-ID).
-    Returns a dict with message type, method/status, and headers, or None if not SIP.
+    Returns a dict with both display-friendly keys and dot-notation keys for message
+    type, method/status, and headers, or None if the payload is not a SIP message or
+    decoding fails.
     """
     sipMethods = {
         "INVITE", "ACK", "BYE", "CANCEL", "REGISTER",
