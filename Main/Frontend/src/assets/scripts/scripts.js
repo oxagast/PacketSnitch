@@ -238,6 +238,7 @@ document.getElementById("prev-btn").addEventListener("click", function () {
     currentPacketKey =
       currentIp + ":" + packetsForHost[index]["Packet Info"]["Index"];
     infoPanel(packetsForHost);
+    const proto = packetsForHost[index]["Packet Info"]["Protocol"] || "TCP";
     popHexGrid(
       packetsForHost[index]["Packet Info"]["Raw data"]["Payload"][
         "Hex Encoded"
@@ -377,6 +378,7 @@ function handlePacketNavigation(navAction, navBookmark) {
     doError("No packet information found for this host!");
     return;
   } else {
+    const proto = packetSet[index]["Packet Info"]["Protocol"] || "TCP";
     currentIp = packetSet[index]["Packet Info"]["IP"]["Source IP"];
     currentPacketKey =
       currentIp + ":" + packetSet[index]["Packet Info"]["Index"];
@@ -610,23 +612,38 @@ function infoPanel(pk) {
   extraInfoData = p["Extra Info"];
   packetTimestamp = packetInfoData["Packet Timestamp"];
   ipChecksum = packetInfoData["IP"]["IP Checksum"];
-  tcpChecksum = packetInfoData["TCP"]["TCP checksum"];
+
+  // Determine transport protocol (TCP or UDP); fall back to TCP for older captures
+  const protocol = packetInfoData["Protocol"] || "TCP";
+  const transportData = packetInfoData[protocol] || {};
+
+  const transportChecksum =
+    protocol === "TCP"
+      ? transportData["TCP checksum"]
+      : transportData["UDP checksum"];
+  const transportLayerLen =
+    protocol === "TCP"
+      ? transportData["TCP layer length"]
+      : transportData["UDP length"];
+  const tcpFlags =
+    protocol === "TCP" && transportData["TCP Flag Data"]
+      ? transportData["TCP Flag Data"]["Flags"]
+      : "N/A";
+
   sourceIpPort =
     packetInfoData["IP"]["Source IP"] +
     ":" +
-    packetInfoData["TCP"]["Source port"];
+    (transportData["Source port"] ?? "?");
   destIpPort =
     packetInfoData["IP"]["Destination IP"] +
     ":" +
-    packetInfoData["TCP"]["Destination port"];
+    (transportData["Destination port"] ?? "?");
   srcMac = packetInfoData["Ethernet Frame"]["MAC Source"];
   dstMac = packetInfoData["Ethernet Frame"]["MAC Destination"];
   srcMacVendor = packetInfoData["Ethernet Frame"]["MAC Source Vendor"];
   dstMacVendor = packetInfoData["Ethernet Frame"]["MAC Destination Vendor"];
-  tcpFlags = packetInfoData["TCP"]["TCP Flag Data"]["Flags"];
   ipLayerLen = packetInfoData["IP"]["IP layer length"];
-  tcpLayerLen = packetInfoData["TCP"]["TCP layer length"];
-  wireLen = packetInfoData["TCP"]["Wire length"];
+  wireLen = transportData["Wire length"];
   payloadLen = packetInfoData["Raw data"]["Payload Length"];
   sslCert = "";
   sslVersion = "";
@@ -738,15 +755,38 @@ function infoPanel(pk) {
   }
   const checksumData = [
     { name: "IP Checksum", value: ipChecksum },
-    { name: "TCP Checksum", value: tcpChecksum },
+    { name: protocol + " Checksum", value: transportChecksum },
     { name: "Flags", value: tcpFlags },
     { name: "IP Length", value: ipLayerLen },
-    { name: "TCP Length", value: tcpLayerLen },
+    { name: protocol + " Length", value: transportLayerLen },
     { name: "Wire Length", value: wireLen },
     { name: "Payload Length", value: payloadLen },
   ];
   const checksumHeaders = ["Protocol data", "Details"];
   createTable(checksumData, checksumHeaders, "sidedatatable");
+
+  // DNS info table (shown for UDP/DNS packets)
+  const dnsData = transportData["DNS"];
+  if (dnsData) {
+    const dnsRows = [
+      { name: "Transaction ID", value: dnsData["Transaction ID"] },
+      {
+        name: "Type",
+        value: dnsData["Is Response"] ? "Response" : "Query",
+      },
+      {
+        name: "Query Names",
+        value: (dnsData["Query Names"] || []).join(", ") || "—",
+      },
+      {
+        name: "Answer IPs",
+        value: (dnsData["Answer IPs"] || []).join(", ") || "—",
+      },
+      { name: "Questions", value: dnsData["Question Count"] },
+      { name: "Answers", value: dnsData["Answer Count"] },
+    ];
+    createTable(dnsRows, ["DNS Field", "Value"], "sidedatatable");
+  }
   const ipTableHeaders = ["Packet", "Data"];
   const srcIpData = [
     { name: "IP:Port", value: sourceIpPort },

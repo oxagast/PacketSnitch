@@ -205,4 +205,4 @@ function filterPackets(data, query) {
   });
 }
 
-module.exports = { filterPackets };
+module.exports = { filterPackets, getDataType };
