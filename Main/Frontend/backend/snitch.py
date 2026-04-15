@@ -1,13 +1,15 @@
-## snitch.py: Analyze pcap network captures, extract TCP packet data, and gather extra information.
+## snitch.py: Analyze pcap network captures, extract TCP and UDP packet data, and gather extra information.
 #
-# This script processes .pcap files, extracting TCP packet payloads and metadata, and generates
-# testcases and info files for each packet. It enriches the output with MIME types, entropy,
-# geoip, network class, banners, and more. Optionally, it performs active reconnaissance to
-# gather additional network and server information. Summaries and final reports can be generated
-# using a large language model (LLM).
+# This script processes .pcap files, extracting TCP and UDP packet payloads and metadata,
+# and generates testcases and info files for each packet. It enriches the output with
+# MIME types, entropy, geoip, network class, banners, and more. DNS packets (UDP/53) are
+# decoded and the query/answer records are included in the output JSON. Optionally, it
+# performs active reconnaissance to gather additional network and server information.
+# Summaries and final reports can be generated using a large language model (LLM).
 #
 # Features:
-#   - Extracts TCP packet data and metadata from .pcap files.
+#   - Extracts TCP and UDP packet data and metadata from .pcap files.
+#   - Decodes DNS queries and responses from UDP port 53 packets.
 #   - Writes raw payloads and info files to output directories.
 #   - Determines MIME types, entropy, geoip, network class, banners, and more.
 #   - Optionally performs active reconnaissance (reverse DNS, banners, SSL info, etc.).
@@ -478,10 +480,12 @@ def getGeoipInfo(ip, srcOrDst):
     return geoIpResult
 
 
-def getDatatypes(data, dstPort, sourceIp, destIp, timeout):
+def getDatatypes(data, dstPort, sourceIp, destIp, timeout, protocol="tcp"):
     """
     Analyze data to determine MIME type, decompress if possible, and extract traits.
     Returns a dictionary with MIME type, decompression info, data types, and traits.
+    The protocol parameter ("tcp" or "udp") is forwarded to getTraits for accurate
+    port-description lookups.
     """
     mimeType = magic.from_buffer(data, mime=True)
     lineDescs = []
@@ -506,7 +510,7 @@ def getDatatypes(data, dstPort, sourceIp, destIp, timeout):
         uniqueDescs.remove("data")
     if uniqueDescs == []:
         uniqueDescs = ["Unknown data type"]
-    traitData = getTraits(data, dstPort, sourceIp, destIp, timeout)
+    traitData = getTraits(data, dstPort, sourceIp, destIp, timeout, protocol)
     dataTypeResult = {
         "MIME Type": mimeType,
         "payload.mime": mimeType,
@@ -530,16 +534,18 @@ def getServ(port, protocol="tcp"):
         return "Unknown"
 
 
-def getTraits(data, dstPort, sourceIp, destIp, timeout):
+def getTraits(data, dstPort, sourceIp, destIp, timeout, protocol="tcp"):
     """
     Analyze data for entropy, charsetType, encoding, and network/server traits.
     Returns a dictionary with entropy, network data, length, server info, and character info.
+    The protocol parameter ("tcp" or "udp") is used for port-description lookups so that
+    UDP service names and descriptions are resolved correctly.
     """
 
     byteCounts = np.bincount(list(data))
     shannonEntropy = entropy(byteCounts, base=2)
     dataLength = len(data)
-    protoName = getServ(dstPort)
+    protoName = getServ(dstPort, protocol)
     charsetType = "ascii" if all(32 <= b <= 126 for b in data) else "binary"
     uniqueCharCount = len(set(data))
     uniqueCharsSet = set(data)
@@ -567,7 +573,7 @@ def getTraits(data, dstPort, sourceIp, destIp, timeout):
     dstGeoInfo = getGeoipInfo(destIp, "dst")
     srcNetClass = getNetclass(sourceIp)
     dstNetClass = getNetclass(destIp)
-    portDesc = getPortDescription(dstPort)
+    portDesc = getPortDescription(dstPort, protocol)
     return {
         "Shannon Entropy": shannonEntropy,
         "payload.entropy": shannonEntropy,
@@ -622,9 +628,10 @@ def macAddrToVendor(macAddr):
 
 def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
     """
-    Process a single scapy packet: extract TCP payload, write the raw testcase file,
-    gather analysis data (MIME, entropy, geoip, etc.) and merge everything into a
-    single JSON output file.
+    Process a single scapy packet: extract TCP or UDP payload, write the raw testcase
+    file, gather analysis data (MIME, entropy, geoip, etc.) and merge everything into a
+    single JSON output file.  For UDP packets on port 53 the DNS layer is also decoded
+    and included in the output.
 
     packetIndex is the 0-based position of this packet in the full capture, used as
     the filename index so files from concurrent threads do not collide.
@@ -640,40 +647,31 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
     )
     if not p.haslayer("IP"):
         return None
-    if not p.haslayer("TCP"):
+
+    isTcp = p.haslayer("TCP")
+    isUdp = p.haslayer("UDP")
+    if not isTcp and not isUdp:
         return None
 
-    rawPayload = p["TCP"].payload.original
-    srcPort = p["TCP"].sport
-    dstPort = p["TCP"].dport
+    if isTcp:
+        rawPayload = p["TCP"].payload.original
+        srcPort = p["TCP"].sport
+        dstPort = p["TCP"].dport
+        transportProtocol = "tcp"
+    else:
+        rawPayload = p["UDP"].payload.original
+        srcPort = p["UDP"].sport
+        dstPort = p["UDP"].dport
+        transportProtocol = "udp"
+
     dstPortStr = str(dstPort)
     if (srcPortFilter is None or srcPort == srcPortFilter) and (dstPortFilter is None or dstPort == dstPortFilter):
         if rawPayload is not None and len(rawPayload) > 0:
             writeTestcase(rawPayload, outputDir, dstPortStr, packetIndex)
-            dataTypeInfo = getDatatypes(rawPayload, dstPort, p["IP"].src, p["IP"].dst, timeout)
+            dataTypeInfo = getDatatypes(rawPayload, dstPort, p["IP"].src, p["IP"].dst, timeout, transportProtocol)
             timestamp = datetime.fromtimestamp(float(Decimal(p.time))).strftime(
                 "%Y-%m-%d %H:%M:%S.%f"
             )
-            # Build TCP flag string once
-            tcpFlags = ""
-            if p["TCP"].flags.S:
-                tcpFlags += "SYN|"
-            if p["TCP"].flags.A:
-                tcpFlags += "ACK|"
-            if p["TCP"].flags.F:
-                tcpFlags += "FIN|"
-            if p["TCP"].flags.R:
-                tcpFlags += "RST|"
-            if p["TCP"].flags.P:
-                tcpFlags += "PSH|"
-            if p["TCP"].flags.U:
-                tcpFlags += "URG|"
-            if p["TCP"].flags.ECE:
-                tcpFlags += "ECE|"
-            if p["TCP"].flags.CWR:
-                tcpFlags += "CWR|"
-            if tcpFlags.endswith("|"):
-                tcpFlags = tcpFlags[:-1]
 
             # Resolve geoip once per packet so we don't hit the cache (or DB) twice
             # for the same IP within a single packet.
@@ -684,10 +682,122 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                 and dstGeoInfo.get("Location") == "Localnet"
             )
 
+            if isTcp:
+                # Build TCP flag string once
+                tcpFlags = ""
+                if p["TCP"].flags.S:
+                    tcpFlags += "SYN|"
+                if p["TCP"].flags.A:
+                    tcpFlags += "ACK|"
+                if p["TCP"].flags.F:
+                    tcpFlags += "FIN|"
+                if p["TCP"].flags.R:
+                    tcpFlags += "RST|"
+                if p["TCP"].flags.P:
+                    tcpFlags += "PSH|"
+                if p["TCP"].flags.U:
+                    tcpFlags += "URG|"
+                if p["TCP"].flags.ECE:
+                    tcpFlags += "ECE|"
+                if p["TCP"].flags.CWR:
+                    tcpFlags += "CWR|"
+                if tcpFlags.endswith("|"):
+                    tcpFlags = tcpFlags[:-1]
+
+                transportSection = {
+                    "Source port": int(srcPort),
+                    "tcp.src.port": int(srcPort),
+                    "Destination port": int(dstPort),
+                    "tcp.dst.port": int(dstPort),
+                    "TCP checksum": hex(int(p["TCP"].chksum)),
+                    "tcp.chksum": hex(int(p["TCP"].chksum)),
+                    "Urgent flag": bool(p["TCP"].urgptr),
+                    "tcp.urgptr": bool(p["TCP"].urgptr),
+                    "TCP Flag Data": {
+                        "Flags": tcpFlags if tcpFlags else "None",
+                        "tcp.flags": tcpFlags if tcpFlags else "None",
+                    },
+                    "Options": list(p["TCP"].options),
+                    "tcp.options": list(p["TCP"].options),
+                    "TCP layer length": int(p["TCP"].dataofs * 4),
+                    "tcp.len": int(p["TCP"].dataofs * 4),
+                    "Wire length": len(p["TCP"]),
+                    "wire.len": len(p["TCP"]),
+                }
+                protocolKey = "TCP"
+            else:
+                # Build UDP section; decode DNS if present
+                dnsSection = None
+                if p.haslayer("DNS"):
+                    dnsLayer = p["DNS"]
+                    queryNames = []
+                    answerNames = []
+                    answerIps = []
+                    try:
+                        qd = dnsLayer.qd
+                        while qd is not None and hasattr(qd, "qname"):
+                            queryNames.append(
+                                qd.qname.decode(errors="ignore").rstrip(".")
+                            )
+                            qd = qd.payload if hasattr(qd, "payload") else None
+                    except Exception:
+                        pass
+                    try:
+                        an = dnsLayer.an
+                        while an is not None and hasattr(an, "rrname"):
+                            answerNames.append(
+                                an.rrname.decode(errors="ignore").rstrip(".")
+                            )
+                            if hasattr(an, "rdata"):
+                                answerIps.append(str(an.rdata))
+                            an = an.payload if hasattr(an, "payload") else None
+                    except Exception:
+                        pass
+                    firstQname = queryNames[0] if queryNames else ""
+                    firstAip = answerIps[0] if answerIps else ""
+                    dnsSection = {
+                        "Transaction ID": int(dnsLayer.id),
+                        "dns.id": int(dnsLayer.id),
+                        "Is Response": bool(dnsLayer.qr),
+                        "dns.qr": bool(dnsLayer.qr),
+                        "Query Names": queryNames,
+                        "dns.qnames": queryNames,
+                        "First Query Name": firstQname,
+                        "dns.qname": firstQname,
+                        "Answer Names": answerNames,
+                        "dns.anames": answerNames,
+                        "Answer IPs": answerIps,
+                        "dns.aips": answerIps,
+                        "First Answer IP": firstAip,
+                        "dns.aip": firstAip,
+                        "Question Count": int(dnsLayer.qdcount),
+                        "dns.qdcount": int(dnsLayer.qdcount),
+                        "Answer Count": int(dnsLayer.ancount),
+                        "dns.ancount": int(dnsLayer.ancount),
+                    }
+
+                transportSection = {
+                    "Source port": int(srcPort),
+                    "udp.src.port": int(srcPort),
+                    "Destination port": int(dstPort),
+                    "udp.dst.port": int(dstPort),
+                    "UDP checksum": hex(int(p["UDP"].chksum)),
+                    "udp.chksum": hex(int(p["UDP"].chksum)),
+                    "UDP length": int(p["UDP"].len),
+                    "udp.len": int(p["UDP"].len),
+                    "Wire length": len(p["UDP"]),
+                    "wire.len": len(p["UDP"]),
+                }
+                if dnsSection is not None:
+                    transportSection["DNS"] = dnsSection
+                protocolKey = "UDP"
+
             packetInfo = {
                 "Packet Processed": int(packetIndex),
                 "Packet Timestamp": timestamp,
                 "packet.timestamp": timestamp,
+                "Protocol": protocolKey,
+                "packet.protocol": protocolKey,
                 # Only include Ethernet MAC data for LAN-local traffic
                 "Ethernet Frame": {
                     "MAC Source": srcMacAddr,
@@ -711,26 +821,7 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                     "IP layer length": int(p["IP"].len),
                     "ip.len": int(p["IP"].len),
                 },
-                "TCP": {
-                    "Source port": int(srcPort),
-                    "tcp.src.port": int(srcPort),
-                    "Destination port": int(dstPort),
-                    "tcp.dst.port": int(dstPort),
-                    "TCP checksum": hex(int(p["TCP"].chksum)),
-                    "tcp.chksum": hex(int(p["TCP"].chksum)),
-                    "Urgent flag": bool(p["TCP"].urgptr),
-                    "tcp.urgptr": bool(p["TCP"].urgptr),
-                    "TCP Flag Data": {
-                        "Flags": tcpFlags if tcpFlags else "None",
-                        "tcp.flags": tcpFlags if tcpFlags else "None",
-                    },
-                    "Options": list(p["TCP"].options),
-                    "tcp.options": list(p["TCP"].options),
-                    "TCP layer length": int(p["TCP"].dataofs * 4),
-                    "tcp.len": int(p["TCP"].dataofs * 4),
-                    "Wire length": len(p["TCP"]),
-                    "wire.len": len(p["TCP"]),
-                },
+                protocolKey: transportSection,
                 "Raw data": {
                     "Payload": {
                         "Hex Encoded": rawPayload.hex(),
@@ -838,7 +929,8 @@ def llmBrief(jsonBatch):
 
 def startThreading():
     """
-    Process all TCP packets from the pre-loaded `packets` list using a ThreadPoolExecutor.
+    Process all TCP and UDP packets from the pre-loaded `packets` list using a
+    ThreadPoolExecutor.
 
     Rather than re-reading the pcap file in every thread (which was the old behaviour),
     this submits one lightweight task per packet index.  ThreadPoolExecutor handles
@@ -847,11 +939,11 @@ def startThreading():
     """
     if __name__ == "__main__":
         print(
-            f"Spooling up {numWorkerThreads} worker threads to process {totalTcpPackets} packets...",
+            f"Spooling up {numWorkerThreads} worker threads to process {totalPackets} packets...",
             file=sys.stderr,
         )
-        # Build the list of packet indices that belong to TCP packets
-        tcpPacketIndices = [i for i, p in enumerate(packets) if p.haslayer("TCP")]
+        # Build the list of packet indices that belong to TCP or UDP packets
+        packetIndices = [i for i, p in enumerate(packets) if p.haslayer("TCP") or p.haslayer("UDP")]
 
         with ThreadPoolExecutor(max_workers=numWorkerThreads) as executor:
             taskFutures = {
@@ -862,7 +954,7 @@ def startThreading():
                     args.dest_port,
                     args.timeout,
                 ): idx
-                for idx in tcpPacketIndices
+                for idx in packetIndices
             }
             for future in as_completed(taskFutures):
                 if stopEvent.is_set():
@@ -883,11 +975,12 @@ parser = argparse.ArgumentParser(
     description=textwrap.dedent(
         f"""                                
 PacketSnitch.
-This software analyzes pcap network captures. It extracts mostly TCP packet data,
+This software analyzes pcap network captures. It extracts TCP and UDP packet data,
 writes testcases, and gathers extra information such as MIME types, entropy, geoip,
-network class, banners, and more. Optionally, it performs active reconnaissance
-to enrich the output with additional network and server information.  A full capture
-summary is generated using a large language model to provide insights into the data.
+network class, banners, and more. DNS packets (UDP port 53) are decoded and included
+in the output. Optionally, it performs active reconnaissance to enrich the output
+with additional network and server information.  A full capture summary is generated
+using a large language model to provide insights into the data.
         Outputs:
           - Testcase files: outputDirPath/<dest_port>/pcap.data_packet.<index>.dat
           - Testcase info: outputDirPath/<dest_port>/pcap.info_packet.<index>.json
@@ -1004,13 +1097,13 @@ if os.path.exists(macVendorsPath):
 else:
     print("Warning: MAC vendor CSV not found at " + macVendorsPath, file=sys.stderr)
 
-totalTcpPackets = 0
+totalPackets = 0
 packets = scapy.rdpcap(args.pcap_file)  # type: ignore
 allPacketCount = len(packets)
 llmBatchSize = 0
-totalTcpPackets = len([p for p in packets if p.haslayer("TCP")])
-if totalTcpPackets == 0:
-    print("No packets found matching the specified port filters.", file=sys.stderr)
+totalPackets = len([p for p in packets if p.haslayer("TCP") or p.haslayer("UDP")])
+if totalPackets == 0:
+    print("No TCP or UDP packets found in the capture.", file=sys.stderr)
     sys.exit(1)
 if "threads" in config and config["threads"]:
     numWorkerThreads = config["threads"]
@@ -1070,8 +1163,8 @@ if llmModelName and useLlm:
             )
 print(
     "Preparing to process "
-    + str(totalTcpPackets)
-    + " packets with "
+    + str(totalPackets)
+    + " TCP/UDP packets with "
     + str(numWorkerThreads)
     + " threads.",
     file=sys.stderr,
