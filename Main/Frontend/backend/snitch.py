@@ -104,6 +104,12 @@ geoIpCacheLock = threading.Lock()
 cachedBanners: dict = {}
 cachedBannersLock = threading.Lock()
 
+# --- HTTP method set used by decodeHTTP() for request-line detection ---
+HTTP_METHODS: set = {
+    "GET", "POST", "HEAD", "PUT", "DELETE", "PATCH",
+    "OPTIONS", "TRACE", "CONNECT",
+}
+
 
 def llmQuery(packetInfoStr):
     """
@@ -841,14 +847,116 @@ def decodeSIP(rawPayload):
         return None
 
 
+def decodeHTTP(rawPayload):
+    """
+    Decode an HTTP request or response from raw payload bytes.
+    Handles both HTTP/1.x requests and responses.  Returns a dict with
+    both display-friendly keys (e.g., 'Method') and dot-notation keys
+    (e.g., 'http.method') for use by the frontend, or None if the payload
+    does not look like an HTTP message.
+
+    For requests the following fields are extracted:
+      Method, URL, HTTP Version, Host, User-Agent, Content-Type,
+      Content-Length, Referer, Accept, Accept-Encoding, Connection.
+    For responses the following fields are extracted:
+      HTTP Version, Status Code, Status Message, Content-Type,
+      Content-Length, Server, Content-Encoding, Transfer-Encoding,
+      Connection, Location (for redirects).
+    """
+    try:
+        text = rawPayload.decode(errors="ignore")
+        # Normalise line endings so both CRLF and bare-LF messages are handled uniformly
+        normalised = text.replace("\r\n", "\n")
+        headerSection = normalised.split("\n\n")[0]
+        lines = headerSection.split("\n")
+        if not lines:
+            return None
+        firstLine = lines[0].strip()
+        isHttpResponse = firstLine.startswith("HTTP/")
+        isHttpRequest = firstLine.split(" ")[0] in HTTP_METHODS if " " in firstLine else False
+        if not isHttpResponse and not isHttpRequest:
+            return None
+
+        # Parse headers into a dict (lowercase keys for case-insensitive lookup)
+        headers = {}
+        for line in lines[1:]:
+            if ": " in line:
+                key, _, val = line.partition(": ")
+                headers[key.strip().lower()] = val.strip()
+
+        if isHttpRequest:
+            parts = firstLine.split(" ", 2)
+            method = parts[0]
+            url = parts[1] if len(parts) > 1 else "Unknown"
+            httpVersion = parts[2] if len(parts) > 2 else "Unknown"
+            return {
+                "Type": "Request",
+                "http.type": "Request",
+                "Method": method,
+                "http.method": method,
+                "URL": url,
+                "http.url": url,
+                "HTTP Version": httpVersion,
+                "http.version": httpVersion,
+                "Host": headers.get("host", "Unknown"),
+                "http.host": headers.get("host", "Unknown"),
+                "User-Agent": headers.get("user-agent", "Unknown"),
+                "http.user_agent": headers.get("user-agent", "Unknown"),
+                "Content-Type": headers.get("content-type", "Unknown"),
+                "http.content_type": headers.get("content-type", "Unknown"),
+                "Content-Length": headers.get("content-length", "Unknown"),
+                "http.content_length": headers.get("content-length", "Unknown"),
+                "Referer": headers.get("referer", "Unknown"),
+                "http.referer": headers.get("referer", "Unknown"),
+                "Accept": headers.get("accept", "Unknown"),
+                "http.accept": headers.get("accept", "Unknown"),
+                "Accept-Encoding": headers.get("accept-encoding", "Unknown"),
+                "http.accept_encoding": headers.get("accept-encoding", "Unknown"),
+                "Connection": headers.get("connection", "Unknown"),
+                "http.connection": headers.get("connection", "Unknown"),
+            }
+        else:
+            parts = firstLine.split(" ", 2)
+            httpVersion = parts[0]
+            statusCode = parts[1] if len(parts) > 1 else "Unknown"
+            statusMessage = parts[2] if len(parts) > 2 else "Unknown"
+            return {
+                "Type": "Response",
+                "http.type": "Response",
+                "HTTP Version": httpVersion,
+                "http.version": httpVersion,
+                "Status Code": statusCode,
+                "http.status_code": statusCode,
+                "Status Message": statusMessage,
+                "http.status_msg": statusMessage,
+                "Content-Type": headers.get("content-type", "Unknown"),
+                "http.content_type": headers.get("content-type", "Unknown"),
+                "Content-Length": headers.get("content-length", "Unknown"),
+                "http.content_length": headers.get("content-length", "Unknown"),
+                "Server": headers.get("server", "Unknown"),
+                "http.server": headers.get("server", "Unknown"),
+                "Content-Encoding": headers.get("content-encoding", "Unknown"),
+                "http.content_encoding": headers.get("content-encoding", "Unknown"),
+                "Transfer-Encoding": headers.get("transfer-encoding", "Unknown"),
+                "http.transfer_encoding": headers.get("transfer-encoding", "Unknown"),
+                "Connection": headers.get("connection", "Unknown"),
+                "http.connection": headers.get("connection", "Unknown"),
+                "Location": headers.get("location", "Unknown"),
+                "http.location": headers.get("location", "Unknown"),
+            }
+    except Exception:
+        return None
+
+
 def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
     """
     Process a single scapy packet: extract TCP, UDP, or ICMP payload, write the raw
     testcase file, gather analysis data (MIME, entropy, geoip, etc.) and merge
     everything into a single JSON output file.  For UDP packets on port 53 the DNS
     layer is decoded.  SNMP (161/162), DHCP (67/68), NTP (123), and SIP (5060/5061)
-    packets are also decoded and included in the output.  ICMP packets are fully
-    supported as a separate transport type.
+    packets are also decoded and included in the output.  HTTP (ports 80, 8080, 8000,
+    8443, 443, and any port whose payload looks like HTTP) is decoded for both
+    requests and responses.  ICMP packets are fully supported as a separate transport type.
 
     packetIndex is the 0-based position of this packet in the full capture, used as
     the filename index so files from concurrent threads do not collide.
@@ -965,6 +1073,10 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                     snmpSection = decodeSNMP(p)
                     if snmpSection is not None:
                         transportSection["SNMP"] = snmpSection
+                # Decode HTTP on any TCP port — decodeHTTP() returns None for non-HTTP payloads
+                httpSection = decodeHTTP(rawPayload)
+                if httpSection is not None:
+                    transportSection["HTTP"] = httpSection
                 protocolKey = "TCP"
             elif isUdp:
                 # Build UDP section; decode DNS if present
