@@ -56,8 +56,10 @@ checkOllama().then((isInstalled) => {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    minWidth: 1180,
-    minHeight: 600,
+    minWidth: 1220,
+    minHeight: 640,
+    autoHideMenuBar: true,
+    frame: false,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
@@ -113,6 +115,7 @@ function checkOllama() {
     exec("ollama --version", (fileError, stdout, stderr) => {
       if (fileError) {
         resolve(false); // not installed or not in PATH
+        alert("Ollama is not installed!");
       } else {
         resolve(true);
       }
