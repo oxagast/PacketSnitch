@@ -730,9 +730,14 @@ def decodeNTP(p):
         return None
     ntpLayer = p["NTP"]
     modeMap = {
-        0: "Reserved", 1: "Symmetric Active", 2: "Symmetric Passive",
-        3: "Client", 4: "Server", 5: "Broadcast",
-        6: "NTP Control", 7: "Private",
+        0: "Reserved",
+        1: "Symmetric Active",
+        2: "Symmetric Passive",
+        3: "Client",
+        4: "Server",
+        5: "Broadcast",
+        6: "NTP Control",
+        7: "Private",
     }
     try:
         leap = int(ntpLayer.leap) if hasattr(ntpLayer, "leap") else 0
@@ -766,8 +771,18 @@ def decodeSIP(rawPayload):
     decoding fails.
     """
     sipMethods = {
-        "INVITE", "ACK", "BYE", "CANCEL", "REGISTER",
-        "OPTIONS", "SUBSCRIBE", "NOTIFY", "REFER", "INFO", "UPDATE", "PRACK",
+        "INVITE",
+        "ACK",
+        "BYE",
+        "CANCEL",
+        "REGISTER",
+        "OPTIONS",
+        "SUBSCRIBE",
+        "NOTIFY",
+        "REFER",
+        "INFO",
+        "UPDATE",
+        "PRACK",
     }
     try:
         text = rawPayload.decode(errors="ignore")
@@ -776,7 +791,9 @@ def decodeSIP(rawPayload):
             return None
         firstLine = lines[0].strip()
         isSipResponse = firstLine.startswith("SIP/")
-        isSipRequest = firstLine.split(" ")[0] in sipMethods if " " in firstLine else False
+        isSipRequest = (
+            firstLine.split(" ")[0] in sipMethods if " " in firstLine else False
+        )
         if not isSipResponse and not isSipRequest:
             return None
         headers = {}
@@ -839,12 +856,8 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
     """
     srcMacAddr = p.src if p.haslayer("Ethernet") else "N/A"
     dstMacAddr = p.dst if p.haslayer("Ethernet") else "N/A"
-    srcMacVendor = (
-        macAddrToVendor(srcMacAddr) if srcMacAddr != "N/A" else "N/A"
-    )
-    dstMacVendor = (
-        macAddrToVendor(dstMacAddr) if dstMacAddr != "N/A" else "N/A"
-    )
+    srcMacVendor = macAddrToVendor(srcMacAddr) if srcMacAddr != "N/A" else "N/A"
+    dstMacVendor = macAddrToVendor(dstMacAddr) if dstMacAddr != "N/A" else "N/A"
     if not p.haslayer("IP"):
         return None
 
@@ -874,10 +887,19 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
         transportProtocol = "icmp"
         dstPortStr = "icmp"
 
-    if (srcPortFilter is None or srcPort == srcPortFilter) and (dstPortFilter is None or dstPort == dstPortFilter):
+    if (srcPortFilter is None or srcPort == srcPortFilter) and (
+        dstPortFilter is None or dstPort == dstPortFilter
+    ):
         if rawPayload is not None and len(rawPayload) > 0:
             writeTestcase(rawPayload, outputDir, dstPortStr, packetIndex)
-            dataTypeInfo = getDatatypes(rawPayload, dstPort, p["IP"].src, p["IP"].dst, timeout, transportProtocol)
+            dataTypeInfo = getDatatypes(
+                rawPayload,
+                dstPort,
+                p["IP"].src,
+                p["IP"].dst,
+                timeout,
+                transportProtocol,
+            )
             timestamp = datetime.fromtimestamp(float(Decimal(p.time))).strftime(
                 "%Y-%m-%d %H:%M:%S.%f"
             )
@@ -1034,11 +1056,19 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                 # ICMP transport section
                 icmpLayer = p["ICMP"]
                 icmpTypeMap = {
-                    0: "Echo Reply", 3: "Destination Unreachable", 4: "Source Quench",
-                    5: "Redirect", 8: "Echo Request", 9: "Router Advertisement",
-                    10: "Router Solicitation", 11: "Time Exceeded",
-                    12: "Parameter Problem", 13: "Timestamp", 14: "Timestamp Reply",
-                    15: "Information Request", 16: "Information Reply",
+                    0: "Echo Reply",
+                    3: "Destination Unreachable",
+                    4: "Source Quench",
+                    5: "Redirect",
+                    8: "Echo Request",
+                    9: "Router Advertisement",
+                    10: "Router Solicitation",
+                    11: "Time Exceeded",
+                    12: "Parameter Problem",
+                    13: "Timestamp",
+                    14: "Timestamp Reply",
+                    15: "Information Request",
+                    16: "Information Reply",
                 }
                 icmpType = int(icmpLayer.type) if hasattr(icmpLayer, "type") else 0
                 icmpCode = int(icmpLayer.code) if hasattr(icmpLayer, "code") else 0
@@ -1079,7 +1109,7 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                 "Packet Timestamp": timestamp,
                 "packet.timestamp": timestamp,
                 "Protocol": protocolKey,
-                "packet.protocol": protocolKey,
+                "packet.proto": protocolKey,
                 # Only include Ethernet MAC data for LAN-local traffic
                 "Ethernet Frame": {
                     "MAC Source": srcMacAddr,
@@ -1181,9 +1211,7 @@ def popDictKey(obj, keyToRemove):
     if isinstance(obj, dict):
         # Create a new dict to avoid modifying while iterating
         return {
-            k: popDictKey(v, keyToRemove)
-            for k, v in obj.items()
-            if k != keyToRemove
+            k: popDictKey(v, keyToRemove) for k, v in obj.items() if k != keyToRemove
         }
     elif isinstance(obj, list):
         return [popDictKey(item, keyToRemove) for item in obj]
@@ -1225,7 +1253,11 @@ def startThreading():
             file=sys.stderr,
         )
         # Build the list of packet indices that belong to TCP, UDP, or ICMP packets
-        packetIndices = [i for i, p in enumerate(packets) if p.haslayer("TCP") or p.haslayer("UDP") or p.haslayer("ICMP")]
+        packetIndices = [
+            i
+            for i, p in enumerate(packets)
+            if p.haslayer("TCP") or p.haslayer("UDP") or p.haslayer("ICMP")
+        ]
 
         with ThreadPoolExecutor(max_workers=numWorkerThreads) as executor:
             taskFutures = {
@@ -1383,7 +1415,9 @@ totalPackets = 0
 packets = scapy.rdpcap(args.pcap_file)  # type: ignore
 allPacketCount = len(packets)
 llmBatchSize = 0
-totalPackets = len([p for p in packets if p.haslayer("TCP") or p.haslayer("UDP") or p.haslayer("ICMP")])
+totalPackets = len(
+    [p for p in packets if p.haslayer("TCP") or p.haslayer("UDP") or p.haslayer("ICMP")]
+)
 if totalPackets == 0:
     print("No TCP, UDP, or ICMP packets found in the capture.", file=sys.stderr)
     sys.exit(1)
@@ -1463,7 +1497,10 @@ try:
     try:
         threadingResult = startThreading()
     except Exception as startErr:
-        print(f"Warning: startThreading raised an exception ({startErr}); retrying.", file=sys.stderr)
+        print(
+            f"Warning: startThreading raised an exception ({startErr}); retrying.",
+            file=sys.stderr,
+        )
         threadingResult = startThreading()
 finally:
     finalSummary = ""
@@ -1481,7 +1518,9 @@ finally:
         allPacketInfo = allPacketInfoBackup
 
     if config.get("final_summary", True) and config["ollama"].get("use_llm", True):
-        joinedSummaries = " ".join(llmSummaries) if llmSummaries else "No LLM summaries generated."
+        joinedSummaries = (
+            " ".join(llmSummaries) if llmSummaries else "No LLM summaries generated."
+        )
         try:
             finalLlmResponse = ollama.generate(
                 model=llmModelName,
@@ -1489,7 +1528,9 @@ finally:
                 + joinedSummaries,
             )
             finalSummary = finalLlmResponse["response"]
-            with open(outputDir + "/final_summary.txt", "w", encoding="utf-8") as summaryFile:
+            with open(
+                outputDir + "/final_summary.txt", "w", encoding="utf-8"
+            ) as summaryFile:
                 summaryFile.write(finalSummary)
             print("\n" + finalSummary)
             print("\nFinal summary saved to: " + outputDir + "/final_summary.txt")
