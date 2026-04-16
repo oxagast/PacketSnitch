@@ -23,7 +23,10 @@ python3 snitch.py traffic.pcap -o output_dir -a -v
 
 ```bash
 # Development
-npm install && npm start
+npm install
+(chown/chmod electron binary)
+npm run make
+npm start
 
 # Or run the pre-built binary
 ./packetsnitch          # Linux
