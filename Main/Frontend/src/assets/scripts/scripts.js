@@ -858,7 +858,44 @@ function infoPanel(pk) {
     ];
     createTable(sipRows, ["SIP Field", "Value"], "sidedatatable");
   }
-  const ipTableHeaders = ["Packet", "Data"];
+
+  // HTTP info table (shown for HTTP request/response packets)
+  const httpData = transportData["HTTP"];
+  if (httpData) {
+    const httpRows = [
+      { name: "Type", value: httpData["Type"] || "—" },
+    ];
+    if (httpData["Type"] === "Request") {
+      httpRows.push(
+        { name: "Method", value: httpData["Method"] || "—" },
+        { name: "URL", value: httpData["URL"] || "—" },
+        { name: "HTTP Version", value: httpData["HTTP Version"] || "—" },
+        { name: "Host", value: httpData["Host"] || "—" },
+        { name: "User-Agent", value: httpData["User-Agent"] || "—" },
+        { name: "Content-Type", value: httpData["Content-Type"] || "—" },
+        { name: "Content-Length", value: httpData["Content-Length"] || "—" },
+        { name: "Referer", value: httpData["Referer"] || "—" },
+        { name: "Accept", value: httpData["Accept"] || "—" },
+        { name: "Accept-Encoding", value: httpData["Accept-Encoding"] || "—" },
+        { name: "Connection", value: httpData["Connection"] || "—" },
+      );
+    } else {
+      httpRows.push(
+        { name: "Status Code", value: httpData["Status Code"] || "—" },
+        { name: "Status Message", value: httpData["Status Message"] || "—" },
+        { name: "HTTP Version", value: httpData["HTTP Version"] || "—" },
+        { name: "Server", value: httpData["Server"] || "—" },
+        { name: "Content-Type", value: httpData["Content-Type"] || "—" },
+        { name: "Content-Length", value: httpData["Content-Length"] || "—" },
+        { name: "Content-Encoding", value: httpData["Content-Encoding"] || "—" },
+        { name: "Transfer-Encoding", value: httpData["Transfer-Encoding"] || "—" },
+        { name: "Connection", value: httpData["Connection"] || "—" },
+        { name: "Location", value: httpData["Location"] || "—" },
+      );
+    }
+    createTable(httpRows, ["HTTP Field", "Value"], "sidedatatable");
+  }
+
   const srcIpData = [
     { name: "IP:Port", value: sourceIpPort },
     { name: "MAC", value: srcMac },
