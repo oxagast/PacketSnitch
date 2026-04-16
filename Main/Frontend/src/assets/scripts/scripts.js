@@ -1,6 +1,9 @@
 const { filterPackets } = require("./filter");
 const { getDataType } = require("./filter");
 // Global variables for DOM elements and state
+document.getElementById("close-btn").addEventListener("click", () => {
+  window.quitapi.quitApp();
+});
 const jsonUploadInput = document.getElementById("json-upload"); // File input for JSON upload
 let capturedPackets = {}; // Stores parsed packet data from JSON
 let jsonCapture = ""; // Stringified JSON capture for pretty display
