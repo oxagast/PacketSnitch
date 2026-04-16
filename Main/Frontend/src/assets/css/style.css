@@ -107,6 +107,27 @@ body {
   align-items: center;
   border: 1px solid black;
   border-radius: 6px;
+  position: relative;
+  -webkit-app-region: drag;
+}
+
+#close-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #4a90e2;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  -webkit-app-region: no-drag;
+}
+
+#close-btn:hover {
+  color: #82b4f0;
 }
 
 .rubik-glitch-regular {

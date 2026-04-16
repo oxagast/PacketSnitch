@@ -123,6 +123,10 @@ function checkOllama() {
   });
 }
 
+ipcMain.handle("quit-app", () => {
+  app.quit();
+});
+
 ipcMain.handle("save-json", async () => {
   const { canceled, filePath } = await dialog.showSaveDialog({
     title: "Save JSON Capture",
