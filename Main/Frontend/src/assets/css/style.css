@@ -108,6 +108,7 @@ body {
   border: 1px solid black;
   border-radius: 6px;
   position: relative;
+  -webkit-app-region: drag;
 }
 
 #close-btn {
@@ -122,6 +123,7 @@ body {
   line-height: 1;
   padding: 2px 6px;
   border-radius: 4px;
+  -webkit-app-region: no-drag;
 }
 
 #close-btn:hover {
