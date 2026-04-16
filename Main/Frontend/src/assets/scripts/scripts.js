@@ -896,6 +896,7 @@ function infoPanel(pk) {
     createTable(httpRows, ["HTTP Field", "Value"], "sidedatatable");
   }
 
+  const ipTableHeaders = ["Packet", "Data"];
   const srcIpData = [
     { name: "IP:Port", value: sourceIpPort },
     { name: "MAC", value: srcMac },
