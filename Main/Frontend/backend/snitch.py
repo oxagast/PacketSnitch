@@ -68,7 +68,7 @@ except ImportError:
     import scapy
 
 activeRecon = "False"
-numWorkerThreads = 6
+numWorkerThreads = 2 * (os.cpu_count() or 1)
 numLlmThreads = 5
 llmResponseLength = 100
 llmModelName = "minimax-m2.5:cloud"
