@@ -9,7 +9,7 @@ PacketSnitch is a Python tool for extracting payloads and rich metadata from net
 Please donate to this project to keep it going!<br>
 [Thanks.dev](https://thanks.dev/oxasploits)<br>
 [PayPal](https://paypal.me/oxagast)<br>
-Bitcoin: bc1qx4suwsawn0dcfvdg7qxpxv3je6ke0rcl9naey4
+
 
 
 ## Screenshot
