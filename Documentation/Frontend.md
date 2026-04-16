@@ -35,6 +35,8 @@ npm run make
 
 **Pre-built binaries**
 
+Install via deb/rpm/exe depending on your operating system from the ![Releases](https://github.com/oxasploits/PacketSnitch/releases) page.
+
 - Windows: `packetsnitch.exe`
 - Linux: `packetsnitch`
 
