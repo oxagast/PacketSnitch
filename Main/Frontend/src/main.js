@@ -66,7 +66,7 @@ function createWindow() {
   });
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   mainWindow.webContents.on("did-finish-load", () => {
-    mainWindow.webContents.setZoomFactor(0.7); // makes everything fit snuggly
+    mainWindow.webContents.setZoomFactor(0.6); // makes everything fit snuggly
   });
 }
 
@@ -100,7 +100,7 @@ app.whenReady().then(() => {
 
           isFileSent = true; // Prevent sending multiple times
         }
-      }, 1000);
+      }, 2000);
       console.log("File selected:", filePaths[0]);
       selectedFilePath = filePaths[0];
       return filePaths[0];

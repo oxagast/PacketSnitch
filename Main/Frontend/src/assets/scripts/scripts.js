@@ -619,18 +619,18 @@ function infoPanel(pk) {
     protocol === "TCP"
       ? transportData["TCP checksum"]
       : protocol === "UDP"
-      ? transportData["UDP checksum"]
-      : protocol === "ICMP"
-      ? transportData["ICMP Checksum"]
-      : "N/A";
+        ? transportData["UDP checksum"]
+        : protocol === "ICMP"
+          ? transportData["ICMP Checksum"]
+          : "N/A";
   const transportLayerLen =
     protocol === "TCP"
       ? transportData["TCP layer length"]
       : protocol === "UDP"
-      ? transportData["UDP length"]
-      : protocol === "ICMP"
-      ? transportData["Wire length"]
-      : "N/A";
+        ? transportData["UDP length"]
+        : protocol === "ICMP"
+          ? transportData["Wire length"]
+          : "N/A";
   const tcpFlags =
     protocol === "TCP" && transportData["TCP Flag Data"]
       ? transportData["TCP Flag Data"]["Flags"]
@@ -849,8 +849,7 @@ function infoPanel(pk) {
       { name: "Type", value: sipData["Type"] || "—" },
       {
         name: sipData["Type"] === "Request" ? "Method" : "Status Code",
-        value:
-          sipData["Method"] || sipData["Status Code"] || "—",
+        value: sipData["Method"] || sipData["Status Code"] || "—",
       },
       { name: "From", value: sipData["From"] || "—" },
       { name: "To", value: sipData["To"] || "—" },
@@ -862,9 +861,7 @@ function infoPanel(pk) {
   // HTTP info table (shown for HTTP request/response packets)
   const httpData = transportData["HTTP"];
   if (httpData) {
-    const httpRows = [
-      { name: "Type", value: httpData["Type"] || "—" },
-    ];
+    const httpRows = [{ name: "Type", value: httpData["Type"] || "—" }];
     if (httpData["Type"] === "Request") {
       httpRows.push(
         { name: "Method", value: httpData["Method"] || "—" },
@@ -887,8 +884,14 @@ function infoPanel(pk) {
         { name: "Server", value: httpData["Server"] || "—" },
         { name: "Content-Type", value: httpData["Content-Type"] || "—" },
         { name: "Content-Length", value: httpData["Content-Length"] || "—" },
-        { name: "Content-Encoding", value: httpData["Content-Encoding"] || "—" },
-        { name: "Transfer-Encoding", value: httpData["Transfer-Encoding"] || "—" },
+        {
+          name: "Content-Encoding",
+          value: httpData["Content-Encoding"] || "—",
+        },
+        {
+          name: "Transfer-Encoding",
+          value: httpData["Transfer-Encoding"] || "—",
+        },
         { name: "Connection", value: httpData["Connection"] || "—" },
         { name: "Location", value: httpData["Location"] || "—" },
       );
@@ -1016,6 +1019,7 @@ document.getElementById("save-json-btn").addEventListener("click", function () {
     } else if (result.success) {
       statusUpdate("Status: JSON saved successfully");
     } else {
+      onError("Save failed");
       statusUpdate(
         "Status: Save failed – " + (result.error || "unknown error"),
       );
@@ -1091,6 +1095,7 @@ function showAllData() {
   document.getElementById("rightside").style.display = "block";
   document.getElementById("active-recon").style.display = "block";
   document.getElementById("hexg").hidden = false;
+  document.getElementById("error-container").style.display = "none";
 }
 
 document
