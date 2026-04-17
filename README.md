@@ -23,9 +23,11 @@ This is a screenshot of *PacketSnitch v1.2.227*.
 
 ## Docs
 
-Start by installing a production release from the [releases](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/bitcoin-qr.png) page, `deb`,`rpm`, and `exe` are supported installers for both Linux and Windows.
+Start by installing a production release from the [releases](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/bitcoin-qr.png) page, `deb`,`rpm`, and `exe`. There are supported installers for both Linux and Windows.
 
-Once installed, type `packetsnitch` or click the icon to get started!
+Once installed, type `packetsnitch` or click the icon to get started!  To search for packets using the filter, browse the docs for the unique identifer keys and search syntax in the docs.
+
+Developer install instructions are in the following two articles:
 
 ![Frontend Docs](https://github.com/oxasploits/PacketSnitch/blob/main/Documentation/Frontend.md)
 
