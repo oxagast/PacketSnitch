@@ -64,9 +64,9 @@ function showInstallScreen(installInfo) {
   screen.style.display = "flex";
 }
 
-document
-  .getElementById("install-continue-btn")
-  .addEventListener("click", () => {
+const installContinueBtn = document.getElementById("install-continue-btn");
+if (installContinueBtn) {
+  installContinueBtn.addEventListener("click", () => {
     if (window.installapi) {
       window.installapi.dismissFirstRun().then(() => {
         document.getElementById("install-screen").style.display = "none";
@@ -75,6 +75,7 @@ document
       document.getElementById("install-screen").style.display = "none";
     }
   });
+}
 
 popHexGrid("00".repeat(256));
 // Set up file upload handler for JSON capture

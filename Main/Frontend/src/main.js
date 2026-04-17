@@ -49,8 +49,8 @@ function killBackendProcess() {
 
 function checkOllama() {
   return new Promise((resolve) => {
-    exec("ollama --version", (fileError) => {
-      if (fileError) {
+    exec("ollama --version", (execError) => {
+      if (execError) {
         resolve(false); // not installed or not in PATH
       } else {
         resolve(true);
