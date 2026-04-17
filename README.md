@@ -33,6 +33,10 @@ Developer install instructions are in the following two articles:
 
 ![Backend Docs](https://github.com/oxasploits/PacketSnitch/blob/main/Documentation/Backend.md)
 
+For a complete guide to searching and filtering packets, see the filter reference:
+
+![Filter Reference](https://github.com/oxasploits/PacketSnitch/blob/main/Documentation/Filters.md)
+
 ## License
 
 GNU GPLv3
