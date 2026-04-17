@@ -73,8 +73,6 @@ Shows the raw payload bytes for the current packet in two views:
 - **ASCII View** — Printable character runs extracted from the payload, making it easy to spot readable strings embedded in binary data.
 - **Hex Grid** — An interactive hex dump. Clicking a cell highlights the corresponding bytes and shows the printable ASCII sequence starting at that offset.
 
-![PacketSnitch hex view](https://raw.githubusercontent.com/oxasploits/PacketSnitch/main/Documentation/screenshots/packetsnitch_ss12.png)
-
 ### Right Sidebar
 
 | Panel                | Description |
@@ -86,8 +84,6 @@ Shows the raw payload bytes for the current packet in two views:
 ### Summary Frame
 
 Click **Summary** in the toolbar to see an LLM-generated report for the entire capture. The report is produced by Ollama and is only available when the backend was run with LLM support enabled in `conf.yaml`.
-
-![PacketSnitch summary](https://raw.githubusercontent.com/oxasploits/PacketSnitch/main/Documentation/screenshots/packetSnitch_ss13.png)
 
 ---
 
