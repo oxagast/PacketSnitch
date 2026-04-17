@@ -8,7 +8,10 @@ PacketSnitch is a Python tool for extracting payloads and rich metadata from net
 
 Please donate to this project to keep it going!<br>
 [Thanks.dev](https://thanks.dev/oxasploits)<br>
-[PayPal](https://paypal.me/oxagast)<br>
+
+![Bitcoin](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/bitcoin-qr.png)
+![PayPal](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/paypal-qr.png)
+![Venmo](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/venmo-qr.png)
 
 
 
