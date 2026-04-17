@@ -9,6 +9,9 @@ const testcaseTempDir = path.join(os.tmpdir(), "testcases");
 let mainWindow;
 let selectedFilePath;
 let isBackendLoaded = false;
+let versionFilePath;
+let isFirstRunAfterInstall = false;
+let cachedOllamaInstalled = false;
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
@@ -44,15 +47,31 @@ function killBackendProcess() {
   }
 }
 
-checkOllama().then((isInstalled) => {
-  if (isInstalled) {
-    console.log("Ollama is installed, proceeding with app launch...");
-  } else {
-    console.log(
-      "Ollama is not installed. LLM summarisation will be unavailable.",
-    );
+function checkOllama() {
+  return new Promise((resolve) => {
+    exec("ollama --version", (fileError) => {
+      if (fileError) {
+        resolve(false); // not installed or not in PATH
+      } else {
+        resolve(true);
+      }
+    });
+  });
+}
+
+function checkNewInstall() {
+  if (!versionFilePath) return false;
+  try {
+    if (!fs.existsSync(versionFilePath)) {
+      return true;
+    }
+    const storedVersion = fs.readFileSync(versionFilePath, "utf8").trim();
+    return storedVersion !== app.getVersion();
+  } catch (err) {
+    console.error("Error checking install version:", err);
+    return true;
   }
-});
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -73,7 +92,18 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  versionFilePath = path.join(
+    app.getPath("userData"),
+    "installed_version.txt",
+  );
+  isFirstRunAfterInstall = checkNewInstall();
   checkOllama().then((isInstalled) => {
+    cachedOllamaInstalled = isInstalled;
+    if (!isInstalled) {
+      console.log(
+        "Ollama is not installed. LLM summarisation will be unavailable.",
+      );
+    }
     createWindow();
     app.on("activate", function () {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -110,18 +140,64 @@ app.whenReady().then(() => {
   });
 });
 
-function checkOllama() {
-  return new Promise((resolve) => {
-    exec("ollama --version", (fileError, stdout, stderr) => {
-      if (fileError) {
-        resolve(false); // not installed or not in PATH
-        alert("Ollama is not installed!");
-      } else {
-        resolve(true);
-      }
-    });
-  });
-}
+ipcMain.handle("check-first-run", async () => {
+  const isDev = !app.isPackaged;
+  const basePath = isDev
+    ? path.join(__dirname, "../..")
+    : process.resourcesPath;
+  const backendExe = platform === "win32" ? "snitch.exe" : "snitch";
+  const filesToCheck = [
+    {
+      name: "PacketSnitch Backend (" + backendExe + ")",
+      path: path.join(basePath, "backend", backendExe),
+    },
+    {
+      name: "GeoIP Database (GeoLite2-City.mmdb)",
+      path: path.join(basePath, "backend", "common", "GeoLite2-City.mmdb"),
+    },
+    {
+      name: "MAC Vendors Database (mac-vendors-export.csv)",
+      path: path.join(
+        basePath,
+        "backend",
+        "common",
+        "mac-vendors-export.csv",
+      ),
+    },
+    {
+      name: "Services Database (service-names-port-numbers.csv)",
+      path: path.join(
+        basePath,
+        "backend",
+        "common",
+        "service-names-port-numbers.csv",
+      ),
+    },
+  ];
+  const installedFiles = filesToCheck.map((f) => ({
+    name: f.name,
+    path: f.path,
+    exists: fs.existsSync(f.path),
+  }));
+  return {
+    isFirstRun: isFirstRunAfterInstall,
+    version: app.getVersion(),
+    ollamaInstalled: cachedOllamaInstalled,
+    installedFiles,
+  };
+});
+
+ipcMain.handle("dismiss-first-run", async () => {
+  const currentVersion = app.getVersion();
+  try {
+    fs.writeFileSync(versionFilePath, currentVersion, "utf8");
+    isFirstRunAfterInstall = false;
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to write version file:", err);
+    return { success: false, error: err.message };
+  }
+});
 
 ipcMain.handle("quit-app", () => {
   app.quit();
