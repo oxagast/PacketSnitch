@@ -19,23 +19,23 @@ Thanks.dev, PayPal, Venmo, and Bitcoin are accepted forms of donation to the Pac
 ## Screenshot
 
 This is a screenshot of *PacketSnitch v1.2.227*.
-![PacketSnitch Screenshot](https://private-user-images.githubusercontent.com/11489666/578954353-2ae3e5e6-e675-41c5-abb0-f150e9e832b4.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzYzNTAxOTIsIm5iZiI6MTc3NjM0OTg5MiwicGF0aCI6Ii8xMTQ4OTY2Ni81Nzg5NTQzNTMtMmFlM2U1ZTYtZTY3NS00MWM1LWFiYjAtZjE1MGU5ZTgzMmI0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA0MTYlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNDE2VDE0MzEzMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTY4ZmE5NTMxZjk0ZWQwOTk5NTE0ZjI4OTQ4Njk5M2JhMjViODA2MDNlNThmYzM1OTVmNDcxMDEzN2E2OWIzY2ImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.LysCp8f0gsyguwcVxA_jl2XzmYcP6NX6Aceg7Dl2nvc)
+![PacketSnitch Screenshot](https://private-user-images.githubusercontent.com/11489666/580219878-60ce31c8-008d-41e1-a911-5fec16d375e3.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzY0NjkwMDUsIm5iZiI6MTc3NjQ2ODcwNSwicGF0aCI6Ii8xMTQ4OTY2Ni81ODAyMTk4NzgtNjBjZTMxYzgtMDA4ZC00MWUxLWE5MTEtNWZlYzE2ZDM3NWUzLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA0MTclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNDE3VDIzMzE0NVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPThkNWEzMWQwODdmMTFmMGExZWU0M2UxMTQ1NjU4ZjU0OGUyNGMwOWVkMWM1YmU5MzU1NDIwZGI5ZjQwMGI5MWEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.vs_J3_fL82KDOE19Mb9UjgnSGdRhVKrBS-vIP_eZEKY)
 
 ## Docs
 
-Start by installing a production release from the [releases](https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/bitcoin-qr.png) page, `deb`,`rpm`, and `exe`. There are supported installers for both Linux and Windows.
+Start by installing a production release from the [releases](https://github.com/oxasploits/PacketSnitch/releases) page, `deb`,`rpm`, and `exe`. There are supported installers for both Linux and Windows.
 
 Once installed, type `packetsnitch` or click the icon to get started!  To search for packets using the filter, browse the docs for the unique identifer keys and search syntax in the docs.
 
 Developer install instructions are in the following two articles:
 
-![Frontend Docs](https://github.com/oxasploits/PacketSnitch/blob/main/Documentation/Frontend.md)
+[Frontend Docs](https://github.com/oxasploits/PacketSnitch/blob/main/Documentation/Frontend.md)
 
-![Backend Docs](https://github.com/oxasploits/PacketSnitch/blob/main/Documentation/Backend.md)
+[Backend Docs](https://github.com/oxasploits/PacketSnitch/blob/main/Documentation/Backend.md)
 
 For a complete guide to searching and filtering packets, see the filter reference:
 
-![Filter Reference](https://github.com/oxasploits/PacketSnitch/blob/main/Documentation/Filters.md)
+[Filter Reference](https://github.com/oxasploits/PacketSnitch/blob/main/Documentation/Filters.md)
 
 ## License
 
