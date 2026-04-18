@@ -1,5 +1,6 @@
 const { filterPackets } = require("./filter");
 const { getDataType } = require("./filter");
+const SOFTWARE_VERSION = require("../../../package.json").version;
 // Global variables for DOM elements and state
 document.getElementById("close-btn").addEventListener("click", () => {
   window.quitapi.quitApp();
