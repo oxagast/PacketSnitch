@@ -36,3 +36,8 @@ contextBridge.exposeInMainWorld("saveapi", {
 contextBridge.exposeInMainWorld("quitapi", {
   quitApp: () => ipcRenderer.invoke("quit-app"),
 });
+
+contextBridge.exposeInMainWorld("installapi", {
+  checkFirstRun: () => ipcRenderer.invoke("check-first-run"),
+  dismissFirstRun: () => ipcRenderer.invoke("dismiss-first-run"),
+});
