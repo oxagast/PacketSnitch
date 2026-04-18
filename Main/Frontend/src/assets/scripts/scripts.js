@@ -1,6 +1,6 @@
 const { filterPackets } = require("./filter");
 const { getDataType } = require("./filter");
-const SOFTWARE_VERSION = require("../../../package.json").version;
+const psVer = require("../../../package.json").version;
 // Global variables for DOM elements and state
 document.getElementById("close-btn").addEventListener("click", () => {
   window.quitapi.quitApp();
@@ -202,7 +202,7 @@ function processFile(file) {
 function statusUpdate(message) {
   status.textContent = message;
   setTimeout(() => {
-    status.textContent = "Status: Ready";
+    status.textContent = "PacketSnitch " + psVer + ": Ready";
   }, 6000);
 }
 
