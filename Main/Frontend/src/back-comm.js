@@ -54,9 +54,18 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
         } else {
           sendError("Backend execution error! " + error);
         }
+      } else {
+        setTimeout(() => {
+          const hostsJsonPath = path.join(testcaseOutputDir, "hosts.json");
+          const mainWin = BrowserWindow.getAllWindows()[0];
+          if (mainWin && fs.existsSync(hostsJsonPath)) {
+            const hostsJsonData = fs.readFileSync(hostsJsonPath, "utf8");
+            mainWin.webContents.send("json-data", hostsJsonData);
+          }
+        }, 1000);
       }
     });
 
-    console.log("Backend started, watiting for JSON...");
+    console.log("Backend started, waiting for completion...");
   });
 });
