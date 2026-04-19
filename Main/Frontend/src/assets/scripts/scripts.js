@@ -9,6 +9,25 @@ const {
   renderNtpTable,
   renderSipTable,
   renderHttpTable,
+  renderFtpTable,
+  renderSmtpTable,
+  renderPop3Table,
+  renderImapTable,
+  renderTelnetTable,
+  renderIrcTable,
+  renderMtpTable,
+  renderLdapTable,
+  renderMysqlTable,
+  renderPostgresqlTable,
+  renderXmppTable,
+  renderSmbTable,
+  renderMqttTable,
+  renderRtspTable,
+  renderTftpTable,
+  renderBgpTable,
+  renderHttp2Table,
+  renderNntpTable,
+  renderRadiusTable,
 } = require("./decoders");
 const psVer = require("../../../package.json").version;
 // Global variables for DOM elements and state
@@ -839,6 +858,63 @@ function infoPanel(pk) {
 
   // HTTP info table (shown for HTTP request/response packets)
   renderHttpTable(transportData);
+
+  // HTTP/2 info table (shown for HTTP/2 frames on any TCP port)
+  renderHttp2Table(transportData);
+
+  // FTP info table (shown for FTP packets on port 20/21)
+  renderFtpTable(transportData);
+
+  // SMTP info table (shown for SMTP packets on port 25/587/465)
+  renderSmtpTable(transportData);
+
+  // POP3 info table (shown for POP3 packets on port 110/995)
+  renderPop3Table(transportData);
+
+  // IMAP info table (shown for IMAP packets on port 143/993)
+  renderImapTable(transportData);
+
+  // Telnet info table (shown for Telnet packets on port 23)
+  renderTelnetTable(transportData);
+
+  // IRC info table (shown for IRC packets on port 6667/6668/6669)
+  renderIrcTable(transportData);
+
+  // MTP info table (shown for MTP/MMS packets on port 1755)
+  renderMtpTable(transportData);
+
+  // LDAP info table (shown for LDAP packets on port 389/636)
+  renderLdapTable(transportData);
+
+  // MySQL info table (shown for MySQL packets on port 3306)
+  renderMysqlTable(transportData);
+
+  // PostgreSQL info table (shown for PostgreSQL packets on port 5432)
+  renderPostgresqlTable(transportData);
+
+  // XMPP info table (shown for XMPP packets on port 5222/5223)
+  renderXmppTable(transportData);
+
+  // SMB info table (shown for SMB packets on port 139/445)
+  renderSmbTable(transportData);
+
+  // MQTT info table (shown for MQTT packets on port 1883/8883)
+  renderMqttTable(transportData);
+
+  // RTSP info table (shown for RTSP packets on port 554)
+  renderRtspTable(transportData);
+
+  // TFTP info table (shown for TFTP packets on UDP port 69)
+  renderTftpTable(transportData);
+
+  // BGP info table (shown for BGP packets on port 179)
+  renderBgpTable(transportData);
+
+  // NNTP info table (shown for NNTP packets on port 119)
+  renderNntpTable(transportData);
+
+  // RADIUS info table (shown for RADIUS packets on port 1812/1813/1645/1646)
+  renderRadiusTable(transportData);
 
   const ipTableHeaders = ["Packet", "Data"];
   const srcIpData = [
