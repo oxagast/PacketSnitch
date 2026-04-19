@@ -190,10 +190,14 @@ Protocol-specific keys (e.g., `dns.*`, `http.*`) are only present in packets whe
 | `dns.id`         | integer | DNS transaction ID                               |
 | `dns.qr`         | boolean | `true` = response, `false` = query               |
 | `dns.qname`      | string  | First queried domain name                        |
+| `dns.qnames`     | array   | All queried domain names in the message          |
 | `dns.aname`      | string  | First answer name                                |
+| `dns.anames`     | array   | All answer names in the message                  |
 | `dns.aip`        | string  | First resolved IP address from the response      |
+| `dns.aips`       | array   | All resolved IP addresses from the response      |
 | `dns.qdcount`    | integer | Number of questions in the message               |
 | `dns.ancount`    | integer | Number of answer records in the message          |
+| `dns.hostnames`  | array   | Hostnames resolved via active recon (requires `-a`) |
 
 ### HTTP Fields
 
@@ -236,7 +240,7 @@ Protocol-specific keys (e.g., `dns.*`, `http.*`) are only present in packets whe
 
 | Filter Key      | Type   | Description                                                    |
 | --------------- | ------ | -------------------------------------------------------------- |
-| `dhcp.msg_type` | string | DHCP message type (`DISCOVER`, `OFFER`, `REQUEST`, `ACK`, etc.) |
+| `dhcp.msg_type` | string | DHCP message type (`Discover`, `Offer`, `Request`, `Decline`, `ACK`, `NAK`, `Release`, `Inform`) |
 | `dhcp.xid`      | string | Transaction ID (hex)                                           |
 | `dhcp.ciaddr`   | string | Client IP address                                              |
 | `dhcp.yiaddr`   | string | Offered IP address                                             |
@@ -268,6 +272,240 @@ Protocol-specific keys (e.g., `dns.*`, `http.*`) are only present in packets whe
 | `sip.call_id`     | string | `Call-ID` header                                              |
 | `sip.status_code` | string | SIP status code (e.g. `200`) — responses only                 |
 | `sip.status_msg`  | string | SIP status message (e.g. `OK`) — responses only               |
+
+### FTP Fields
+
+> Only present on packets captured on TCP port 20 or 21.
+
+| Filter Key       | Type   | Description                                                  |
+| ---------------- | ------ | ------------------------------------------------------------ |
+| `ftp.type`       | string | `Command` or `Response`                                      |
+| `ftp.command`    | string | FTP command (e.g. `USER`, `RETR`, `LIST`) — commands only    |
+| `ftp.argument`   | string | Argument passed to the command — commands only               |
+| `ftp.status_code`| string | FTP status code (e.g. `220`, `230`) — responses only         |
+| `ftp.message`    | string | Status message text — responses only                         |
+
+### SMTP Fields
+
+> Only present on packets captured on TCP port 25, 587, or 465.
+
+| Filter Key        | Type   | Description                                                    |
+| ----------------- | ------ | -------------------------------------------------------------- |
+| `smtp.type`       | string | `Command` or `Response`                                        |
+| `smtp.command`    | string | SMTP command (e.g. `EHLO`, `MAIL`, `RCPT`) — commands only    |
+| `smtp.argument`   | string | Argument passed to the command — commands only                 |
+| `smtp.status_code`| string | SMTP status code (e.g. `250`, `354`) — responses only          |
+| `smtp.message`    | string | Status message text — responses only                           |
+
+### POP3 Fields
+
+> Only present on packets captured on TCP port 110 or 995.
+
+| Filter Key       | Type   | Description                                                    |
+| ---------------- | ------ | -------------------------------------------------------------- |
+| `pop3.type`      | string | `Command` or `Response`                                        |
+| `pop3.command`   | string | POP3 command (e.g. `USER`, `RETR`, `LIST`) — commands only    |
+| `pop3.argument`  | string | Argument passed to the command — commands only                 |
+| `pop3.status`    | string | Response status indicator (`+OK` or `-ERR`) — responses only  |
+| `pop3.message`   | string | Response message text — responses only                         |
+
+### IMAP Fields
+
+> Only present on packets captured on TCP port 143 or 993.
+
+| Filter Key      | Type   | Description                                                                 |
+| --------------- | ------ | --------------------------------------------------------------------------- |
+| `imap.type`     | string | `Command`, `Response`, or `Untagged`                                        |
+| `imap.tag`      | string | IMAP tag (e.g. `A001`) — commands and responses only                        |
+| `imap.command`  | string | IMAP command (e.g. `LOGIN`, `SELECT`, `FETCH`) — commands only              |
+| `imap.argument` | string | Command argument — commands only                                            |
+| `imap.status`   | string | Status keyword (`OK`, `NO`, `BAD`, or untagged keyword) — responses/untagged|
+| `imap.info`     | string | Additional info text — untagged responses only                              |
+| `imap.message`  | string | Response message text — tagged responses only                               |
+
+### Telnet Fields
+
+> Only present on packets captured on TCP port 23.
+
+| Filter Key           | Type   | Description                                               |
+| -------------------- | ------ | --------------------------------------------------------- |
+| `telnet.negotiations`| array  | List of Telnet IAC negotiation option names               |
+| `telnet.text`        | string | Printable ASCII text extracted from the payload (≤ 200 chars) |
+
+### IRC Fields
+
+> Only present on packets captured on TCP port 6667, 6668, or 6669.
+
+| Filter Key      | Type    | Description                                              |
+| --------------- | ------- | -------------------------------------------------------- |
+| `irc.command`   | string  | IRC command from the first parsed message (e.g. `PRIVMSG`) |
+| `irc.prefix`    | string  | Message prefix (nick/server) from the first parsed message |
+| `irc.params`    | string  | Command parameters from the first parsed message         |
+| `irc.msg_count` | integer | Total number of IRC messages parsed in the payload       |
+
+### MTP / MMS Fields
+
+> Only present on packets captured on TCP port 1755.
+
+| Filter Key    | Type    | Description                                              |
+| ------------- | ------- | -------------------------------------------------------- |
+| `mtp.protocol`| string  | Always `MMS/MTP`                                         |
+| `mtp.cmd_id`  | string  | Command ID as a hex string (e.g. `0x00040001`)           |
+| `mtp.command` | string  | Human-readable command name                              |
+| `mtp.length`  | integer | Declared message length in bytes                         |
+
+### LDAP Fields
+
+> Only present on packets captured on TCP or UDP port 389 or 636.
+
+| Filter Key      | Type    | Description                          |
+| --------------- | ------- | ------------------------------------ |
+| `ldap.msg_id`   | integer | LDAP message ID                      |
+| `ldap.operation`| string  | LDAP operation name (e.g. `BindRequest`, `SearchRequest`) |
+
+### MySQL Fields
+
+> Only present on packets captured on TCP port 3306.
+
+| Filter Key            | Type    | Description                                                      |
+| --------------------- | ------- | ---------------------------------------------------------------- |
+| `mysql.type`          | string  | Packet type: `Server Greeting`, `OK`, `Error`, or `Command`     |
+| `mysql.seq`           | integer | MySQL sequence number                                            |
+| `mysql.proto_version` | integer | Protocol version (always `10`) — Server Greeting only            |
+| `mysql.server_version`| string  | MySQL server version string — Server Greeting only               |
+| `mysql.error_code`    | integer | MySQL error code — Error only                                    |
+| `mysql.error_msg`     | string  | MySQL error message — Error only                                 |
+| `mysql.command`       | string  | Command type name (e.g. `Query`, `Quit`) — Command only          |
+| `mysql.query`         | string  | SQL query text — Command only                                    |
+
+### PostgreSQL Fields
+
+> Only present on packets captured on TCP port 5432.
+
+| Filter Key          | Type    | Description                                                      |
+| ------------------- | ------- | ---------------------------------------------------------------- |
+| `pg.type`           | string  | Message type (e.g. `Query`, `ReadyForQuery`, `StartupMessage`)   |
+| `pg.direction`      | string  | `Backend` (server→client) or `Frontend` (client→server)         |
+| `pg.msg_length`     | integer | Declared message length in bytes                                 |
+| `pg.proto_version`  | string  | Protocol version (e.g. `3.0`) — StartupMessage only             |
+| `pg.body`           | string  | Decoded body text — Frontend messages only                       |
+
+### XMPP Fields
+
+> Only present on packets captured on TCP port 5222 or 5223.
+
+| Filter Key    | Type   | Description                                   |
+| ------------- | ------ | --------------------------------------------- |
+| `xmpp.stanza` | string | Stanza type (e.g. `message`, `presence`, `iq`) |
+| `xmpp.to`     | string | `to` attribute of the stanza                  |
+| `xmpp.from`   | string | `from` attribute of the stanza                |
+
+### SMB Fields
+
+> Only present on packets captured on TCP port 139 or 445.
+
+| Filter Key      | Type    | Description                                               |
+| --------------- | ------- | --------------------------------------------------------- |
+| `smb.version`   | string  | `SMBv1` or `SMBv2/v3`                                     |
+| `smb.command`   | string  | SMB command name (e.g. `SMB_COM_NEGOTIATE`, `Create`)     |
+| `smb.status`    | string  | NT status code as a hex string (e.g. `0x00000000`)        |
+| `smb.is_response`| boolean| `true` if this is a server response, `false` if a request |
+
+### MQTT Fields
+
+> Only present on packets captured on TCP or UDP port 1883 or 8883.
+
+| Filter Key      | Type    | Description                                                      |
+| --------------- | ------- | ---------------------------------------------------------------- |
+| `mqtt.msg_type` | string  | MQTT message type (e.g. `CONNECT`, `PUBLISH`, `SUBSCRIBE`)       |
+| `mqtt.qos`      | integer | Quality of Service level (0, 1, or 2)                            |
+| `mqtt.dup`      | boolean | Whether the DUP flag is set                                      |
+| `mqtt.retain`   | boolean | Whether the RETAIN flag is set                                   |
+| `mqtt.topic`    | string  | Topic string — PUBLISH messages only                             |
+
+### RTSP Fields
+
+> Only present on packets captured on TCP port 554.
+
+| Filter Key            | Type   | Description                                                       |
+| --------------------- | ------ | ----------------------------------------------------------------- |
+| `rtsp.type`           | string | `Request` or `Response`                                           |
+| `rtsp.version`        | string | RTSP version (e.g. `RTSP/1.0`)                                    |
+| `rtsp.method`         | string | RTSP method (e.g. `DESCRIBE`, `SETUP`, `PLAY`) — requests only    |
+| `rtsp.url`            | string | Request URL — requests only                                       |
+| `rtsp.cseq`           | string | `CSeq` header value                                               |
+| `rtsp.session`        | string | `Session` header value                                            |
+| `rtsp.transport`      | string | `Transport` header value — requests only                          |
+| `rtsp.status_code`    | string | RTSP status code (e.g. `200`) — responses only                    |
+| `rtsp.status_msg`     | string | RTSP status message (e.g. `OK`) — responses only                  |
+| `rtsp.content_type`   | string | `Content-Type` header — responses only                            |
+| `rtsp.content_length` | string | `Content-Length` header — responses only                          |
+
+### TFTP Fields
+
+> Only present on packets captured on UDP port 69.
+
+| Filter Key        | Type    | Description                                                        |
+| ----------------- | ------- | ------------------------------------------------------------------ |
+| `tftp.opcode`     | string  | TFTP opcode (`Read Request`, `Write Request`, `Data`, `Acknowledgment`, `Error`) |
+| `tftp.filename`   | string  | File name — Read/Write Request only                                |
+| `tftp.mode`       | string  | Transfer mode (e.g. `octet`, `netascii`) — Read/Write Request only |
+| `tftp.block`      | integer | Block number — Data and Acknowledgment only                        |
+| `tftp.data_len`   | integer | Length of the data payload in bytes — Data only                    |
+| `tftp.error_code` | integer | TFTP error code — Error only                                       |
+| `tftp.error_desc` | string  | Standard error description — Error only                            |
+| `tftp.error_msg`  | string  | Custom error message — Error only                                  |
+
+### BGP Fields
+
+> Only present on packets captured on TCP port 179.
+
+| Filter Key          | Type    | Description                                                          |
+| ------------------- | ------- | -------------------------------------------------------------------- |
+| `bgp.type`          | string  | BGP message type (`OPEN`, `UPDATE`, `NOTIFICATION`, `KEEPALIVE`, `ROUTE-REFRESH`) |
+| `bgp.length`        | integer | Total message length in bytes                                        |
+| `bgp.version`       | integer | BGP version number — OPEN only                                       |
+| `bgp.asn`           | integer | Sender's Autonomous System Number — OPEN only                        |
+| `bgp.hold_time`     | integer | Negotiated hold time in seconds — OPEN only                          |
+| `bgp.router_id`     | string  | BGP router ID (dotted-decimal IP) — OPEN only                        |
+| `bgp.error_code`    | integer | Error code — NOTIFICATION only                                       |
+| `bgp.error_name`    | string  | Human-readable error name — NOTIFICATION only                        |
+| `bgp.error_subcode` | integer | Error subcode — NOTIFICATION only                                    |
+
+### HTTP/2 Fields
+
+> Detected on any TCP port when a binary HTTP/2 frame or connection preface is found.
+
+| Filter Key           | Type    | Description                                                      |
+| -------------------- | ------- | ---------------------------------------------------------------- |
+| `http2.preface`      | boolean | `true` if the HTTP/2 connection preface (`PRI * HTTP/2.0…`) was detected |
+| `http2.frame_type`   | string  | Frame type (e.g. `DATA`, `HEADERS`, `SETTINGS`, `PING`, `GOAWAY`) |
+| `http2.frame_length` | integer | Frame payload length in bytes                                    |
+| `http2.frame_flags`  | string  | Frame flags as a hex string (e.g. `0x04`)                        |
+| `http2.stream_id`    | integer | Stream identifier                                                |
+
+### NNTP Fields
+
+> Only present on packets captured on TCP port 119.
+
+| Filter Key         | Type   | Description                                                |
+| ------------------ | ------ | ---------------------------------------------------------- |
+| `nntp.type`        | string | `Command` or `Response`                                    |
+| `nntp.command`     | string | NNTP command (e.g. `GROUP`, `ARTICLE`, `POST`) — commands only |
+| `nntp.argument`    | string | Command argument — commands only                           |
+| `nntp.status_code` | string | NNTP status code (e.g. `211`, `420`) — responses only      |
+| `nntp.message`     | string | Response message text — responses only                     |
+
+### RADIUS Fields
+
+> Only present on packets captured on TCP or UDP port 1812, 1813, 1645, or 1646.
+
+| Filter Key     | Type    | Description                                                          |
+| -------------- | ------- | -------------------------------------------------------------------- |
+| `radius.code`  | string  | RADIUS packet code (e.g. `Access-Request`, `Access-Accept`, `Accounting-Request`) |
+| `radius.id`    | integer | Packet identifier                                                    |
+| `radius.length`| integer | Total packet length in bytes                                         |
+| `radius.attrs` | array   | List of decoded RADIUS attributes (`{Type, Value}` objects)          |
 
 ---
 
@@ -382,7 +620,7 @@ snmp.community:public
 snmp.pdu_type:Trap
 
 # DHCP DISCOVER messages
-dhcp.msg_type:DISCOVER
+dhcp.msg_type:Discover
 
 # NTP client requests
 ntp.mode:client
