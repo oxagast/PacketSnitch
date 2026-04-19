@@ -41,7 +41,8 @@
     "css-loader": "^6.11.0",
     "electron": "^40.6.1",
     "node-loader": "^2.1.0",
-    "style-loader": "^3.3.4"
+    "style-loader": "^3.3.4",
+    "webpack-cli": "^7.0.2"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",
