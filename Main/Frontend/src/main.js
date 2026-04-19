@@ -77,8 +77,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     minWidth: 1220,
     minHeight: 640,
-    autoHideMenuBar: true,
-    frame: false,
+    //  autoHideMenuBar: true,
+    //  frame: false,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
@@ -92,10 +92,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  versionFilePath = path.join(
-    app.getPath("userData"),
-    "installed_version.txt",
-  );
+  versionFilePath = path.join(app.getPath("userData"), "installed_version.txt");
   isFirstRunAfterInstall = checkNewInstall();
   checkOllama().then((isInstalled) => {
     cachedOllamaInstalled = isInstalled;
@@ -157,12 +154,7 @@ ipcMain.handle("check-first-run", async () => {
     },
     {
       name: "MAC Vendors Database (mac-vendors-export.csv)",
-      path: path.join(
-        basePath,
-        "backend",
-        "common",
-        "mac-vendors-export.csv",
-      ),
+      path: path.join(basePath, "backend", "common", "mac-vendors-export.csv"),
     },
     {
       name: "Services Database (service-names-port-numbers.csv)",
