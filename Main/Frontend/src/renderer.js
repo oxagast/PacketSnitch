@@ -26,5 +26,5 @@
  * ```
  */
 
-import "./assets/css/style.css";
-import "./front.js";
+import './assets/css/style.css';
+import './front.js';

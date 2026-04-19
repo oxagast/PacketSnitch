@@ -1,7 +1,7 @@
 module.exports = {
   // ...existing config
-  target: "electron-preload",
+  target: 'electron-preload',
   externals: {
-    fs: "commonjs2 fs",
+    fs: 'commonjs2 fs',
   },
 };

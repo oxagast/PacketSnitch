@@ -1,43 +1,43 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld("jsonapi", {
+contextBridge.exposeInMainWorld('jsonapi', {
   onJsonData: (callback) => {
-    ipcRenderer.on("json-data", (event, hostsJsonData) => {
+    ipcRenderer.on('json-data', (event, hostsJsonData) => {
       callback(hostsJsonData);
     });
   },
 });
 
-contextBridge.exposeInMainWorld("snitchapi", {
+contextBridge.exposeInMainWorld('snitchapi', {
   runBackendCommand: (filename, useLLM) =>
-    ipcRenderer.invoke("run-backend-command", filename, useLLM),
+    ipcRenderer.invoke('run-backend-command', filename, useLLM),
 });
 
-contextBridge.exposeInMainWorld("getfileapi", {
-  selectFile: () => ipcRenderer.invoke("select-file"),
+contextBridge.exposeInMainWorld('getfileapi', {
+  selectFile: () => ipcRenderer.invoke('select-file'),
 });
 
-contextBridge.exposeInMainWorld("api", {
+contextBridge.exposeInMainWorld('api', {
   onError: (callback) => {
-    ipcRenderer.on("backend-error", (_event, message) => {
+    ipcRenderer.on('backend-error', (_event, message) => {
       callback(message);
     });
   },
 });
 
-contextBridge.exposeInMainWorld("fsize", {
-  getFSize: () => ipcRenderer.invoke("file-size"), // Expose this method to renderer
+contextBridge.exposeInMainWorld('fsize', {
+  getFSize: () => ipcRenderer.invoke('file-size'), // Expose this method to renderer
 });
 
-contextBridge.exposeInMainWorld("saveapi", {
-  saveJson: () => ipcRenderer.invoke("save-json"),
+contextBridge.exposeInMainWorld('saveapi', {
+  saveJson: () => ipcRenderer.invoke('save-json'),
 });
 
-contextBridge.exposeInMainWorld("quitapi", {
-  quitApp: () => ipcRenderer.invoke("quit-app"),
+contextBridge.exposeInMainWorld('quitapi', {
+  quitApp: () => ipcRenderer.invoke('quit-app'),
 });
 
-contextBridge.exposeInMainWorld("installapi", {
-  checkFirstRun: () => ipcRenderer.invoke("check-first-run"),
-  dismissFirstRun: () => ipcRenderer.invoke("dismiss-first-run"),
+contextBridge.exposeInMainWorld('installapi', {
+  checkFirstRun: () => ipcRenderer.invoke('check-first-run'),
+  dismissFirstRun: () => ipcRenderer.invoke('dismiss-first-run'),
 });
