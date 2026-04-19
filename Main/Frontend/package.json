@@ -15,6 +15,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
+  "engines": {
+    "node": ">=12.11.0"
+  },
   "build": {
     "win": {
       "target": "nsis",

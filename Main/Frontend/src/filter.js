@@ -91,7 +91,10 @@ function filterChunk(data, filter) {
     const filterModifier = comparisonOps.find((m) => filterValRaw.includes(m));
     const filterValue = filterValRaw.replace(filterModifier, '').trim();
     for (const packetItem of hostPackets) {
-      const fieldValue = searchFullKey(packetItem, originalKeys[normalizedKeys.indexOf(filterKey)]);
+      const fieldValue = searchFullKey(
+        packetItem,
+        originalKeys[normalizedKeys.indexOf(filterKey)],
+      );
       if (fieldValue === undefined) continue;
       if (filterModifier && compare(fieldValue, filterValue, filterModifier)) {
         matchedPackets.push({ Host: { [host]: [packetItem] } });
@@ -116,11 +119,30 @@ function tokenizeQuery(query) {
   const tokenList = [];
   let i = 0;
   while (i < query.length) {
-    if (/\s/.test(query[i])) { i++; continue; }
-    if (query[i] === '(') { tokenList.push({ type: 'LPAREN' }); i++; continue; }
-    if (query[i] === ')') { tokenList.push({ type: 'RPAREN' }); i++; continue; }
-    if (query.startsWith('||', i)) { tokenList.push({ type: 'OR' }); i += 2; continue; }
-    if (query.startsWith('&&', i)) { tokenList.push({ type: 'AND' }); i += 2; continue; }
+    if (/\s/.test(query[i])) {
+      i++;
+      continue;
+    }
+    if (query[i] === '(') {
+      tokenList.push({ type: 'LPAREN' });
+      i++;
+      continue;
+    }
+    if (query[i] === ')') {
+      tokenList.push({ type: 'RPAREN' });
+      i++;
+      continue;
+    }
+    if (query.startsWith('||', i)) {
+      tokenList.push({ type: 'OR' });
+      i += 2;
+      continue;
+    }
+    if (query.startsWith('&&', i)) {
+      tokenList.push({ type: 'AND' });
+      i += 2;
+      continue;
+    }
     let exprEnd = i;
     while (
       exprEnd < query.length &&
@@ -142,11 +164,15 @@ function runQuery(data, query) {
   const tokenList = tokenizeQuery(query);
   let pos = 0;
 
-  function peek() { return tokenList[pos]; }
+  function peek() {
+    return tokenList[pos];
+  }
   function consume(type) {
     const currentToken = tokenList[pos];
     if (type && (!currentToken || currentToken.type !== type)) {
-      throw new Error(`Expected ${type} but got ${currentToken ? currentToken.type : 'EOF'}`);
+      throw new Error(
+        `Expected ${type} but got ${currentToken ? currentToken.type : 'EOF'}`,
+      );
     }
     pos++;
     return currentToken;

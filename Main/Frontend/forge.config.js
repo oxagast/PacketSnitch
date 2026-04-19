@@ -5,17 +5,16 @@ module.exports = {
   packagerConfig: {
     asar: true,
     extraResource: ['./backend/'],
-	icon: path.resolve(__dirname, 'ps-icon.ico'),
-	setupIcon: path.resolve(__dirname, 'ps-icon.ico'),
+    icon: path.resolve(__dirname, 'ps-icon.ico'),
+    setupIcon: path.resolve(__dirname, 'ps-icon.ico'),
   },
   rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
       config: {
-		   name: 'PacketSnitch', 
-		  
-	  },
+        name: 'PacketSnitch',
+      },
     },
     {
       name: '@electron-forge/maker-zip',
