@@ -152,6 +152,343 @@ function renderHttpTable(transportData) {
   createTable(httpRows, ["HTTP Field", "Value"], "sidedatatable");
 }
 
+function renderFtpTable(transportData) {
+  const ftpData = transportData["FTP"];
+  if (!ftpData) return;
+  const ftpRows = [{ name: "Type", value: ftpData["Type"] || "—" }];
+  if (ftpData["Type"] === "Command") {
+    ftpRows.push(
+      { name: "Command", value: ftpData["Command"] || "—" },
+      { name: "Argument", value: ftpData["Argument"] || "—" },
+    );
+  } else {
+    ftpRows.push(
+      { name: "Status Code", value: ftpData["Status Code"] || "—" },
+      { name: "Message", value: ftpData["Message"] || "—" },
+    );
+  }
+  createTable(ftpRows, ["FTP Field", "Value"], "sidedatatable");
+}
+
+function renderSmtpTable(transportData) {
+  const smtpData = transportData["SMTP"];
+  if (!smtpData) return;
+  const smtpRows = [{ name: "Type", value: smtpData["Type"] || "—" }];
+  if (smtpData["Type"] === "Command") {
+    smtpRows.push(
+      { name: "Command", value: smtpData["Command"] || "—" },
+      { name: "Argument", value: smtpData["Argument"] || "—" },
+    );
+  } else {
+    smtpRows.push(
+      { name: "Status Code", value: smtpData["Status Code"] || "—" },
+      { name: "Message", value: smtpData["Message"] || "—" },
+    );
+  }
+  createTable(smtpRows, ["SMTP Field", "Value"], "sidedatatable");
+}
+
+function renderPop3Table(transportData) {
+  const pop3Data = transportData["POP3"];
+  if (!pop3Data) return;
+  const pop3Rows = [{ name: "Type", value: pop3Data["Type"] || "—" }];
+  if (pop3Data["Type"] === "Command") {
+    pop3Rows.push(
+      { name: "Command", value: pop3Data["Command"] || "—" },
+      { name: "Argument", value: pop3Data["Argument"] || "—" },
+    );
+  } else {
+    pop3Rows.push(
+      { name: "Status", value: pop3Data["Status"] || "—" },
+      { name: "Message", value: pop3Data["Message"] || "—" },
+    );
+  }
+  createTable(pop3Rows, ["POP3 Field", "Value"], "sidedatatable");
+}
+
+function renderImapTable(transportData) {
+  const imapData = transportData["IMAP"];
+  if (!imapData) return;
+  const imapRows = [{ name: "Type", value: imapData["Type"] || "—" }];
+  if (imapData["Type"] === "Command") {
+    imapRows.push(
+      { name: "Tag", value: imapData["Tag"] || "—" },
+      { name: "Command", value: imapData["Command"] || "—" },
+      { name: "Argument", value: imapData["Argument"] || "—" },
+    );
+  } else if (imapData["Type"] === "Response") {
+    imapRows.push(
+      { name: "Tag", value: imapData["Tag"] || "—" },
+      { name: "Status", value: imapData["Status"] || "—" },
+      { name: "Message", value: imapData["Message"] || "—" },
+    );
+  } else {
+    imapRows.push(
+      { name: "Status", value: imapData["Status"] || "—" },
+      { name: "Info", value: imapData["Info"] || "—" },
+    );
+  }
+  createTable(imapRows, ["IMAP Field", "Value"], "sidedatatable");
+}
+
+function renderTelnetTable(transportData) {
+  const telnetData = transportData["Telnet"];
+  if (!telnetData) return;
+  const negotiations = (telnetData["Negotiations"] || []).join(", ") || "—";
+  const telnetRows = [
+    { name: "Negotiations", value: negotiations },
+    { name: "Text", value: telnetData["Printable Text"] || "—" },
+  ];
+  createTable(telnetRows, ["Telnet Field", "Value"], "sidedatatable");
+}
+
+function renderIrcTable(transportData) {
+  const ircData = transportData["IRC"];
+  if (!ircData) return;
+  const ircRows = [
+    { name: "Command", value: ircData["Command"] || "—" },
+    { name: "Prefix", value: ircData["Prefix"] || "—" },
+    { name: "Parameters", value: ircData["Parameters"] || "—" },
+    { name: "Message Count", value: ircData["Message Count"] ?? "—" },
+  ];
+  createTable(ircRows, ["IRC Field", "Value"], "sidedatatable");
+}
+
+function renderMtpTable(transportData) {
+  const mtpData = transportData["MTP"];
+  if (!mtpData) return;
+  const mtpRows = [
+    { name: "Protocol", value: mtpData["Protocol"] || "—" },
+    { name: "Command", value: mtpData["Command"] || "—" },
+    { name: "Command ID", value: mtpData["Command ID"] || "—" },
+    { name: "Length", value: mtpData["Length"] ?? "—" },
+  ];
+  createTable(mtpRows, ["MTP Field", "Value"], "sidedatatable");
+}
+
+function renderLdapTable(transportData) {
+  const ldapData = transportData["LDAP"];
+  if (!ldapData) return;
+  const ldapRows = [
+    { name: "Message ID", value: ldapData["Message ID"] ?? "—" },
+    { name: "Operation", value: ldapData["Operation"] || "—" },
+  ];
+  createTable(ldapRows, ["LDAP Field", "Value"], "sidedatatable");
+}
+
+function renderMysqlTable(transportData) {
+  const mysqlData = transportData["MySQL"];
+  if (!mysqlData) return;
+  const mysqlRows = [
+    { name: "Type", value: mysqlData["Type"] || "—" },
+    { name: "Sequence", value: mysqlData["Sequence"] ?? "—" },
+  ];
+  if (mysqlData["Type"] === "Server Greeting") {
+    mysqlRows.push(
+      { name: "Protocol Version", value: mysqlData["Protocol Version"] ?? "—" },
+      { name: "Server Version", value: mysqlData["Server Version"] || "—" },
+    );
+  } else if (mysqlData["Type"] === "Command") {
+    mysqlRows.push(
+      { name: "Command", value: mysqlData["Command"] || "—" },
+      { name: "Query", value: mysqlData["Query"] || "—" },
+    );
+  } else if (mysqlData["Type"] === "Error") {
+    mysqlRows.push(
+      { name: "Error Code", value: mysqlData["Error Code"] ?? "—" },
+      { name: "Error Message", value: mysqlData["Error Message"] || "—" },
+    );
+  }
+  createTable(mysqlRows, ["MySQL Field", "Value"], "sidedatatable");
+}
+
+function renderPostgresqlTable(transportData) {
+  const pgData = transportData["PostgreSQL"];
+  if (!pgData) return;
+  const pgRows = [
+    { name: "Type", value: pgData["Type"] || "—" },
+    { name: "Direction", value: pgData["Direction"] || "—" },
+  ];
+  if (pgData["Protocol Version"]) {
+    pgRows.push({ name: "Protocol Version", value: pgData["Protocol Version"] });
+  }
+  if (pgData["Message Length"] !== undefined) {
+    pgRows.push({ name: "Message Length", value: pgData["Message Length"] });
+  }
+  if (pgData["Body"]) {
+    pgRows.push({ name: "Body", value: pgData["Body"] });
+  }
+  createTable(pgRows, ["PostgreSQL Field", "Value"], "sidedatatable");
+}
+
+function renderXmppTable(transportData) {
+  const xmppData = transportData["XMPP"];
+  if (!xmppData) return;
+  const xmppRows = [
+    { name: "Stanza Type", value: xmppData["Stanza Type"] || "—" },
+    { name: "From", value: xmppData["From"] || "—" },
+    { name: "To", value: xmppData["To"] || "—" },
+  ];
+  createTable(xmppRows, ["XMPP Field", "Value"], "sidedatatable");
+}
+
+function renderSmbTable(transportData) {
+  const smbData = transportData["SMB"];
+  if (!smbData) return;
+  const smbRows = [
+    { name: "Version", value: smbData["Version"] || "—" },
+    { name: "Command", value: smbData["Command"] || "—" },
+    { name: "Status", value: smbData["Status"] || "—" },
+    { name: "Is Response", value: smbData["Is Response"] ? "Yes" : "No" },
+  ];
+  createTable(smbRows, ["SMB Field", "Value"], "sidedatatable");
+}
+
+function renderMqttTable(transportData) {
+  const mqttData = transportData["MQTT"];
+  if (!mqttData) return;
+  const mqttRows = [
+    { name: "Message Type", value: mqttData["Message Type"] || "—" },
+    { name: "QoS", value: mqttData["QoS"] ?? "—" },
+    { name: "DUP Flag", value: mqttData["DUP Flag"] ? "Yes" : "No" },
+    { name: "Retain Flag", value: mqttData["Retain Flag"] ? "Yes" : "No" },
+  ];
+  if (mqttData["Topic"]) {
+    mqttRows.push({ name: "Topic", value: mqttData["Topic"] });
+  }
+  createTable(mqttRows, ["MQTT Field", "Value"], "sidedatatable");
+}
+
+function renderRtspTable(transportData) {
+  const rtspData = transportData["RTSP"];
+  if (!rtspData) return;
+  const rtspRows = [{ name: "Type", value: rtspData["Type"] || "—" }];
+  if (rtspData["Type"] === "Request") {
+    rtspRows.push(
+      { name: "Method", value: rtspData["Method"] || "—" },
+      { name: "URL", value: rtspData["URL"] || "—" },
+      { name: "RTSP Version", value: rtspData["RTSP Version"] || "—" },
+      { name: "CSeq", value: rtspData["CSeq"] || "—" },
+      { name: "Session", value: rtspData["Session"] || "—" },
+      { name: "Transport", value: rtspData["Transport"] || "—" },
+    );
+  } else {
+    rtspRows.push(
+      { name: "Status Code", value: rtspData["Status Code"] || "—" },
+      { name: "Status Message", value: rtspData["Status Message"] || "—" },
+      { name: "RTSP Version", value: rtspData["RTSP Version"] || "—" },
+      { name: "CSeq", value: rtspData["CSeq"] || "—" },
+      { name: "Content-Type", value: rtspData["Content-Type"] || "—" },
+      { name: "Content-Length", value: rtspData["Content-Length"] || "—" },
+    );
+  }
+  createTable(rtspRows, ["RTSP Field", "Value"], "sidedatatable");
+}
+
+function renderTftpTable(transportData) {
+  const tftpData = transportData["TFTP"];
+  if (!tftpData) return;
+  const tftpRows = [{ name: "Opcode", value: tftpData["Opcode"] || "—" }];
+  if (tftpData["Filename"] !== undefined) {
+    tftpRows.push(
+      { name: "Filename", value: tftpData["Filename"] || "—" },
+      { name: "Mode", value: tftpData["Mode"] || "—" },
+    );
+  }
+  if (tftpData["Block Number"] !== undefined) {
+    tftpRows.push({ name: "Block Number", value: tftpData["Block Number"] });
+  }
+  if (tftpData["Data Length"] !== undefined) {
+    tftpRows.push({ name: "Data Length", value: tftpData["Data Length"] });
+  }
+  if (tftpData["Error Code"] !== undefined) {
+    tftpRows.push(
+      { name: "Error Code", value: tftpData["Error Code"] },
+      { name: "Error Description", value: tftpData["Error Description"] || "—" },
+      { name: "Error Message", value: tftpData["Error Message"] || "—" },
+    );
+  }
+  createTable(tftpRows, ["TFTP Field", "Value"], "sidedatatable");
+}
+
+function renderBgpTable(transportData) {
+  const bgpData = transportData["BGP"];
+  if (!bgpData) return;
+  const bgpRows = [
+    { name: "Message Type", value: bgpData["Message Type"] || "—" },
+    { name: "Message Length", value: bgpData["Message Length"] ?? "—" },
+  ];
+  if (bgpData["BGP Version"] !== undefined) {
+    bgpRows.push(
+      { name: "BGP Version", value: bgpData["BGP Version"] },
+      { name: "ASN", value: bgpData["ASN"] ?? "—" },
+      { name: "Hold Time", value: bgpData["Hold Time"] ?? "—" },
+      { name: "Router ID", value: bgpData["Router ID"] || "—" },
+    );
+  }
+  if (bgpData["Error Code"] !== undefined) {
+    bgpRows.push(
+      { name: "Error Name", value: bgpData["Error Name"] || "—" },
+      { name: "Error Code", value: bgpData["Error Code"] },
+      { name: "Error Subcode", value: bgpData["Error Subcode"] ?? "—" },
+    );
+  }
+  createTable(bgpRows, ["BGP Field", "Value"], "sidedatatable");
+}
+
+function renderHttp2Table(transportData) {
+  const http2Data = transportData["HTTP2"];
+  if (!http2Data) return;
+  const http2Rows = [
+    { name: "Frame Type", value: http2Data["Frame Type"] || "—" },
+    {
+      name: "Connection Preface",
+      value: http2Data["Connection Preface"] ? "Yes" : "No",
+    },
+  ];
+  if (http2Data["Frame Length"] !== undefined) {
+    http2Rows.push(
+      { name: "Frame Length", value: http2Data["Frame Length"] },
+      { name: "Frame Flags", value: http2Data["Frame Flags"] || "—" },
+      { name: "Stream ID", value: http2Data["Stream ID"] ?? "—" },
+    );
+  }
+  createTable(http2Rows, ["HTTP/2 Field", "Value"], "sidedatatable");
+}
+
+function renderNntpTable(transportData) {
+  const nntpData = transportData["NNTP"];
+  if (!nntpData) return;
+  const nntpRows = [{ name: "Type", value: nntpData["Type"] || "—" }];
+  if (nntpData["Type"] === "Command") {
+    nntpRows.push(
+      { name: "Command", value: nntpData["Command"] || "—" },
+      { name: "Argument", value: nntpData["Argument"] || "—" },
+    );
+  } else {
+    nntpRows.push(
+      { name: "Status Code", value: nntpData["Status Code"] || "—" },
+      { name: "Message", value: nntpData["Message"] || "—" },
+    );
+  }
+  createTable(nntpRows, ["NNTP Field", "Value"], "sidedatatable");
+}
+
+function renderRadiusTable(transportData) {
+  const radiusData = transportData["RADIUS"];
+  if (!radiusData) return;
+  const radiusRows = [
+    { name: "Code", value: radiusData["Code"] || "—" },
+    { name: "Identifier", value: radiusData["Identifier"] ?? "—" },
+    { name: "Length", value: radiusData["Length"] ?? "—" },
+  ];
+  const attrs = radiusData["Attributes"] || [];
+  attrs.forEach((attr) => {
+    radiusRows.push({ name: attr["Type"] || "Attr", value: attr["Value"] || "—" });
+  });
+  createTable(radiusRows, ["RADIUS Field", "Value"], "sidedatatable");
+}
+
 module.exports = {
   createTable,
   renderDnsTable,
@@ -161,4 +498,23 @@ module.exports = {
   renderNtpTable,
   renderSipTable,
   renderHttpTable,
+  renderFtpTable,
+  renderSmtpTable,
+  renderPop3Table,
+  renderImapTable,
+  renderTelnetTable,
+  renderIrcTable,
+  renderMtpTable,
+  renderLdapTable,
+  renderMysqlTable,
+  renderPostgresqlTable,
+  renderXmppTable,
+  renderSmbTable,
+  renderMqttTable,
+  renderRtspTable,
+  renderTftpTable,
+  renderBgpTable,
+  renderHttp2Table,
+  renderNntpTable,
+  renderRadiusTable,
 };
