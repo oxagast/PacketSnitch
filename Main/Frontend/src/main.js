@@ -106,7 +106,6 @@ app.whenReady().then(() => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
     console.log("App ready, waiting for file selection...");
-    let isFileSent = false;
     // start the process that listens for the file selection and runs the backend command
     require("./back-comm");
     ipcMain.handle("select-file", async () => {
@@ -116,20 +115,10 @@ app.whenReady().then(() => {
       if (canceled) return null;
       console.log("Accepted pcapng.. Checking for json existence...");
       isBackendLoaded = true;
-      isFileSent = false; // Reset so new JSON data will be sent for each load
       // Remove stale output directory so snitch always starts with a clean slate
       if (fs.existsSync(testcaseTempDir)) {
         fs.rmSync(testcaseTempDir, { recursive: true, force: true });
       }
-      setInterval(() => {
-        if (!isFileSent && fs.existsSync(hostsJsonFilePath)) {
-          // here we read the file in
-          const hostsJsonData = fs.readFileSync(hostsJsonFilePath, "utf8");
-          mainWindow.webContents.send("json-data", hostsJsonData);
-
-          isFileSent = true; // Prevent sending multiple times
-        }
-      }, 2000);
       console.log("File selected:", filePaths[0]);
       selectedFilePath = filePaths[0];
       return filePaths[0];
