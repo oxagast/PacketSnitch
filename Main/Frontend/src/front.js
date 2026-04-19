@@ -35,11 +35,9 @@ const psVer = require("../package.json").version;
 document.getElementById("close-btn").addEventListener("click", () => {
   window.quitapi.quitApp();
 });
-const jsonUploadInput = document.getElementById("json-upload"); // File input for JSON upload
 let capturedPackets = {}; // Stores parsed packet data from JSON
 let jsonCapture = ""; // Stringified JSON capture for pretty display
 let currentIp;
-let hexPayload;
 let finalSummary = ""; // Stores the summary section from JSON
 const status = document.getElementById("status"); // Status bar element
 let hostsList = ["0.0.0.0"]; // List of hosts found in capture
@@ -48,7 +46,6 @@ let packetsForHost = []; // Packets for the currently selected host
 let index = 0; // Navigation index for packets
 let bookmarkList = []; // List of bookmarks (host:packet index)
 let activeBookmark = {}; // Current bookmark object
-let isFirstRun = true; // Flag for first run to initialize hex grid
 let isFileLoaded = false;
 let jsonOfPackets;
 let filteredPackets;
@@ -717,7 +714,8 @@ function infoPanel(pk) {
   const srcMac = packetInfoData["Ethernet Frame"]["MAC Source"];
   const dstMac = packetInfoData["Ethernet Frame"]["MAC Destination"];
   const srcMacVendor = packetInfoData["Ethernet Frame"]["MAC Source Vendor"];
-  const dstMacVendor = packetInfoData["Ethernet Frame"]["MAC Destination Vendor"];
+  const dstMacVendor =
+    packetInfoData["Ethernet Frame"]["MAC Destination Vendor"];
   const ipLayerLen = packetInfoData["IP"]["IP layer length"];
   const wireLen = transportData["Wire length"];
   const payloadLen = packetInfoData["Raw data"]["Payload Length"];
@@ -773,7 +771,8 @@ function infoPanel(pk) {
   const protoName = extraInfoData["Traits"]["Network Data"]["Port Protcol"];
   const protoDescription =
     extraInfoData["Traits"]["Network Data"]["Port Description"];
-  const srcNetClass = extraInfoData["Traits"]["Network Data"]["Source IP"]["Class"];
+  const srcNetClass =
+    extraInfoData["Traits"]["Network Data"]["Source IP"]["Class"];
   const dstNetClass =
     extraInfoData["Traits"]["Network Data"]["Destination IP"]["Class"];
   document.getElementById("sidedatatable").textContent = "";

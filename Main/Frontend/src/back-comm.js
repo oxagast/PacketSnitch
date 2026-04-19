@@ -61,7 +61,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
             const hostsJsonData = fs.readFileSync(hostsJsonPath, "utf8");
             mainWin.webContents.send("json-data", hostsJsonData);
           }
-        }, 1000);
+        }, 200);
       }
     });
 

@@ -12,7 +12,8 @@
     "make": "npm run build-python && electron-forge make",
     "build-python": "pyinstaller --onedir -y --add-data \"backend/common:common\" --distpath backend ./backend/snitch.py",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "build": {
     "win": {
@@ -36,11 +37,13 @@
     "@electron-forge/plugin-fuses": "^7.11.1",
     "@electron-forge/plugin-webpack": "^7.11.1",
     "@electron/fuses": "^1.8.0",
+    "@eslint/js": "^10.0.1",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
     "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^6.11.0",
     "electron": "^40.6.1",
     "eslint": "^8.57.1",
+    "globals": "^17.5.0",
     "node-loader": "^2.1.0",
     "style-loader": "^3.3.4",
     "webpack-cli": "^7.0.2"
