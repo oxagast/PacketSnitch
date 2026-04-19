@@ -45,6 +45,8 @@ let packetsForHost = []; // Packets for the currently selected host
 let index = 0; // Navigation index for packets
 let bookmarkList = []; // List of bookmarks (host:packet index)
 let activeBookmark = {}; // Current bookmark object
+let isFileLoaded = false;
+let jsonOfPackets;
 let filteredPackets;
 let currentPacketKey;
 let startTime;
