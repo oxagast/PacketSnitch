@@ -177,7 +177,7 @@ ip.src.addr:192.168.1.1 && tcp.dst.port:443
 (payload.mime:text/html || payload.mime:application/json) && payload.entropy>=4.0
 ```
 
-Filter keys use the same dot-notation names as the [searchable attributes](Backend.md#searchable-attributes) documented in the Backend docs. Keys are normalized to lowercase with spaces replaced by hyphens.
+Filter keys use the same dot-notation names as the [searchable attributes](Filters.md) documented in the Backend docs. Keys are normalized to lowercase with spaces replaced by hyphens.
 
 ### Filter Examples
 
