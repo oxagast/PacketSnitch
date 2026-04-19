@@ -2264,7 +2264,7 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                     nntpSection = decodeNNTP(rawPayload)
                     if nntpSection is not None:
                         transportSection["NNTP"] = nntpSection
-                # Decode RADIUS on TCP ports 1812/1813/1645/1646
+                # Decode RADIUS on TCP ports 1812/1813/1645/1646 (RFC 6614 defines RADIUS over TCP)
                 if dstPort in (1812, 1813, 1645, 1646) or srcPort in (1812, 1813, 1645, 1646):
                     radiusSection = decodeRADIUS(rawPayload)
                     if radiusSection is not None:
