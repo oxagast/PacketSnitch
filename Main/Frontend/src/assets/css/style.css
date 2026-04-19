@@ -805,7 +805,7 @@ strong {
 }
 
 .install-file-ok {
-  color: #6be06b;
+  color: white;
 }
 
 .install-file-missing {
@@ -821,9 +821,9 @@ strong {
 }
 
 .install-ok {
-  background-color: rgba(107, 224, 107, 0.12);
-  color: #6be06b;
-  border: 1px solid #6be06b44;
+  /* background-color: rgba(107, 224, 107, 0.12); */
+  color: white;
+  border: white;
 }
 
 .install-warning {

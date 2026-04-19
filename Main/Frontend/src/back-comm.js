@@ -1,11 +1,11 @@
-const { BrowserWindow, ipcMain, app, ipcRenderer } = require("electron");
+const { BrowserWindow, ipcMain } = require("electron");
 const { exec } = require("child_process");
 const os = require("os");
 const platform = os.platform();
 const path = require("path");
 const fs = require("fs");
-systemTempDir = os.tmpdir();
-testcaseOutputDir = path.join(systemTempDir, "testcases");
+const systemTempDir = os.tmpdir();
+const testcaseOutputDir = path.join(systemTempDir, "testcases");
 ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   console.log(`Received pcap: ${filename}`);
   const isDev = !require("electron").app.isPackaged;
@@ -16,14 +16,13 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
 
   if (platform === "win32") {
     snitchExePath = path.join(basePath, "\\backend\\snitch\\snitch.exe");
-  }
-  if (platform === "linux") {
+  } else if (platform === "linux") {
     snitchExePath = path.join(basePath, "/backend/snitch/snitch");
   } else {
-    snitchExePath = path.join(basePath, "\\backend\\snitch\\snitch.exe");
+    snitchExePath = path.join(basePath, "/backend/snitch/snitch");
   }
 
-  backendCommand = `"${snitchExePath}" "${filename}" -a -o "${testcaseOutputDir}"${useLLM ? "" : " --nollm"}`;
+  const backendCommand = `"${snitchExePath}" "${filename}" -a -o "${testcaseOutputDir}"${useLLM ? "" : " --nollm"}`;
 
   // Always start with a clean output directory so snitch never hits the
   // interactive overwrite prompt on second (and later) runs.
@@ -40,7 +39,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
     }
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     exec(backendCommand, (error, stdout, stderr) => {
       resolve(stdout);
       console.log("Backend output:", stdout);
