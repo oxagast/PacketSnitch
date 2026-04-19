@@ -75,7 +75,6 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     minWidth: 1220,
     minHeight: 640,
-    autoHideMenuBar: true,
     frame: false,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,

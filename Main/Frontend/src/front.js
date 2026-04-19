@@ -1,6 +1,5 @@
 import "./assets/css/style.css";
 const { filterPackets } = require("./filter");
-const { getDataType } = require("./filter");
 const {
   createTable,
   renderDnsTable,
