@@ -27,11 +27,9 @@ ipcMain.handle("file-size", async () => {
   }
 });
 
-hostsJsonFilePath = path.join(testcaseTempDir, "hosts.json");
+const hostsJsonFilePath = path.join(testcaseTempDir, "hosts.json");
 // make sure we have a fresh temp dir
-fs.rmSync(testcaseTempDir, { recursive: true, force: true }, (fileError) => {
-  if (fileError) console.error(fileError);
-});
+fs.rmSync(testcaseTempDir, { recursive: true, force: true });
 
 function killBackendProcess() {
   console.log("Killing backend proc...");
@@ -81,9 +79,9 @@ function createWindow() {
     //frame: false,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+      contextIsolation: true,
+      nodeIntegration: true,
     },
-    contextIsolation: true,
-    nodeIntegration: true,
   });
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   mainWindow.webContents.on("did-finish-load", () => {
