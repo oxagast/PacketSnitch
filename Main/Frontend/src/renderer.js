@@ -27,4 +27,4 @@
  */
 
 import "./assets/css/style.css";
-import "./assets/scripts/scripts.js";
+import "./front.js";
