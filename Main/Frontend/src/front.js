@@ -314,7 +314,7 @@ function initializeDataView() {
 document.getElementById('prev-btn').addEventListener('click', function () {
   statusUpdate('Status: Displaying capture analysis summary');
   //highlightTab("prev-navAction");
-  if (index > 1) {
+  if (index > 0) {
     index--;
 
     currentIp = packetsForHost[index]['Packet Info']['IP']['Source IP'];
@@ -418,7 +418,7 @@ function handlePacketNavigation(navAction, navBookmark) {
 
   document.getElementById('total-packets').innerHTML =
     'Total Packets: ' + totalPacketCount();
-  index = 1;
+  index = 0;
   if (navAction === undefined) {
     handlePacketNavigation('first-load');
   }
