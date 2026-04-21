@@ -1,5 +1,4 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
-const { Worker } = require('worker_threads');
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
@@ -27,7 +26,6 @@ ipcMain.handle('file-size', async () => {
   }
 });
 
-const hostsJsonFilePath = path.join(testcaseTempDir, 'hosts.json');
 // make sure we have a fresh temp dir
 fs.rmSync(testcaseTempDir, { recursive: true, force: true });
 
@@ -181,7 +179,11 @@ ipcMain.handle('quit-app', () => {
   app.quit();
 });
 
-ipcMain.handle('save-json', async () => {
+ipcMain.handle('save-json', async (_event, jsonData) => {
+  if (typeof jsonData !== 'string' || jsonData.trim() === '') {
+    return { success: false, error: 'No JSON data to save' };
+  }
+
   const { canceled, filePath } = await dialog.showSaveDialog({
     title: 'Save JSON Capture',
     defaultPath: path.join(app.getPath('documents'), 'capture.json'),
@@ -189,21 +191,13 @@ ipcMain.handle('save-json', async () => {
   });
   if (canceled || !filePath) return { success: false, canceled: true };
 
-  return new Promise((resolve) => {
-    const workerPath = './src/save-worker.js';
-    const worker = new Worker(workerPath, {
-      workerData: { srcPath: hostsJsonFilePath, destPath: filePath },
-    });
-    worker.on('message', (result) => {
-      worker.terminate();
-      resolve(result);
-    });
-    worker.on('error', (err) => {
-      console.error('Save worker error:', err);
-      worker.terminate();
-      resolve({ success: false, error: err.message });
-    });
-  });
+  try {
+    await fs.promises.writeFile(filePath, jsonData, 'utf8');
+    return { success: true };
+  } catch (err) {
+    console.error('Save error:', err);
+    return { success: false, error: err.message };
+  }
 });
 
 app.on('before-quit', () => {
