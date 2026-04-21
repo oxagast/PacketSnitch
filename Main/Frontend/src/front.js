@@ -246,18 +246,13 @@ function hostPacketInfo(currentIp) {
   }
 }
 
-// Update host filter when a new host is selected from dropdown
+// Update host filter and navigate when a new host is selected from dropdown
 document.getElementById('target_hosts').addEventListener('change', function () {
   const selected = document.getElementById('target_hosts').value;
   let hostFilterEl = document.getElementById('host_filter');
-  filteredPackets = []; // reset filter when host changes
   if (hostFilterEl.value !== selected) {
     hostFilterEl.value = selected;
   }
-});
-
-document.getElementById('target_hosts').addEventListener('click', function () {
-  const selected = document.getElementById('target_hosts').value;
   filteredPackets = filterPackets(
     capturedPackets,
     'ip.src.addr: ' + selected + '|| ip.dst.addr: ' + selected,
