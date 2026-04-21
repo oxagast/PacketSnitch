@@ -325,11 +325,7 @@ document.getElementById('prev-btn').addEventListener('click', function () {
     currentIp = packetsForHost[index]['Packet Info']['IP']['Source IP'];
     currentPacketKey =
       currentIp + ':' + packetsForHost[index]['Packet Info']['Index'];
-    document.getElementById('selectBookmark').value = bookmarkList.includes(
-      currentPacketKey,
-    )
-      ? currentPacketKey
-      : '';
+    syncBookmarkDropdown(currentPacketKey);
     infoPanel(packetsForHost);
     popHexGrid(
       packetsForHost[index]['Packet Info']['Raw data']['Payload'][
@@ -349,11 +345,7 @@ document.getElementById('next-btn').addEventListener('click', function () {
     currentPacketKey =
       currentIp + ':' + packetsForHost[index]['Packet Info']['Index'];
   }
-  document.getElementById('selectBookmark').value = bookmarkList.includes(
-    currentPacketKey,
-  )
-    ? currentPacketKey
-    : '';
+  syncBookmarkDropdown(currentPacketKey);
   infoPanel(packetsForHost);
   popHexGrid(
     packetsForHost[index]['Packet Info']['Raw data']['Payload']['Hex Encoded'],
@@ -393,6 +385,15 @@ document.getElementById('setBookmark').addEventListener('click', function () {
     }
   }
 });
+
+// Syncs the bookmark dropdown to reflect whether the given packet key is bookmarked
+function syncBookmarkDropdown(packetKey) {
+  document.getElementById('selectBookmark').value = bookmarkList.includes(
+    packetKey,
+  )
+    ? packetKey
+    : '';
+}
 
 // function that returns the total number of packets in the entire capture
 function totalPacketCount() {
@@ -478,11 +479,7 @@ function handlePacketNavigation(navAction, navBookmark) {
     currentIp = packetSet[index]['Packet Info']['IP']['Source IP'];
     currentPacketKey =
       currentIp + ':' + packetSet[index]['Packet Info']['Index'];
-    document.getElementById('selectBookmark').value = bookmarkList.includes(
-      currentPacketKey,
-    )
-      ? currentPacketKey
-      : '';
+    syncBookmarkDropdown(currentPacketKey);
     console.log(packetSet[index]);
     const hexPayload =
       packetSet[index]['Packet Info']['Raw data']['Payload']['Hex Encoded'];
