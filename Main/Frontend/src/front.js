@@ -325,6 +325,11 @@ document.getElementById('prev-btn').addEventListener('click', function () {
     currentIp = packetsForHost[index]['Packet Info']['IP']['Source IP'];
     currentPacketKey =
       currentIp + ':' + packetsForHost[index]['Packet Info']['Index'];
+    document.getElementById('selectBookmark').value = bookmarkList.includes(
+      currentPacketKey,
+    )
+      ? currentPacketKey
+      : '';
     infoPanel(packetsForHost);
     popHexGrid(
       packetsForHost[index]['Packet Info']['Raw data']['Payload'][
@@ -344,6 +349,11 @@ document.getElementById('next-btn').addEventListener('click', function () {
     currentPacketKey =
       currentIp + ':' + packetsForHost[index]['Packet Info']['Index'];
   }
+  document.getElementById('selectBookmark').value = bookmarkList.includes(
+    currentPacketKey,
+  )
+    ? currentPacketKey
+    : '';
   infoPanel(packetsForHost);
   popHexGrid(
     packetsForHost[index]['Packet Info']['Raw data']['Payload']['Hex Encoded'],
@@ -354,7 +364,7 @@ document.getElementById('next-btn').addEventListener('click', function () {
 // Handle bookmark selection from dropdown
 document
   .getElementById('selectBookmark')
-  .addEventListener('click', function () {
+  .addEventListener('change', function () {
     const bookmarkHost = document
       .getElementById('selectBookmark')
       .value.split(':')[0];
@@ -468,6 +478,11 @@ function handlePacketNavigation(navAction, navBookmark) {
     currentIp = packetSet[index]['Packet Info']['IP']['Source IP'];
     currentPacketKey =
       currentIp + ':' + packetSet[index]['Packet Info']['Index'];
+    document.getElementById('selectBookmark').value = bookmarkList.includes(
+      currentPacketKey,
+    )
+      ? currentPacketKey
+      : '';
     console.log(packetSet[index]);
     const hexPayload =
       packetSet[index]['Packet Info']['Raw data']['Payload']['Hex Encoded'];
