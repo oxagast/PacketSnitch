@@ -246,18 +246,13 @@ function hostPacketInfo(currentIp) {
   }
 }
 
-// Update host filter when a new host is selected from dropdown
+// Update host filter and navigate when a new host is selected from dropdown
 document.getElementById('target_hosts').addEventListener('change', function () {
   const selected = document.getElementById('target_hosts').value;
   let hostFilterEl = document.getElementById('host_filter');
-  filteredPackets = []; // reset filter when host changes
   if (hostFilterEl.value !== selected) {
     hostFilterEl.value = selected;
   }
-});
-
-document.getElementById('target_hosts').addEventListener('click', function () {
-  const selected = document.getElementById('target_hosts').value;
   filteredPackets = filterPackets(
     capturedPackets,
     'ip.src.addr: ' + selected + '|| ip.dst.addr: ' + selected,
@@ -319,12 +314,13 @@ function initializeDataView() {
 document.getElementById('prev-btn').addEventListener('click', function () {
   statusUpdate('Status: Displaying capture analysis summary');
   //highlightTab("prev-navAction");
-  if (index > 1) {
+  if (index > 0) {
     index--;
 
     currentIp = packetsForHost[index]['Packet Info']['IP']['Source IP'];
     currentPacketKey =
       currentIp + ':' + packetsForHost[index]['Packet Info']['Index'];
+    syncBookmarkDropdown(currentPacketKey);
     infoPanel(packetsForHost);
     popHexGrid(
       packetsForHost[index]['Packet Info']['Raw data']['Payload'][
@@ -344,6 +340,7 @@ document.getElementById('next-btn').addEventListener('click', function () {
     currentPacketKey =
       currentIp + ':' + packetsForHost[index]['Packet Info']['Index'];
   }
+  syncBookmarkDropdown(currentPacketKey);
   infoPanel(packetsForHost);
   popHexGrid(
     packetsForHost[index]['Packet Info']['Raw data']['Payload']['Hex Encoded'],
@@ -354,7 +351,7 @@ document.getElementById('next-btn').addEventListener('click', function () {
 // Handle bookmark selection from dropdown
 document
   .getElementById('selectBookmark')
-  .addEventListener('click', function () {
+  .addEventListener('change', function () {
     const bookmarkHost = document
       .getElementById('selectBookmark')
       .value.split(':')[0];
@@ -384,6 +381,15 @@ document.getElementById('setBookmark').addEventListener('click', function () {
   }
 });
 
+// Syncs the bookmark dropdown to reflect whether the given packet key is bookmarked
+function syncBookmarkDropdown(packetKey) {
+  document.getElementById('selectBookmark').value = bookmarkList.includes(
+    packetKey,
+  )
+    ? packetKey
+    : '';
+}
+
 // function that returns the total number of packets in the entire capture
 function totalPacketCount() {
   let totalCount = 0;
@@ -412,7 +418,7 @@ function handlePacketNavigation(navAction, navBookmark) {
 
   document.getElementById('total-packets').innerHTML =
     'Total Packets: ' + totalPacketCount();
-  index = 1;
+  index = 0;
   if (navAction === undefined) {
     handlePacketNavigation('first-load');
   }
@@ -468,6 +474,7 @@ function handlePacketNavigation(navAction, navBookmark) {
     currentIp = packetSet[index]['Packet Info']['IP']['Source IP'];
     currentPacketKey =
       currentIp + ':' + packetSet[index]['Packet Info']['Index'];
+    syncBookmarkDropdown(currentPacketKey);
     console.log(packetSet[index]);
     const hexPayload =
       packetSet[index]['Packet Info']['Raw data']['Payload']['Hex Encoded'];
