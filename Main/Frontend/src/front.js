@@ -717,11 +717,15 @@ function infoPanel(pk) {
     packetInfoData['IP']['Destination IP'] +
     ':' +
     (transportData['Destination port'] ?? '?');
-  const srcMac = packetInfoData['Ethernet Frame']['MAC Source'];
-  const dstMac = packetInfoData['Ethernet Frame']['MAC Destination'];
-  const srcMacVendor = packetInfoData['Ethernet Frame']['MAC Source Vendor'];
-  const dstMacVendor =
-    packetInfoData['Ethernet Frame']['MAC Destination Vendor'];
+  const etherFrame =
+    typeof packetInfoData['Ethernet Frame'] === 'object' &&
+    packetInfoData['Ethernet Frame'] !== null
+      ? packetInfoData['Ethernet Frame']
+      : {};
+  const srcMac = etherFrame['MAC Source'] ?? 'N/A';
+  const dstMac = etherFrame['MAC Destination'] ?? 'N/A';
+  const srcMacVendor = etherFrame['MAC Source Vendor'] ?? 'N/A';
+  const dstMacVendor = etherFrame['MAC Destination Vendor'] ?? 'N/A';
   const ipLayerLen = packetInfoData['IP']['IP layer length'];
   const wireLen = transportData['Wire length'];
   const payloadLen = packetInfoData['Raw data']['Payload Length'];
