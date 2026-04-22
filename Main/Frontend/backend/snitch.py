@@ -2434,7 +2434,8 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                 "packet.timestamp": timestamp,
                 "Protocol": protocolKey,
                 "packet.proto": protocolKey,
-                # Only include Ethernet MAC data for LAN-local traffic
+                # Include Ethernet MAC data when at least one IP is local (private),
+                # so that mixed private+internet traffic still exposes the local device's MAC.
                 "Ethernet Frame": {
                     "MAC Source": srcMacAddr,
                     "ether.src.mac.addr": srcMacAddr,
@@ -2445,7 +2446,10 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
                     "MAC Destination Vendor": dstMacVendor,
                     "ether.dst.mac.vendor": dstMacVendor,
                 }
-                if isLocalNetwork
+                if (
+                    srcGeoInfo.get("Location") == "Localnet"
+                    or dstGeoInfo.get("Location") == "Localnet"
+                )
                 else "N/A",
                 "IP": {
                     "Source IP": str(p["IP"].src),
