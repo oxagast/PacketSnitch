@@ -30,7 +30,7 @@ contextBridge.exposeInMainWorld('fsize', {
 });
 
 contextBridge.exposeInMainWorld('saveapi', {
-  saveJson: () => ipcRenderer.invoke('save-json'),
+  saveJson: (jsonData) => ipcRenderer.invoke('save-json', jsonData),
 });
 
 contextBridge.exposeInMainWorld('quitapi', {

@@ -415,12 +415,13 @@ function initializeDataView() {
 document.getElementById('prev-btn').addEventListener('click', function () {
   statusUpdate('Status: Displaying capture analysis summary');
   //highlightTab("prev-navAction");
-  if (index > 1) {
+  if (index > 0) {
     index--;
 
     currentIp = packetsForHost[index]['Packet Info']['IP']['Source IP'];
     currentPacketKey =
       currentIp + ':' + packetsForHost[index]['Packet Info']['Index'];
+    syncBookmarkDropdown(currentPacketKey);
     infoPanel(packetsForHost);
     popHexGrid(
       packetsForHost[index]['Packet Info']['Raw data']['Payload'][
@@ -440,6 +441,7 @@ document.getElementById('next-btn').addEventListener('click', function () {
     currentPacketKey =
       currentIp + ':' + packetsForHost[index]['Packet Info']['Index'];
   }
+  syncBookmarkDropdown(currentPacketKey);
   infoPanel(packetsForHost);
   popHexGrid(
     packetsForHost[index]['Packet Info']['Raw data']['Payload']['Hex Encoded'],
@@ -450,7 +452,7 @@ document.getElementById('next-btn').addEventListener('click', function () {
 // Handle bookmark selection from dropdown
 document
   .getElementById('selectBookmark')
-  .addEventListener('click', function () {
+  .addEventListener('change', function () {
     const bookmarkHost = document
       .getElementById('selectBookmark')
       .value.split(':')[0];
@@ -480,6 +482,15 @@ document.getElementById('setBookmark').addEventListener('click', function () {
   }
 });
 
+// Syncs the bookmark dropdown to reflect whether the given packet key is bookmarked
+function syncBookmarkDropdown(packetKey) {
+  document.getElementById('selectBookmark').value = bookmarkList.includes(
+    packetKey,
+  )
+    ? packetKey
+    : '';
+}
+
 // function that returns the total number of packets in the entire capture
 function totalPacketCount() {
   let totalCount = 0;
@@ -508,7 +519,7 @@ function handlePacketNavigation(navAction, navBookmark) {
 
   document.getElementById('total-packets').innerHTML =
     'Total Packets: ' + totalPacketCount();
-  index = 1;
+  index = 0;
   if (navAction === undefined) {
     handlePacketNavigation('first-load');
   }
@@ -564,6 +575,7 @@ function handlePacketNavigation(navAction, navBookmark) {
     currentIp = packetSet[index]['Packet Info']['IP']['Source IP'];
     currentPacketKey =
       currentIp + ':' + packetSet[index]['Packet Info']['Index'];
+    syncBookmarkDropdown(currentPacketKey);
     console.log(packetSet[index]);
     const hexPayload =
       packetSet[index]['Packet Info']['Raw data']['Payload']['Hex Encoded'];
@@ -806,11 +818,15 @@ function infoPanel(pk) {
     packetInfoData['IP']['Destination IP'] +
     ':' +
     (transportData['Destination port'] ?? '?');
-  const srcMac = packetInfoData['Ethernet Frame']['MAC Source'];
-  const dstMac = packetInfoData['Ethernet Frame']['MAC Destination'];
-  const srcMacVendor = packetInfoData['Ethernet Frame']['MAC Source Vendor'];
-  const dstMacVendor =
-    packetInfoData['Ethernet Frame']['MAC Destination Vendor'];
+  const etherFrame =
+    typeof packetInfoData['Ethernet Frame'] === 'object' &&
+    packetInfoData['Ethernet Frame'] !== null
+      ? packetInfoData['Ethernet Frame']
+      : {};
+  const srcMac = etherFrame['MAC Source'] ?? 'N/A';
+  const dstMac = etherFrame['MAC Destination'] ?? 'N/A';
+  const srcMacVendor = etherFrame['MAC Source Vendor'] ?? 'N/A';
+  const dstMacVendor = etherFrame['MAC Destination Vendor'] ?? 'N/A';
   const ipLayerLen = packetInfoData['IP']['IP layer length'];
   const wireLen = transportData['Wire length'];
   const payloadLen = packetInfoData['Raw data']['Payload Length'];
@@ -1128,7 +1144,7 @@ document.getElementById('save-json-btn').addEventListener('click', function () {
     statusUpdate('Status: No data loaded to save');
     return;
   }
-  window.saveapi.saveJson().then((result) => {
+  window.saveapi.saveJson(jsonCapture).then((result) => {
     if (result.canceled) {
       statusUpdate('Status: Save cancelled');
     } else if (result.success) {
