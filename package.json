@@ -1,17 +1,17 @@
 {
-  "name": "PacketSnitch",
-  "executableName": "PacketSnitch",
-  "productName": "PacketSnitch",
-  "version": "1.4.508",
+  "name": "packetsnitch",
+  "executableName": "packetsnitch",
+  "productName": "packetsnitch",
+  "version": "1.5.604",
   "description": "A High Level Network Analysis Tool",
   "main": ".webpack/main",
-  "private": true,
+  "private": false,
   "scripts": {
     "start": "electron-forge start",
     "package": "npm run build-python && electron-forge package",
-    "make": "npm run build-python && electron-forge make",
+    "make": "npm run build-python && QA_SKIP_RPATHS=1 electron-forge make",
     "build-python": "python3 -m PyInstaller --onedir -y --add-data \"backend/common:common\" --distpath backend ./backend/snitch.py",
-    "publish": "electron-forge publish"
+    "publish": "QA_SKIP_RPATHS=1 electron-forge publish"
   },
   "engines": {
     "node": ">=12.11.0"
@@ -22,7 +22,27 @@
       "icon": "ps-icon.ico"
     }
   },
-  "keywords": [],
+  "keywords": [
+    "packet sniffer",
+    "network analysis",
+    "network monitoring",
+    "packet capture",
+    "protocol analysis",
+    "traffic analysis",
+    "network security",
+    "packets",
+    "networking",
+    "cybersecurity",
+    "network troubleshooting",
+    "network performance",
+    "network diagnostics",
+    "network forensics",
+    "network visualization",
+    "network management",
+    "pcap decoder",
+    "pcapng decoder",
+    "packet inspector"
+  ],
   "author": {
     "name": "Marshall Whittaker",
     "email": "marshall@oxasploits.com"
