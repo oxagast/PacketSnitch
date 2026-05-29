@@ -242,21 +242,21 @@ ipcMain.handle("check-first-run", async () => {
   const filesToCheck = [
     {
       name: "PacketSnitch Backend (" + backendExe + ")",
-      path: path.join(basePath, "backend", backendExe),
+      path: path.join(basePath, "src/backend/snitch/", backendExe),
     },
     {
       name: "GeoIP Database (GeoLite2-City.mmdb)",
-      path: path.join(basePath, "backend", "common", "GeoLite2-City.mmdb"),
+      path: path.join(basePath, "src/backend", "common", "GeoLite2-City.mmdb"),
     },
     {
       name: "MAC Vendors Database (mac-vendors-export.csv)",
-      path: path.join(basePath, "backend", "common", "mac-vendors-export.csv"),
+      path: path.join(basePath, "src/backend", "common", "mac-vendors-export.csv"),
     },
     {
       name: "Services Database (service-names-port-numbers.csv)",
       path: path.join(
         basePath,
-        "backend",
+        "src/backend",
         "common",
         "service-names-port-numbers.csv",
       ),
