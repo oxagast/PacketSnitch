@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['backend/snitch.py'],
+    ['src/backend/snitch.py'],
     pathex=[],
     binaries=[],
-    datas=[('backend/common', 'common')],
+    datas=[('src/backend/common', 'common')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
