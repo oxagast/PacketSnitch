@@ -1,7 +1,7 @@
 # PacketSnitch
 
 <p align="center">
-  <img src="https://github.com/oxasploits/PacketSnitch/blob/main/Logo/packet-snitch-tag-transp-whitetext.png" alt="PacketSnitch" width="400">
+  <img src="https://github.com/oxasploits/PacketSnitch/blob/main/logo/packet-snitch-tag-transp-whitetext.png" alt="PacketSnitch" width="400">
 </p>
 
 <p align="center">
@@ -61,7 +61,7 @@ Launch the app with `packetsnitch` or click the desktop icon.
 ## The Interface
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/screenshots/ps-views.gif" alt="PacketSnitch main view" width="950">
+  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/docs/screenshots/ps-views.gif" alt="PacketSnitch main view" width="950">
 </p>
 
 ### Left Sidebar
@@ -170,9 +170,9 @@ If you find PacketSnitch useful, please consider supporting its development:
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/bitcoin-qr.png" width="120" alt="Bitcoin">
+  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/docs/bitcoin-qr.png" width="120" alt="Bitcoin">
   &nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/paypal-qr.png" width="120" alt="PayPal">
+  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/docs/paypal-qr.png" width="120" alt="PayPal">
   &nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/Documentation/venmo-qr.png" width="120" alt="Venmo">
+  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/docs/venmo-qr.png" width="120" alt="Venmo">
 </p>
