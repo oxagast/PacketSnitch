@@ -30,7 +30,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
     fs.rmSync(testcaseOutputDir, { recursive: true, force: true });
   }
 
-  global.logBackend("Command to run:", backendCommand);
+  global.logBackend("Exec: ", backendCommand);
 
   function sendError(message) {
     const mainWin = BrowserWindow.getAllWindows()[0]; // or track your main window
@@ -42,8 +42,8 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   return new Promise((resolve) => {
     exec(backendCommand, (error, stdout, stderr) => {
       resolve(stdout);
-      global.logBackend("Backend output:", stdout);
-      global.logBackend("Backend error output:", stderr);
+      global.logBackend("Info: ", stdout);
+      global.logBackend("Error: ", stderr);
       if (stdout.includes("Ollama")) {
         sendError("Backend LLM generation error!");
       }
@@ -65,6 +65,6 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
       }
     });
 
-    global.logBackend("Backend started, waiting for completion...");
+    global.logBackend("Backend packet processing initiated");
   });
 });
