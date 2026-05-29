@@ -10,9 +10,9 @@
     "start": "electron-forge start",
     "package": "npm run build-python && electron-forge package",
     "patch-build": "cp spec.ejs node_modules/electron-installer-redhat/resources/spec.ejs",
-    "make": "npm run build-python && npm run patch-build && cross-env QA_SKIP_RPATHS=1 electron-forge make",
+    "make": "npm run build-python && cross-env QA_SKIP_RPATHS=1 electron-forge make",
     "build-python": "python3 -m PyInstaller --onedir -y --add-data \"src/backend/common:common\" --distpath src/backend ./src/backend/snitch.py",
-    "publish": "npm run patch-build && cross-env QA_SKIP_RPATHS=1 electron-forge publish"
+    "publish": "cross-env QA_SKIP_RPATHS=1 electron-forge publish"
   },
   "publishConfig": {
     "@oxagast:registry": "https://npm.pkg.github.com"
