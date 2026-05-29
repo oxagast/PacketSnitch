@@ -1,7 +1,7 @@
 # PacketSnitch
 
 <p align="center">
-  <img src="https://github.com/oxasploits/PacketSnitch/blob/main/logo/packet-snitch-tag-transp-whitetext.png" alt="PacketSnitch" width="400">
+  <img src="https://github.com/oxasploits/PacketSnitch/blob/main/logo/ps-tagline.png" alt="PacketSnitch" width="400">
 </p>
 
 <p align="center">
