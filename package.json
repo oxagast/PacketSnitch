@@ -13,6 +13,9 @@
     "build-python": "python3 -m PyInstaller --onedir -y --add-data \"backend/common:common\" --distpath backend ./backend/snitch.py",
     "publish": "QA_SKIP_RPATHS=1 electron-forge publish"
   },
+  "publishConfig": {
+    "@oxagast:registry": "https://npm.pkg.github.com"
+  },
   "engines": {
     "node": ">=12.11.0"
   },
