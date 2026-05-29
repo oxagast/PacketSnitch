@@ -38,7 +38,7 @@ This binary distribution of NumPy also bundles the following software:
 
 
 Name: OpenBLAS
-Files: numpy.libs\libscipy_openblas*.dll
+Files: numpy.libs/libscipy_openblas*.so
 Description: bundled as a dynamically linked library
 Availability: https://github.com/OpenMathLib/OpenBLAS/
 License: BSD-3-Clause
@@ -74,7 +74,7 @@ License: BSD-3-Clause
 
 
 Name: LAPACK
-Files: numpy.libs\libscipy_openblas*.dll
+Files: numpy.libs/libscipy_openblas*.so
 Description: bundled in OpenBLAS
 Availability: https://github.com/OpenMathLib/OpenBLAS/
 License: BSD-3-Clause-Open-MPI
@@ -129,8 +129,8 @@ License: BSD-3-Clause-Open-MPI
 
 
 Name: GCC runtime library
-Files: numpy.libs\libscipy_openblas*.dll
-Description: statically linked to files compiled with gcc
+Files: numpy.libs/libgfortran*.so
+Description: dynamically linked to files compiled with gcc
 Availability: https://gcc.gnu.org/git/?p=gcc.git;a=tree;f=libgfortran
 License: GPL-3.0-or-later WITH GCC-exception-3.1
   Copyright (C) 2002-2017 Free Software Foundation, Inc.
@@ -912,3 +912,24 @@ the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
 
+Name: libquadmath
+Files: numpy.libs/libquadmath*.so
+Description: dynamically linked to files compiled with gcc
+Availability: https://gcc.gnu.org/git/?p=gcc.git;a=tree;f=libquadmath
+License: LGPL-2.1-or-later
+
+    GCC Quad-Precision Math Library
+    Copyright (C) 2010-2019 Free Software Foundation, Inc.
+    Written by Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+    This file is part of the libquadmath library.
+    Libquadmath is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    Libquadmath is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+    https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
