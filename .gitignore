@@ -2,7 +2,7 @@ node_modules
 build
 out
 .npmrc
-backend/snitch
+src/backend/snitch
 backend/snitch.exe
 
 
