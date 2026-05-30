@@ -10,16 +10,16 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   global.logBackend(`Received pcap: ${filename}`);
   const isDev = !require("electron").app.isPackaged;
   const basePath = isDev
-    ? path.join(__dirname, "../..")
+    ? path.join(__dirname, "../../src/")
     : process.resourcesPath;
   let snitchExePath;
 
   if (platform === "win32") {
-    snitchExePath = path.join(basePath, "\\src\\backend\\snitch\\snitch.exe");
+    snitchExePath = path.join(basePath, "\\backend\\snitch\\snitch.exe");
   } else if (platform === "linux") {
-    snitchExePath = path.join(basePath, "/src/backend/snitch/snitch");
+    snitchExePath = path.join(basePath, "/backend/snitch/snitch");
   } else {
-    snitchExePath = path.join(basePath, "/src/backend/snitch/snitch");
+    snitchExePath = path.join(basePath, "/backend/snitch/snitch");
   }
 
   const backendCommand = `"${snitchExePath}" "${filename}" -a -o "${testcaseOutputDir}"${useLLM ? "" : " --nollm"}`;

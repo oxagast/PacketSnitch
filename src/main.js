@@ -236,27 +236,27 @@ app.whenReady().then(() => {
 ipcMain.handle("check-first-run", async () => {
   const isDev = !app.isPackaged;
   const basePath = isDev
-    ? path.join(__dirname, "../..")
+    ? path.join(__dirname, "../../src/")
     : process.resourcesPath;
   const backendExe = platform === "win32" ? "snitch.exe" : "snitch";
   const filesToCheck = [
     {
       name: "PacketSnitch Backend (" + backendExe + ")",
-      path: path.join(basePath, "src/backend/snitch/", backendExe),
+      path: path.join(basePath, "backend/snitch/", backendExe),
     },
     {
       name: "GeoIP Database (GeoLite2-City.mmdb)",
-      path: path.join(basePath, "src/backend", "common", "GeoLite2-City.mmdb"),
+      path: path.join(basePath, "backend", "common", "GeoLite2-City.mmdb"),
     },
     {
       name: "MAC Vendors Database (mac-vendors-export.csv)",
-      path: path.join(basePath, "src/backend", "common", "mac-vendors-export.csv"),
+      path: path.join(basePath, "backend", "common", "mac-vendors-export.csv"),
     },
     {
       name: "Services Database (service-names-port-numbers.csv)",
       path: path.join(
         basePath,
-        "src/backend",
+        "backend",
         "common",
         "service-names-port-numbers.csv",
       ),
