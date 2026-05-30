@@ -261,6 +261,10 @@ ipcMain.handle("check-first-run", async () => {
         "service-names-port-numbers.csv",
       ),
     },
+    {
+      name: "Frontend Interface (*.html *.js *.css)",
+      path: path.join(basePath, "index.html"),
+    },
   ];
   const installedFiles = filesToCheck.map((f) => ({
     name: f.name,
