@@ -83,7 +83,12 @@ function createCryptPanel({
         const extraInfo = packet?.["Extra Info"];
         const serverInfo = extraInfo?.["Traits"]?.["Server Info"];
         const encryptionData = serverInfo?.["Encryption Data"];
-        if (!packetInfo || !serverInfo || !encryptionData || encryptionData === "N/A")
+        if (
+          !packetInfo ||
+          !serverInfo ||
+          !encryptionData ||
+          encryptionData === "N/A"
+        )
           return;
 
         const protocol = packetInfo["Protocol"] || "Unknown";
@@ -146,7 +151,8 @@ function createCryptPanel({
 
     if (cryptEncounteredEntries.length === 0) {
       const option = document.createElement("option");
-      option.textContent = "No SSL/TLS encryption encountered in loaded capture.";
+      option.textContent =
+        "No SSL/TLS encryption encountered in loaded capture.";
       option.disabled = true;
       listEl.appendChild(option);
       renderCryptEncounteredDetails(null);
@@ -194,7 +200,9 @@ function createCryptPanel({
       return String(packetIndex) === String(entry.packetIndex);
     });
     return String(
-      matchedPacket?.["Packet Info"]?.["Raw data"]?.["Payload"]?.["Hex Encoded"] || "",
+      matchedPacket?.["Packet Info"]?.["Raw data"]?.["Payload"]?.[
+        "Hex Encoded"
+      ] || "",
     );
   }
 
@@ -231,8 +239,17 @@ function createCryptPanel({
   function decryptTlsCipherBytes(cipherBytes, privateKeyPem) {
     const candidates = extractDecryptCandidates(cipherBytes);
     const decryptVariants = [
-      { name: "RSA-OAEP-SHA256", options: { padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" } },
-      { name: "RSA-PKCS1-v1_5", options: { padding: crypto.constants.RSA_PKCS1_PADDING } },
+      {
+        name: "RSA-OAEP-SHA256",
+        options: {
+          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+          oaepHash: "sha256",
+        },
+      },
+      {
+        name: "RSA-PKCS1-v1_5",
+        options: { padding: crypto.constants.RSA_PKCS1_PADDING },
+      },
     ];
     const failures = [];
     for (const candidate of candidates) {
@@ -268,7 +285,8 @@ function createCryptPanel({
     ) {
       return {
         matched: null,
-        reason: "Certificate/key pair validation is unavailable in this runtime.",
+        reason:
+          "Certificate/key pair validation is unavailable in this runtime.",
       };
     }
     try {
@@ -323,8 +341,12 @@ function createCryptPanel({
     const sslActive = tabName === CRYPT_SSL_SUBTAB;
     const pgpActive = tabName === CRYPT_PGP_SUBTAB;
     const opensshActive = tabName === CRYPT_OPENSSH_SUBTAB;
-    document.getElementById("crypt-subtab-ssl").classList.toggle("active", sslActive);
-    document.getElementById("crypt-subtab-pgp").classList.toggle("active", pgpActive);
+    document
+      .getElementById("crypt-subtab-ssl")
+      .classList.toggle("active", sslActive);
+    document
+      .getElementById("crypt-subtab-pgp")
+      .classList.toggle("active", pgpActive);
     document
       .getElementById("crypt-subtab-openssh")
       .classList.toggle("active", opensshActive);
@@ -395,7 +417,8 @@ function createCryptPanel({
     const file = fileInputEl.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => onLoad(String(reader.result || ""), `file ${file.name}`);
+    reader.onload = () =>
+      onLoad(String(reader.result || ""), `file ${file.name}`);
     reader.onerror = (error) => {
       logErrorEntry("crypt-file-read", error);
       doError("Could not read selected crypt file.");
@@ -404,7 +427,10 @@ function createCryptPanel({
   }
 
   function applyCryptFilterForActiveEntry() {
-    if (cryptActiveEntryIndex < 0 || !cryptEncounteredEntries[cryptActiveEntryIndex]) {
+    if (
+      cryptActiveEntryIndex < 0 ||
+      !cryptEncounteredEntries[cryptActiveEntryIndex]
+    ) {
       statusUpdate("Status: Select an encountered SSL/TLS entry first");
       return;
     }
@@ -413,7 +439,9 @@ function createCryptPanel({
       !STRICT_IPV4_REGEX.test(String(activeEntry.srcIp || "")) ||
       !STRICT_IPV4_REGEX.test(String(activeEntry.dstIp || ""))
     ) {
-      statusUpdate("Status: Cannot build filter query for non-IPv4 packet endpoints");
+      statusUpdate(
+        "Status: Cannot build filter query for non-IPv4 packet endpoints",
+      );
       return;
     }
     const query = `ip.src.addr: ${activeEntry.srcIp} && ip.dst.addr: ${activeEntry.dstIp}`;
@@ -424,7 +452,10 @@ function createCryptPanel({
   }
 
   function loadEncounteredCertificateIntoCrypt() {
-    if (cryptActiveEntryIndex < 0 || !cryptEncounteredEntries[cryptActiveEntryIndex]) {
+    if (
+      cryptActiveEntryIndex < 0 ||
+      !cryptEncounteredEntries[cryptActiveEntryIndex]
+    ) {
       statusUpdate("Status: Select an encountered SSL/TLS entry first");
       return;
     }
@@ -440,7 +471,10 @@ function createCryptPanel({
   }
 
   function selectEncounteredEntry(selectedIndex) {
-    if (!Number.isFinite(selectedIndex) || !cryptEncounteredEntries[selectedIndex]) {
+    if (
+      !Number.isFinite(selectedIndex) ||
+      !cryptEncounteredEntries[selectedIndex]
+    ) {
       return;
     }
     cryptActiveEntryIndex = selectedIndex;
@@ -449,7 +483,10 @@ function createCryptPanel({
   }
 
   function decryptActiveEntryWithLoadedKey() {
-    if (cryptActiveEntryIndex < 0 || !cryptEncounteredEntries[cryptActiveEntryIndex]) {
+    if (
+      cryptActiveEntryIndex < 0 ||
+      !cryptEncounteredEntries[cryptActiveEntryIndex]
+    ) {
       statusUpdate("Status: Select an encountered SSL/TLS entry first");
       return;
     }
@@ -469,7 +506,11 @@ function createCryptPanel({
         "Status: Loaded certificate does not match private key (continuing with key)",
       );
     }
-    if (certificatePem && certKeyCheck.matched === null && certKeyCheck.reason) {
+    if (
+      certificatePem &&
+      certKeyCheck.matched === null &&
+      certKeyCheck.reason
+    ) {
       writeLogEntry(`Crypt cert/key check skipped: ${certKeyCheck.reason}`);
     }
     const activeEntry = cryptEncounteredEntries[cryptActiveEntryIndex];
@@ -491,8 +532,12 @@ function createCryptPanel({
         privateKeyPem,
       );
       renderDecryptedPayload(activeEntry, decryptedBytes);
-      statusUpdate(`Status: Decrypted TLS/SSL payload for packet #${activeEntry.packetIndex}`);
-      writeLogEntry(`Crypt decrypted payload packet_index=${activeEntry.packetIndex}`);
+      statusUpdate(
+        `Status: Decrypted TLS/SSL payload for packet #${activeEntry.packetIndex}`,
+      );
+      writeLogEntry(
+        `Crypt decrypted payload packet_index=${activeEntry.packetIndex}`,
+      );
     } catch (error) {
       clearCryptDecryptionOutput();
       logErrorEntry("crypt-tls-decrypt", error);
