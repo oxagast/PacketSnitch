@@ -1,0 +1,11 @@
+--- node_modules/electron-installer-redhat/resources/spec.ejs	2026-05-31 11:51:43.342676172 -0400
++++ spec.ejs	2026-05-31 11:44:37.177697544 -0400
+@@ -24,7 +24,7 @@
+ 
+ %>%install
+ mkdir -p %{buildroot}/usr/
+-cp <%= process.platform === 'darwin' ? '-R' : '-r' %> usr/* %{buildroot}/usr/
++cp <%= process.platform === 'darwin' ? '-R' : '-r' %> ../usr/* %{buildroot}/usr/
+ 
+ 
+ %files
