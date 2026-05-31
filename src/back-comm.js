@@ -40,30 +40,34 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   }
 
   return new Promise((resolve) => {
-    exec(backendCommand, (error, stdout, stderr) => {
-      resolve(stdout);
-      global.logBackend("", stdout);
-      global.logBackend(" ", stderr);
-      if (stdout.includes("Ollama")) {
-        sendError("[Bridge] Backend LLM generation error!");
-      }
-      if (error) {
-        if (stderr.includes("supported capture file")) {
-          sendError("[Bridge] Unsupported file format!");
-        } else {
-          sendError("[Bridge] Backend execution error! " + error);
+    exec(
+      backendCommand,
+      { maxBuffer: 1024 * 1024 * 50 },
+      (error, stdout, stderr) => {
+        resolve(stdout);
+        global.logBackend("", stdout);
+        global.logBackend("", stderr);
+        if (stdout.includes("Ollama")) {
+          sendError("[Bridge] Backend LLM generation error!");
         }
-      } else {
-        setTimeout(() => {
-          const hostsJsonPath = path.join(testcaseOutputDir, "hosts.json");
-          const mainWin = BrowserWindow.getAllWindows()[0];
-          if (mainWin && fs.existsSync(hostsJsonPath)) {
-            const hostsJsonData = fs.readFileSync(hostsJsonPath, "utf8");
-            mainWin.webContents.send("json-data", hostsJsonData);
+        if (error) {
+          if (stderr.includes("supported capture file")) {
+            sendError("[Bridge] Unsupported file format!");
+          } else {
+            sendError("[Bridge] Backend execution error! " + error);
           }
-        }, 200);
-      }
-    });
+        } else {
+          setTimeout(() => {
+            const hostsJsonPath = path.join(testcaseOutputDir, "hosts.json");
+            const mainWin = BrowserWindow.getAllWindows()[0];
+            if (mainWin && fs.existsSync(hostsJsonPath)) {
+              const hostsJsonData = fs.readFileSync(hostsJsonPath, "utf8");
+              mainWin.webContents.send("json-data", hostsJsonData);
+            }
+          }, 200);
+        }
+      },
+    );
 
     global.logBackend("[Bridge] Backend packet processing initiated");
   });

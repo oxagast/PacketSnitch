@@ -136,7 +136,11 @@ const VALID_MAIN_TABS = [
   MAIN_TAB_CRYPT,
   MAIN_TAB_KEYSTORE,
 ];
-const VALID_CRYPT_SUBTABS = [CRYPT_SSL_SUBTAB, CRYPT_PGP_SUBTAB, CRYPT_OPENSSH_SUBTAB];
+const VALID_CRYPT_SUBTABS = [
+  CRYPT_SSL_SUBTAB,
+  CRYPT_PGP_SUBTAB,
+  CRYPT_OPENSSH_SUBTAB,
+];
 let activeMainTab = MAIN_TAB_SUMMARY;
 let activeCryptSubtab = CRYPT_SSL_SUBTAB;
 let activeDataToolsProtoResult = null;
@@ -297,9 +301,7 @@ document
               const fileSizeKb = (fileSize / 1024).toFixed(2);
               document.getElementById("pcap-size").textContent =
                 `PCAP size: ${fileSizeKb}kb`;
-              writeLogEntry(
-                `Capture size recorded bytes=${fileSize} kilobytes=${fileSizeKb}`,
-              );
+              writeLogEntry(`Capture size kb=${fileSizeKb}`);
             })
             .catch((error) => {
               // Handle any errors (e.g., file not found)
@@ -667,7 +669,9 @@ function addNote(text, color = NOTE_DEFAULT_COLOR, sourceLabel = "manual") {
   selectedNoteId = noteEntry.id;
   renderNotesList();
   statusUpdate("Status: Note added");
-  writeLogEntry(`Note added source=${sourceLabel} length=${normalizedText.length}`);
+  writeLogEntry(
+    `Note added source=${sourceLabel} length=${normalizedText.length}`,
+  );
   return true;
 }
 
@@ -677,7 +681,9 @@ function removeSelectedNote() {
     statusUpdate("Status: No note selected to remove");
     return;
   }
-  const selectedIndex = notesList.findIndex((entry) => entry.id === selectedNoteEntry.id);
+  const selectedIndex = notesList.findIndex(
+    (entry) => entry.id === selectedNoteEntry.id,
+  );
   notesList = notesList.filter((entry) => entry.id !== selectedNoteEntry.id);
   if (notesList.length === 0) {
     selectedNoteId = null;
@@ -724,7 +730,9 @@ async function saveNotesToDisk() {
         : "unknown";
     doError("Notes save failed");
     logErrorEntry("save-notes", errorMessage || "unknown");
-    statusUpdate("Status: Notes save failed – " + (errorMessage || "unknown error"));
+    statusUpdate(
+      "Status: Notes save failed – " + (errorMessage || "unknown error"),
+    );
   }
 }
 
@@ -797,7 +805,11 @@ function initializeNotesPanel() {
   newNoteColorEl.value = NOTE_DEFAULT_COLOR;
 
   addButtonEl.addEventListener("click", () => {
-    const didAdd = addNote(newNoteInputEl.value, newNoteColorEl.value, "notes-panel");
+    const didAdd = addNote(
+      newNoteInputEl.value,
+      newNoteColorEl.value,
+      "notes-panel",
+    );
     if (didAdd) {
       newNoteInputEl.value = "";
       newNoteInputEl.focus();
@@ -810,7 +822,11 @@ function initializeNotesPanel() {
   newNoteInputEl.addEventListener("keydown", (event) => {
     if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
     event.preventDefault();
-    const didAdd = addNote(newNoteInputEl.value, newNoteColorEl.value, "notes-panel");
+    const didAdd = addNote(
+      newNoteInputEl.value,
+      newNoteColorEl.value,
+      "notes-panel",
+    );
     if (didAdd) {
       newNoteInputEl.value = "";
       newNoteInputEl.focus();
@@ -912,7 +928,9 @@ function buildSessionStateSnapshot() {
     activePacketCursor: getActivePacketCursor(),
     packetViewMode: getSessionPacketViewMode(),
     selectedHost:
-      document.getElementById("target_hosts")?.value || hostFilterEl.value || "",
+      document.getElementById("target_hosts")?.value ||
+      hostFilterEl.value ||
+      "",
     bookmarkList: [...bookmarkList],
     sessionKeychainEntries: deepCloneSessionData(
       keystorePanel.getSessionKeychainEntries(),
@@ -925,7 +943,9 @@ function buildSessionStateSnapshot() {
       conv: getActiveConvSubtab(),
       crypt: activeCryptSubtab,
       listSearch: listSearchEl ? listSearchEl.value : "",
-      listGroupStreams: listGroupStreamsEl ? Boolean(listGroupStreamsEl.checked) : false,
+      listGroupStreams: listGroupStreamsEl
+        ? Boolean(listGroupStreamsEl.checked)
+        : false,
     },
   };
 }
@@ -993,12 +1013,24 @@ async function maybePromptSaveSessionOnExit() {
         .removeEventListener("click", onCancel);
       resolve(result);
     }
-    function onSave() { cleanup("save"); }
-    function onDiscard() { cleanup("discard"); }
-    function onCancel() { cleanup("cancel"); }
-    document.getElementById("save-session-save-btn").addEventListener("click", onSave);
-    document.getElementById("save-session-discard-btn").addEventListener("click", onDiscard);
-    document.getElementById("save-session-cancel-btn").addEventListener("click", onCancel);
+    function onSave() {
+      cleanup("save");
+    }
+    function onDiscard() {
+      cleanup("discard");
+    }
+    function onCancel() {
+      cleanup("cancel");
+    }
+    document
+      .getElementById("save-session-save-btn")
+      .addEventListener("click", onSave);
+    document
+      .getElementById("save-session-discard-btn")
+      .addEventListener("click", onDiscard);
+    document
+      .getElementById("save-session-cancel-btn")
+      .addEventListener("click", onCancel);
   });
 }
 
@@ -1042,7 +1074,9 @@ function restoreSessionState(sessionState) {
   bookmarkList = loadedBookmarks;
   rebuildBookmarkDropdown();
 
-  const loadedSessionEntries = Array.isArray(sessionState.sessionKeychainEntries)
+  const loadedSessionEntries = Array.isArray(
+    sessionState.sessionKeychainEntries,
+  )
     ? sessionState.sessionKeychainEntries.filter(
         (entry) => entry && typeof entry === "object",
       )
@@ -1060,7 +1094,8 @@ function restoreSessionState(sessionState) {
             typeof note.id === "string" && note.id.trim()
               ? note.id
               : generateNoteId(),
-          text: typeof note.text === "string" ? note.text : String(note.text || ""),
+          text:
+            typeof note.text === "string" ? note.text : String(note.text || ""),
           color: normalizeNoteColor(note.color),
         }))
     : [];
@@ -1087,7 +1122,8 @@ function restoreSessionState(sessionState) {
     runFilterQuery(restoredFilterQuery, { trackHistory: false });
   } else {
     filteredPackets = [];
-    document.getElementById("filter-returned").textContent = "Filtered Packets: 0";
+    document.getElementById("filter-returned").textContent =
+      "Filtered Packets: 0";
   }
 
   currentPacketKey =
@@ -1104,9 +1140,10 @@ function restoreSessionState(sessionState) {
       : "first-load";
   handlePacketNavigation(navAction);
 
-  const tabState = sessionState.tabs && typeof sessionState.tabs === "object"
-    ? sessionState.tabs
-    : {};
+  const tabState =
+    sessionState.tabs && typeof sessionState.tabs === "object"
+      ? sessionState.tabs
+      : {};
   const savedMainTab =
     typeof tabState.main === "string" && VALID_MAIN_TABS.includes(tabState.main)
       ? tabState.main
@@ -1188,7 +1225,9 @@ function processFile(file) {
         .then((parsed) => {
           const normalizedPayload = normalizeLoadedSessionPayload(parsed);
           if (!normalizedPayload) {
-            doError("Invalid JSON file, please upload a valid capture/session file!");
+            doError(
+              "Invalid JSON file, please upload a valid capture/session file!",
+            );
             fileLoaded(false);
             return;
           }
@@ -1208,7 +1247,9 @@ function processFile(file) {
         JSON.parse(event.target.result),
       );
       if (!normalizedPayload) {
-        doError("Invalid JSON file, please upload a valid capture/session file!");
+        doError(
+          "Invalid JSON file, please upload a valid capture/session file!",
+        );
         fileLoaded(false);
         return;
       }
@@ -1539,16 +1580,21 @@ function computeDataToolsHashes(bytes) {
   const wordArray = CryptoJS.lib.WordArray.create(bytes);
   const byteString = bytesToCharString(bytes);
 
-  document.getElementById("data-tools-md5-output").value =
-    CryptoJS.MD5(wordArray).toString(CryptoJS.enc.Hex);
-  document.getElementById("data-tools-sha1-output").value =
-    CryptoJS.SHA1(wordArray).toString(CryptoJS.enc.Hex);
-  document.getElementById("data-tools-sha256-output").value =
-    CryptoJS.SHA256(wordArray).toString(CryptoJS.enc.Hex);
-  document.getElementById("data-tools-sha384-output").value =
-    CryptoJS.SHA384(wordArray).toString(CryptoJS.enc.Hex);
-  document.getElementById("data-tools-sha512-output").value =
-    CryptoJS.SHA512(wordArray).toString(CryptoJS.enc.Hex);
+  document.getElementById("data-tools-md5-output").value = CryptoJS.MD5(
+    wordArray,
+  ).toString(CryptoJS.enc.Hex);
+  document.getElementById("data-tools-sha1-output").value = CryptoJS.SHA1(
+    wordArray,
+  ).toString(CryptoJS.enc.Hex);
+  document.getElementById("data-tools-sha256-output").value = CryptoJS.SHA256(
+    wordArray,
+  ).toString(CryptoJS.enc.Hex);
+  document.getElementById("data-tools-sha384-output").value = CryptoJS.SHA384(
+    wordArray,
+  ).toString(CryptoJS.enc.Hex);
+  document.getElementById("data-tools-sha512-output").value = CryptoJS.SHA512(
+    wordArray,
+  ).toString(CryptoJS.enc.Hex);
   document.getElementById("data-tools-sha3-256-output").value = sha3_256(bytes);
   document.getElementById("data-tools-sha3-512-output").value = sha3_512(bytes);
   document.getElementById("data-tools-ripemd160-output").value =
@@ -1613,9 +1659,7 @@ function decodeHttpFromBytes(bytes) {
   const lines = text.split(/\r?\n/);
   if (!lines.length) return null;
   const firstLine = lines[0].trim();
-  const requestMatch = firstLine.match(
-    /^([A-Z]+)\s+(\S+)\s+(HTTP\/[\d.]+)$/,
-  );
+  const requestMatch = firstLine.match(/^([A-Z]+)\s+(\S+)\s+(HTTP\/[\d.]+)$/);
   const responseMatch = firstLine.match(/^(HTTP\/[\d.]+)\s+(\d{3})\s*(.*)/);
   if (!requestMatch && !responseMatch) return null;
 
@@ -1731,7 +1775,9 @@ function decodeTelnetFromBytes(bytes) {
                 : cmd === DO
                   ? "DO"
                   : "DONT";
-          negotiations.push(`${cmdName} ${optionNames[opt] ?? `Option ${opt}`}`);
+          negotiations.push(
+            `${cmdName} ${optionNames[opt] ?? `Option ${opt}`}`,
+          );
         }
       } else if (cmd === SB) {
         while (i < bytes.length) {
@@ -2126,7 +2172,6 @@ function getFirstLineOrFallback(elementId, fallback = "") {
   return firstLine || fallback;
 }
 
-
 const cryptPanel = createCryptPanel({
   constants: {
     MAIN_TAB_CRYPT,
@@ -2151,7 +2196,8 @@ const cryptPanel = createCryptPanel({
   filterInputEl,
   syncFilterHighlight,
   runFilterQuery,
-  addSessionKeystoreEntry: (...args) => keystorePanel.addSessionKeystoreEntry(...args),
+  addSessionKeystoreEntry: (...args) =>
+    keystorePanel.addSessionKeystoreEntry(...args),
   getFirstLineOrFallback,
   sendDecryptedToConv: ({ hexValue, utf8Value, sourceLabel }) => {
     const inputEl = document.getElementById("data-tools-input");
@@ -2268,7 +2314,9 @@ const convertContextButtons = {
   filterClearProtocol: getCachedElement("ctx-filter-clear-protocol"),
   filterClearMime: getCachedElement("ctx-filter-clear-mime"),
   keystorePasswordSession: getCachedElement("ctx-keystore-password-session"),
-  keystorePasswordPersistent: getCachedElement("ctx-keystore-password-persistent"),
+  keystorePasswordPersistent: getCachedElement(
+    "ctx-keystore-password-persistent",
+  ),
   keystoreKeySession: getCachedElement("ctx-keystore-key-session"),
   keystoreKeyPersistent: getCachedElement("ctx-keystore-key-persistent"),
   keystoreCertSession: getCachedElement("ctx-keystore-cert-session"),
@@ -2326,7 +2374,9 @@ function updateConvertContextSubmenuPositions() {
   convertContextSubmenuEls.forEach((submenuEl) => {
     if (submenuEl.style.display === "none") return;
     // Use :scope > to get only the direct child panel, not a grandchild's.
-    const submenuPanelEl = submenuEl.querySelector(":scope > .ctx-submenu-panel");
+    const submenuPanelEl = submenuEl.querySelector(
+      ":scope > .ctx-submenu-panel",
+    );
     if (!submenuPanelEl) return;
 
     // Temporarily reveal every ancestor .ctx-submenu-panel so that this
@@ -2639,8 +2689,11 @@ function extractCookieJarEntriesFromHttpFields(fields) {
   };
 
   fields.forEach((field) => {
-    const fieldName = String(field?.name || "").trim().toLowerCase();
-    const fieldValue = typeof field?.value === "string" ? field.value.trim() : "";
+    const fieldName = String(field?.name || "")
+      .trim()
+      .toLowerCase();
+    const fieldValue =
+      typeof field?.value === "string" ? field.value.trim() : "";
     if (!fieldValue) return;
     if (fieldName === "cookie") {
       splitCookieHeaderEntries(fieldValue).forEach((cookieEntry) => {
@@ -2702,7 +2755,9 @@ function getCookieJarTextForContextTarget(target) {
   if (target?.closest?.("#data-tools-proto-output")) {
     const dataToolsCookieJarText =
       getActiveDataToolsProtoResult()?.protocol === "HTTP"
-        ? buildCookieJarTextFromHttpFields(getActiveDataToolsProtoResult().fields)
+        ? buildCookieJarTextFromHttpFields(
+            getActiveDataToolsProtoResult().fields,
+          )
         : "";
     if (dataToolsCookieJarText) return dataToolsCookieJarText;
   }
@@ -2845,10 +2900,13 @@ function showConvertContextMenu(
   convertContextButtons.loadPayload.style.display = hasPayloadToExport
     ? "block"
     : "none";
-  const cursorByteIndex = Number.parseInt(target?.dataset?.byteIndex ?? "-1", 10);
+  const cursorByteIndex = Number.parseInt(
+    target?.dataset?.byteIndex ?? "-1",
+    10,
+  );
   const hasCursorAsciiValue = Boolean(
     target?.classList?.contains("griditem") &&
-      getCursorAsciiContextLoadData(currentPayloadHex, cursorByteIndex),
+    getCursorAsciiContextLoadData(currentPayloadHex, cursorByteIndex),
   );
   convertContextButtons.loadCursorAscii.style.display = hasCursorAsciiValue
     ? "block"
@@ -2924,22 +2982,23 @@ function showConvertContextMenu(
   convertContextButtons.notesSendData.style.display = hasContextDataForNotes
     ? "block"
     : "none";
-  convertContextButtons.notesSendConvOutput.style.display = hasConvOutputForNotes
-    ? "block"
-    : "none";
-  convertContextButtons.notesSendConvHashes.style.display = hasConvHashesForNotes
-    ? "block"
-    : "none";
+  convertContextButtons.notesSendConvOutput.style.display =
+    hasConvOutputForNotes ? "block" : "none";
+  convertContextButtons.notesSendConvHashes.style.display =
+    hasConvHashesForNotes ? "block" : "none";
   const hasNotesActions =
     hasContextDataForNotes || hasConvOutputForNotes || hasConvHashesForNotes;
-  const hasCopyActions = showCopySelection || isHexViewTarget || hasCookieActions;
+  const hasCopyActions =
+    showCopySelection || isHexViewTarget || hasCookieActions;
   const hasClipboardActions = hasCopyActions || showPaste;
   const hasGeneralActions = hasClipboardActions;
   const hasDataTypeActions =
     formats.length > 0 || hasPayloadToExport || hasCursorAsciiValue;
   const hasFilterActions = Object.values(filterQueries).some(Boolean);
-  const hasContextTextKeystoreActions = showCopySelection || Boolean(sourceText);
-  const hasKeystoreActions = hasContextTextKeystoreActions || showManualKeystoreUri;
+  const hasContextTextKeystoreActions =
+    showCopySelection || Boolean(sourceText);
+  const hasKeystoreActions =
+    hasContextTextKeystoreActions || showManualKeystoreUri;
   const hasExportActions =
     showSaveJson || hasPacketToExport || hasPayloadToExport || hasCookieActions;
   convertContextSubmenus.copy.style.display = hasCopyActions ? "block" : "none";
@@ -2964,29 +3023,29 @@ function showConvertContextMenu(
   convertContextSubmenus.filterClear.style.display = hasFilterActions
     ? "block"
     : "none";
-  convertContextSubmenus.notes.style.display = hasNotesActions ? "block" : "none";
+  convertContextSubmenus.notes.style.display = hasNotesActions
+    ? "block"
+    : "none";
   convertContextSubmenus.keystore.style.display = hasKeystoreActions
     ? "block"
     : "none";
-  convertContextSubmenus.keystorePassword.style.display = hasContextTextKeystoreActions
-    ? "block"
-    : "none";
-  convertContextSubmenus.keystoreKey.style.display = hasContextTextKeystoreActions
-    ? "block"
-    : "none";
-  convertContextSubmenus.keystoreCert.style.display = hasContextTextKeystoreActions
-    ? "block"
-    : "none";
-  convertContextSubmenus.keystoreCookie.style.display = hasContextTextKeystoreActions
-    ? "block"
-    : "none";
+  convertContextSubmenus.keystorePassword.style.display =
+    hasContextTextKeystoreActions ? "block" : "none";
+  convertContextSubmenus.keystoreKey.style.display =
+    hasContextTextKeystoreActions ? "block" : "none";
+  convertContextSubmenus.keystoreCert.style.display =
+    hasContextTextKeystoreActions ? "block" : "none";
+  convertContextSubmenus.keystoreCookie.style.display =
+    hasContextTextKeystoreActions ? "block" : "none";
   convertContextSubmenus.keystoreUri.style.display = showManualKeystoreUri
     ? "block"
     : "none";
   convertContextSubmenus.export.style.display = hasExportActions
     ? "block"
     : "none";
-  convertContextSubmenus.httpFile.style.display = hasHttpBody ? "block" : "none";
+  convertContextSubmenus.httpFile.style.display = hasHttpBody
+    ? "block"
+    : "none";
   if (
     !hasGeneralActions &&
     !hasDataTypeActions &&
@@ -3086,7 +3145,10 @@ function loadCursorAsciiIntoDataToolsFromContextMenu() {
     activeContextTarget?.dataset?.byteIndex ?? "-1",
     10,
   );
-  const cursorAsciiLoadData = getCursorAsciiContextLoadData(payloadHex, byteIndex);
+  const cursorAsciiLoadData = getCursorAsciiContextLoadData(
+    payloadHex,
+    byteIndex,
+  );
   hideConvertContextMenu();
   if (!cursorAsciiLoadData) {
     statusUpdate("Status: No cursor ASCII value available to load");
@@ -3471,7 +3533,8 @@ function previewHttpBodyInBrowserFromContextMenu() {
       doError("HTTP body preview failed");
       logErrorEntry("http-body-preview", errorMessage || "unknown");
       statusUpdate(
-        "Status: HTTP body preview failed – " + (errorMessage || "unknown error"),
+        "Status: HTTP body preview failed – " +
+          (errorMessage || "unknown error"),
       );
       console.error("HTTP body preview failed:", errorMessage);
     }
@@ -3596,21 +3659,25 @@ document.getElementById("crypt-btn").addEventListener("click", function () {
   showCryptWorkspace();
 });
 
-document.getElementById("keystore-btn").addEventListener("click", async function () {
-  if (!isFileLoaded) {
-    doError("Please upload a JSON file before accessing the keystore.");
-    return;
-  }
-  const unlocked = await keystorePanel.unlockPersistentKeystoreAndLoad();
-  if (!unlocked) return;
-  keystorePanel.showKeystoreWorkspace();
-});
+document
+  .getElementById("keystore-btn")
+  .addEventListener("click", async function () {
+    if (!isFileLoaded) {
+      doError("Please upload a JSON file before accessing the keystore.");
+      return;
+    }
+    const unlocked = await keystorePanel.unlockPersistentKeystoreAndLoad();
+    if (!unlocked) return;
+    keystorePanel.showKeystoreWorkspace();
+  });
 document
   .getElementById("crypt-keystore-unlock-confirm-btn")
   .addEventListener("click", keystorePanel.submitKeystoreUnlockDialog);
 document
   .getElementById("crypt-keystore-unlock-cancel-btn")
-  .addEventListener("click", () => keystorePanel.resolveKeystoreUnlockPassword(null));
+  .addEventListener("click", () =>
+    keystorePanel.resolveKeystoreUnlockPassword(null),
+  );
 document
   .getElementById("crypt-keystore-unlock-password")
   .addEventListener("keydown", (event) => {
@@ -3625,7 +3692,10 @@ document
   });
 document
   .getElementById("crypt-keystore-manual-uri-confirm-btn")
-  .addEventListener("click", keystorePanel.submitManualUriFromContextMenuDialog);
+  .addEventListener(
+    "click",
+    keystorePanel.submitManualUriFromContextMenuDialog,
+  );
 document
   .getElementById("crypt-keystore-manual-uri-cancel-btn")
   .addEventListener("click", () =>
@@ -3708,9 +3778,11 @@ document
       "pasted text",
     ),
   );
-document.getElementById("crypt-clear-cert-btn").addEventListener("click", () => {
-  applyCryptCertificateText("", "cleared");
-});
+document
+  .getElementById("crypt-clear-cert-btn")
+  .addEventListener("click", () => {
+    applyCryptCertificateText("", "cleared");
+  });
 
 document
   .getElementById("crypt-load-key-file-btn")
@@ -3818,11 +3890,9 @@ document
   .addEventListener("click", () => {
     void keystorePanel.deleteSelectedCryptKeystoreEntry();
   });
-document
-  .getElementById("crypt-open-link-btn")
-  .addEventListener("click", () => {
-    void keystorePanel.openSelectedKeystoreLinkInBrowser();
-  });
+document.getElementById("crypt-open-link-btn").addEventListener("click", () => {
+  void keystorePanel.openSelectedKeystoreLinkInBrowser();
+});
 
 document
   .getElementById("data-tools-convert-btn")
@@ -3978,28 +4048,55 @@ convertContextButtons.notesSendConvHashes.addEventListener("click", () => {
   );
 });
 convertContextButtons.keystorePasswordSession.addEventListener("click", () => {
-  keystorePanel.addToKeystoreFromContextMenu("password", CRYPT_KEYSTORE_MODE_SESSION);
+  keystorePanel.addToKeystoreFromContextMenu(
+    "password",
+    CRYPT_KEYSTORE_MODE_SESSION,
+  );
 });
-convertContextButtons.keystorePasswordPersistent.addEventListener("click", () => {
-  keystorePanel.addToKeystoreFromContextMenu("password", CRYPT_KEYSTORE_MODE_PERSISTENT);
-});
+convertContextButtons.keystorePasswordPersistent.addEventListener(
+  "click",
+  () => {
+    keystorePanel.addToKeystoreFromContextMenu(
+      "password",
+      CRYPT_KEYSTORE_MODE_PERSISTENT,
+    );
+  },
+);
 convertContextButtons.keystoreKeySession.addEventListener("click", () => {
-  keystorePanel.addToKeystoreFromContextMenu("key", CRYPT_KEYSTORE_MODE_SESSION);
+  keystorePanel.addToKeystoreFromContextMenu(
+    "key",
+    CRYPT_KEYSTORE_MODE_SESSION,
+  );
 });
 convertContextButtons.keystoreKeyPersistent.addEventListener("click", () => {
-  keystorePanel.addToKeystoreFromContextMenu("key", CRYPT_KEYSTORE_MODE_PERSISTENT);
+  keystorePanel.addToKeystoreFromContextMenu(
+    "key",
+    CRYPT_KEYSTORE_MODE_PERSISTENT,
+  );
 });
 convertContextButtons.keystoreCertSession.addEventListener("click", () => {
-  keystorePanel.addToKeystoreFromContextMenu("cert", CRYPT_KEYSTORE_MODE_SESSION);
+  keystorePanel.addToKeystoreFromContextMenu(
+    "cert",
+    CRYPT_KEYSTORE_MODE_SESSION,
+  );
 });
 convertContextButtons.keystoreCertPersistent.addEventListener("click", () => {
-  keystorePanel.addToKeystoreFromContextMenu("cert", CRYPT_KEYSTORE_MODE_PERSISTENT);
+  keystorePanel.addToKeystoreFromContextMenu(
+    "cert",
+    CRYPT_KEYSTORE_MODE_PERSISTENT,
+  );
 });
 convertContextButtons.keystoreCookieSession.addEventListener("click", () => {
-  keystorePanel.addToKeystoreFromContextMenu("cookie", CRYPT_KEYSTORE_MODE_SESSION);
+  keystorePanel.addToKeystoreFromContextMenu(
+    "cookie",
+    CRYPT_KEYSTORE_MODE_SESSION,
+  );
 });
 convertContextButtons.keystoreCookiePersistent.addEventListener("click", () => {
-  keystorePanel.addToKeystoreFromContextMenu("cookie", CRYPT_KEYSTORE_MODE_PERSISTENT);
+  keystorePanel.addToKeystoreFromContextMenu(
+    "cookie",
+    CRYPT_KEYSTORE_MODE_PERSISTENT,
+  );
 });
 convertContextButtons.keystoreUriSession.addEventListener("click", () => {
   void keystorePanel.addManualUriToKeystoreFromContextMenu(
@@ -4101,7 +4198,11 @@ function totalPacketCount() {
  * Returns the packet array index matching a `sourceIp:packetIndex` key.
  */
 function findPacketIndexByKey(packetSet, packetKey) {
-  if (!Array.isArray(packetSet) || !packetKey || typeof packetKey !== "string") {
+  if (
+    !Array.isArray(packetSet) ||
+    !packetKey ||
+    typeof packetKey !== "string"
+  ) {
     return -1;
   }
 
@@ -4188,7 +4289,10 @@ function handlePacketNavigation(navAction, navBookmark) {
       );
     }
   } else {
-    const packetIndexFromKey = findPacketIndexByKey(packetSet, previousPacketKey);
+    const packetIndexFromKey = findPacketIndexByKey(
+      packetSet,
+      previousPacketKey,
+    );
     if (packetIndexFromKey >= 0) {
       index = packetIndexFromKey;
     } else if (

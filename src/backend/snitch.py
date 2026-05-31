@@ -32,6 +32,7 @@
 # Author: oxagast
 # Import standard and third-party libraries for argument parsing, file handling, networking, compression, and data processing
 import argparse
+import warnings
 import base64
 import csv
 import json
@@ -57,6 +58,17 @@ import ollama
 import requests
 import yaml
 
+frame = None
+
+warnings.simplefilter("once")
+try:
+    frame = sys._getframe(1)
+except Exception:
+    frame = "Master"
+
+warnings.formatwarning = lambda msg, cat, fname, ln, file=None, line=None: (
+    f"[{frame}] {cat.__name__} {msg}\n"
+)
 # from tqdm import tqdm
 import ipaddress
 from bs4 import BeautifulSoup
@@ -3308,6 +3320,13 @@ def startThreading():
 
         def processChunk(chunk):
             """Process a chunk of packet indices."""
+            print(
+                "[Worker] Processing chunk of packets: indices "
+                + str(chunk[0])
+                + " to "
+                + str(chunk[-1]),
+                file=sys.stderr,
+            )
             results = []
             for idx in chunk:
                 if stopEvent.is_set():
@@ -3329,7 +3348,7 @@ def startThreading():
                 try:
                     future.result()
                 except Exception as exc:
-                    if verbose >= 1:
+                    if verbose >= 0:
                         print(
                             f"[Worker {future}] Packet {taskFutures[future]} raised an exception: {exc}",
                             file=sys.stderr,
