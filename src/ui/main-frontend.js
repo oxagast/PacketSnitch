@@ -293,7 +293,6 @@ document
       .selectFile()
       .then((filePath) => {
         if (filePath) {
-          writeLogEntry(`User selected PCAP file path=${filePath}`);
           window.fsize
             .getFSize()
             .then((fileSize) => {
