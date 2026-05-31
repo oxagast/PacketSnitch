@@ -7,7 +7,7 @@ const fs = require("fs");
 const systemTempDir = os.tmpdir();
 const testcaseOutputDir = path.join(systemTempDir, "testcases");
 ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
-  global.logBackend(`Received pcap: ${filename}`);
+  global.logBackend(`[Bridge] Received pcap: ${filename}`);
   const isDev = !require("electron").app.isPackaged;
   const basePath = isDev
     ? path.join(__dirname, "../../src/")
@@ -22,7 +22,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
     snitchExePath = path.join(basePath, "/backend/snitch/snitch");
   }
 
-  const backendCommand = `"${snitchExePath}" "${filename}" -a -o "${testcaseOutputDir}"${useLLM ? "" : " --nollm"}`;
+  const backendCommand = `"${snitchExePath}" "${filename}" -v -a -o "${testcaseOutputDir}"${useLLM ? "" : " --nollm"}`;
 
   // Always start with a clean output directory so snitch never hits the
   // interactive overwrite prompt on second (and later) runs.
@@ -30,7 +30,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
     fs.rmSync(testcaseOutputDir, { recursive: true, force: true });
   }
 
-  global.logBackend("Exec: ", backendCommand);
+  global.logBackend("[Bridge] Exec: ", backendCommand);
 
   function sendError(message) {
     const mainWin = BrowserWindow.getAllWindows()[0]; // or track your main window
@@ -42,16 +42,16 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   return new Promise((resolve) => {
     exec(backendCommand, (error, stdout, stderr) => {
       resolve(stdout);
-      global.logBackend("Info: ", stdout);
-      global.logBackend("Error: ", stderr);
+      global.logBackend("", stdout);
+      global.logBackend(" ", stderr);
       if (stdout.includes("Ollama")) {
-        sendError("Backend LLM generation error!");
+        sendError("[Bridge] Backend LLM generation error!");
       }
       if (error) {
         if (stderr.includes("supported capture file")) {
-          sendError("Unsupported file format!");
+          sendError("[Bridge] Unsupported file format!");
         } else {
-          sendError("Backend execution error! " + error);
+          sendError("[Bridge] Backend execution error! " + error);
         }
       } else {
         setTimeout(() => {
@@ -65,6 +65,6 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
       }
     });
 
-    global.logBackend("Backend packet processing initiated");
+    global.logBackend("[Bridge] Backend packet processing initiated");
   });
 });

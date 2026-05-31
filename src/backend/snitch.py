@@ -186,7 +186,9 @@ def _extractCookieCredentials(cookieHeader):
         name, _, value = crumb.partition("=")
         name = name.strip()
         value = value.strip()
-        if value and (CREDENTIAL_FIELD_RE.match(name) or _SENSITIVE_COOKIE_RE.match(name)):
+        if value and (
+            CREDENTIAL_FIELD_RE.match(name) or _SENSITIVE_COOKIE_RE.match(name)
+        ):
             creds[f"cookie.{name}"] = value
     return creds
 
@@ -218,7 +220,7 @@ _CRED_KEYWORDS = (
     r"api[_\-.]?key|token|user(?:name)?|login|email"
 )
 _JSON_CRED_RE = re.compile(
-    r'"(?:(?:.*[_\-.])?' + r'(?:' + _CRED_KEYWORDS + r')' + r'(?:[_\-.].*)?)"'
+    r'"(?:(?:.*[_\-.])?' + r"(?:" + _CRED_KEYWORDS + r")" + r'(?:[_\-.].*)?)"'
     r'\s*:\s*"([^"]{1,512})"',
     re.IGNORECASE,
 )
@@ -226,8 +228,8 @@ _JSON_CRED_RE = re.compile(
 # Matches plain-text key:value or key=value lines where the key is credential-like.
 # Delimiters before the key include whitespace, common punctuation, and '&' (form data).
 _TEXT_CRED_RE = re.compile(
-    r'(?:^|[\s,{;&])'
-    r'(?:(?:.*[_\-.])?(?:' + _CRED_KEYWORDS + r')(?:[_\-.].*)?)'
+    r"(?:^|[\s,{;&])"
+    r"(?:(?:.*[_\-.])?(?:" + _CRED_KEYWORDS + r")(?:[_\-.].*)?)"
     r'(?:\s*[=:]\s*)([^\s&"\'<>,;]{1,512})',
     re.IGNORECASE | re.MULTILINE,
 )
@@ -259,9 +261,7 @@ def _extractPostBodyCredentials(body, contentType):
             if val:
                 # Use the raw matched token before the separator as the key
                 raw = match.group(0).lstrip(" \t,{;&")
-                sep = next(
-                    (i for i, c in enumerate(raw) if c in "=:"), len(raw)
-                )
+                sep = next((i for i, c in enumerate(raw) if c in "=:"), len(raw))
                 key = raw[:sep].strip()
                 if key:
                     creds[key] = val
@@ -371,9 +371,7 @@ def getServBanner(ip, port, timeout, hostname, serviceName=None):
     # Get page title for HTTP/HTTPS ports
     try:
         serviceNameNormalized = (
-            serviceName.lower()
-            if isinstance(serviceName, str) and serviceName
-            else ""
+            serviceName.lower() if isinstance(serviceName, str) and serviceName else ""
         )
         isLikelyTlsService = (
             port in TLS_SERVICE_PORTS
@@ -513,7 +511,7 @@ def writeTestcase(data, outputDirPath, portDir, index):
         try:
             os.mkdir(destDir)
         except Exception:
-            print("Error: Nonfatal: Could not create minor dir.")
+            print("[Minor] Error: Nonfatal: Could not create minor dir.")
     with open(destDir + "/pcap.data_packet." + str(index) + ".dat", "wb") as out:
         out.write(data)
 
@@ -698,7 +696,9 @@ def buildTcpStreamInitialDstPortMap(packetList):
     for p in packetList:
         if not (p.haslayer("IP") and p.haslayer("TCP")):
             continue
-        streamKey = getTcpStreamKey(p["IP"].src, p["TCP"].sport, p["IP"].dst, p["TCP"].dport)
+        streamKey = getTcpStreamKey(
+            p["IP"].src, p["TCP"].sport, p["IP"].dst, p["TCP"].dport
+        )
         if streamKey not in streamMap:
             streamMap[streamKey] = p["TCP"].dport
     return streamMap
@@ -1354,9 +1354,9 @@ def decodeSMTP(rawPayload):
                     # password separately; capture what we have in this packet.
                     if len(argParts) > 1:
                         try:
-                            creds["username"] = base64.b64decode(
-                                argParts[1]
-                            ).decode(errors="replace")
+                            creds["username"] = base64.b64decode(argParts[1]).decode(
+                                errors="replace"
+                            )
                         except Exception:
                             pass
                     # Scan remaining lines in the same payload for the password
@@ -1364,9 +1364,9 @@ def decodeSMTP(rawPayload):
                         extraLine = extraLine.strip()
                         if extraLine:
                             try:
-                                creds["password"] = base64.b64decode(
-                                    extraLine
-                                ).decode(errors="replace")
+                                creds["password"] = base64.b64decode(extraLine).decode(
+                                    errors="replace"
+                                )
                             except Exception:
                                 pass
                             break
@@ -1535,7 +1535,10 @@ def decodeIMAP(rawPayload):
                     username = argParts[0].strip('"')
                     if len(argParts) > 1:
                         password = argParts[1].strip('"')
-                        result["Credentials"] = {"username": username, "password": password}
+                        result["Credentials"] = {
+                            "username": username,
+                            "password": password,
+                        }
                         result["Argument"] = username + " ***"
                         result["imap.argument"] = username + " ***"
                     else:
@@ -1633,12 +1636,8 @@ def decodeTelnet(rawPayload):
 
 
 # Compiled patterns for Telnet credential extraction (reused across all calls)
-_TELNET_USER_RE = re.compile(
-    r"(?:login|user(?:name)?)\s*:\s*(\S+)", re.IGNORECASE
-)
-_TELNET_PASS_RE = re.compile(
-    r"(?:pass(?:w(?:or)?d?)?|pw)\s*:\s*(\S+)", re.IGNORECASE
-)
+_TELNET_USER_RE = re.compile(r"(?:login|user(?:name)?)\s*:\s*(\S+)", re.IGNORECASE)
+_TELNET_PASS_RE = re.compile(r"(?:pass(?:w(?:or)?d?)?|pw)\s*:\s*(\S+)", re.IGNORECASE)
 
 
 def _extractTelnetCredentialText(text):
@@ -1669,9 +1668,7 @@ def extractTelnetCredentials(rawPayload):
     Returns a dict with any found credential fields, or an empty dict.
     """
     try:
-        printableText = "".join(
-            chr(b) for b in rawPayload if 32 <= b <= 126
-        ).strip()
+        printableText = "".join(chr(b) for b in rawPayload if 32 <= b <= 126).strip()
         if not printableText:
             return {}
         # Check for labelled prompt-response patterns (server echo or combined packet)
@@ -3227,7 +3224,7 @@ def infoDistiller(batchSize):
     batchSize: number of items per batch
     maxWorkers: number of threads
     """
-    print("Starting LLM calls...")
+    print("[LLM] Starting LLM calls...")
     maxWorkers = 4
     jsonStack = allPacketInfo
 
@@ -3245,7 +3242,7 @@ def infoDistiller(batchSize):
             try:
                 results.append(future.result())
             except Exception as e:
-                print(f"Batch failed: {e}")
+                print(f"[LLM] Batch failed: {e}")
 
     return results
 
@@ -3292,7 +3289,7 @@ def startThreading():
     """
     if __name__ == "__main__":
         print(
-            f"Spooling up {numWorkerThreads} worker threads to process {totalPackets} packets...",
+            f"[Master] Spooling up {numWorkerThreads} worker threads to process {totalPackets} packets...",
             file=sys.stderr,
         )
         # Build the list of packet indices that belong to TCP, UDP, or ICMP packets
@@ -3334,7 +3331,7 @@ def startThreading():
                 except Exception as exc:
                     if verbose >= 1:
                         print(
-                            f"Packet {taskFutures[future]} raised an exception: {exc}",
+                            f"[Worker {future}] Packet {taskFutures[future]} raised an exception: {exc}",
                             file=sys.stderr,
                         )
 
@@ -3439,7 +3436,7 @@ icannCsvPath = scriptDir + "common/service-names-port-numbers.csv"
 if os.path.exists(geoDbPath):
     geoIpReader = geoip2.database.Reader(geoDbPath)
 else:
-    print("Warning: GeoIP database not found at " + geoDbPath, file=sys.stderr)
+    print("[Master] Warning: GeoIP database not found at " + geoDbPath, file=sys.stderr)
 
 # --- Load ICANN port-description CSV into a dict for O(1) per-packet lookups.
 # Without this, every call to getPortDescription() would scan the full CSV.
@@ -3455,7 +3452,9 @@ if os.path.exists(icannCsvPath):
             except (ValueError, TypeError):
                 pass
 else:
-    print("Warning: ICANN port CSV not found at " + icannCsvPath, file=sys.stderr)
+    print(
+        "[Master] Warning: ICANN port CSV not found at " + icannCsvPath, file=sys.stderr
+    )
 
 # --- Load MAC vendor CSV into a dict for O(1) per-packet lookups.
 # Without this, every call to macAddrToVendor() would scan the full CSV.
@@ -3465,7 +3464,10 @@ if os.path.exists(macVendorsPath):
             if "Mac Prefix" in csvRow and "Vendor Name" in csvRow:
                 macVendorMap[csvRow["Mac Prefix"].upper()] = csvRow["Vendor Name"]
 else:
-    print("Warning: MAC vendor CSV not found at " + macVendorsPath, file=sys.stderr)
+    print(
+        "[Master] Warning: MAC vendor CSV not found at " + macVendorsPath,
+        file=sys.stderr,
+    )
 
 totalPackets = 0
 packets = scapy.rdpcap(args.pcap_file)  # type: ignore
@@ -3476,17 +3478,19 @@ totalPackets = len(
     [p for p in packets if p.haslayer("TCP") or p.haslayer("UDP") or p.haslayer("ICMP")]
 )
 if totalPackets == 0:
-    print("No TCP, UDP, or ICMP packets found in the capture.", file=sys.stderr)
+    print(
+        "[Master] No TCP, UDP, or ICMP packets found in the capture.", file=sys.stderr
+    )
     sys.exit(1)
 if "threads" in config and config["threads"]:
     numWorkerThreads = config["threads"]
 outputDir = currentDir + "/" + "testcases"
 if args.output and args.output != "testcases":
     outputDir = args.output
-    print("Using output directory: " + args.output, file=sys.stderr)
+    print("[Master] Using output directory: " + args.output, file=sys.stderr)
 if "output_dir" in config:
     outputDir = currentDir + "/" + config["output_dir"]
-    print("Using output directory from config: " + outputDir, file=sys.stderr)
+    print("[Master] Using output directory from config: " + outputDir, file=sys.stderr)
 if not args.active_recon:
     if config["active_recon"]:
         activeRecon = config["active_recon"]
@@ -3495,18 +3499,20 @@ if not args.active_recon:
 if "ollama" in config and config["ollama"].get("model"):
     if config["ollama"].get("use_llm", False) and verbose >= 1:
         print(
-            "LLM integration enabled. Using model: " + config["ollama"]["model"] + ".",
+            "[LLM] LLM integration enabled. Using model: "
+            + config["ollama"]["model"]
+            + ".",
             file=sys.stderr,
         )
         llmModelName = config["ollama"]["model"]
         if config["ollama"]["llm_brief"]:
             print(
-                "LLM brief generation enabled. Only packet metadata will be sent through the LLM.",
+                "[Master] LLM brief generation enabled. Only packet metadata will be sent through the LLM.",
                 file=sys.stderr,
             )
         else:
             print(
-                "LLM brief generation disabled. LLM will be used for full data packets!  This will take significantly more time, but will provide more detailed llmSummaries for each packet.",
+                "[Master] LLM brief generation disabled. LLM will be used for full data packets!  This will take significantly more time, but will provide more detailed llmSummaries for each packet.",
                 file=sys.stderr,
             )
     llmResponseLength = config["ollama"].get("response_length", 200)
@@ -3529,13 +3535,13 @@ if llmModelName and useLlm:
     if llmModelName.endswith(":cloud"):
         if verbose >= 2:
             print(
-                "Using cloud-based LLM model: "
+                "[Maseter] Using cloud-based LLM model: "
                 + "minimax-m2.5:cloud"  # doesn't need to be that fast, but has to look decent
                 + ". Ensure you have network connectivity and API access.",
                 file=sys.stderr,
             )
 print(
-    "Preparing to process "
+    "[Master] Preparing to process "
     + str(totalPackets)
     + " TCP/UDP/ICMP packets with "
     + str(numWorkerThreads)
@@ -3555,7 +3561,7 @@ try:
         threadingResult = startThreading()
     except Exception as startErr:
         print(
-            f"Warning: startThreading raised an exception ({startErr}); retrying.",
+            f"[Master] Warning: startThreading raised an exception ({startErr}); retrying.",
             file=sys.stderr,
         )
         threadingResult = startThreading()
@@ -3570,7 +3576,7 @@ finally:
         strippedPacketInfo = popDictKey(allPacketInfo, "Raw data")
         allPacketInfo = strippedPacketInfo
         if allPacketInfo and useLlm:
-            print("Generating LLM brief for batch of packets...")
+            print("[LLM] Generating LLM brief for batch of packets...")
             infoDistiller(50)
         allPacketInfo = allPacketInfoBackup
 
@@ -3590,9 +3596,9 @@ finally:
             ) as summaryFile:
                 summaryFile.write(finalSummary)
             print("\n" + finalSummary)
-            print("\nFinal summary saved to: " + outputDir + "/final_summary.txt")
+            print("\n[LLM] Final summary saved to: " + outputDir + "/final_summary.txt")
         except Exception as e:
-            print("\nLLM Final summary generation error: " + str(e))
+            print("\n[LLM] LLM Final summary generation error: " + str(e))
 
     # Always write hosts.json so the frontend can load data regardless of
     # whether LLM summarisation was enabled or succeeded.
@@ -3603,7 +3609,7 @@ finally:
         geoIpReader.close()
 
     print(
-        "Processing complete. Generated testcases and info files are located in: "
+        "[Master] Processing complete. Generated testcases and info files are located in: "
         + outputDir,
         file=sys.stderr,
     )

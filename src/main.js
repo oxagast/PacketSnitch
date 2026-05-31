@@ -141,12 +141,13 @@ function broadcastActivityLogEntry(entry) {
 }
 
 function normalizeActivityLogEntry(entry) {
-  if (typeof entry !== "string" || entry.trim() === "") return null;
+  if (typeof entry !== "string" || entry.trim() === "" || entry.trim() === "\n")
+    return null;
   return entry.trim();
 }
 
 function timestampLifecycleMessage(message) {
-  return `[${new Date().toISOString()}] [Core] ${message}`;
+  return `[${new Date().toISOString()}] [GUI][Main] ${message}`;
 }
 
 function appendActivityLogLine(entry, options = {}) {
@@ -189,7 +190,7 @@ global.logBackend = (...args) => {
   const timestamp = new Date().toISOString();
   message.split(/\r?\n/).forEach((line) => {
     if (line.trim() === "") return;
-    appendActivityLogLine(`[${timestamp}] [Console][Backend] ${line}`);
+    appendActivityLogLine(`[${timestamp}] [Console][Snitch]${line}`);
   });
 };
 
@@ -198,7 +199,7 @@ app.whenReady().then(() => {
   activityLogFilePath = path.join(app.getPath("userData"), "activity-log.txt");
   flushPendingActivityLogEntries();
   appendActivityLogLine(
-    `[${new Date().toISOString()}] [Core] Session started for PacketSnitch v${app.getVersion()}`,
+    `[${new Date().toISOString()}] [GUI][Main] Session started for PacketSnitch v${app.getVersion()}`,
   );
   isFirstRunAfterInstall = checkNewInstall();
   checkOllama().then((isInstalled) => {
