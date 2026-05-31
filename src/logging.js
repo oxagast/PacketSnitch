@@ -1,4 +1,8 @@
-function initializeLogging({ logapi = null, documentRef = document, consoleRef = console }) {
+function initializeLogging({
+  logapi = null,
+  documentRef = document,
+  consoleRef = console,
+}) {
   let activityLogPath = "Unavailable";
   const activityLogEntries = [];
 
@@ -9,7 +13,9 @@ function initializeLogging({ logapi = null, documentRef = document, consoleRef =
     const normalizedSearch = searchText.trim().toLowerCase();
     activityLogEntries
       .filter((entry) =>
-        normalizedSearch ? entry.message.toLowerCase().includes(normalizedSearch) : true,
+        normalizedSearch
+          ? entry.message.toLowerCase().includes(normalizedSearch)
+          : true,
       )
       .forEach((entry) => {
         const row = documentRef.createElement("div");
@@ -42,17 +48,17 @@ function initializeLogging({ logapi = null, documentRef = document, consoleRef =
   }
 
   function writeLogEntry(message) {
-    const stampedMessage = `[${new Date().toISOString()}] [GUI][UI] ${message}`;
+    const stampedMessage = `[${new Date().toISOString()}] [GUI][Renderer] ${message}`;
     addActivityLogEntry(stampedMessage);
   }
 
   function writeConsoleLogEntry(message) {
-    const stampedMessage = `[${new Date().toISOString()}] [Console][UI] ${message}`;
+    const stampedMessage = `[${new Date().toISOString()}] [Console][Renderer] ${message}`;
     addActivityLogEntry(stampedMessage);
   }
 
   function writeBackendErrorLogEntry(message) {
-    const stampedMessage = `[${new Date().toISOString()}] [Console][Backend] ${message}`;
+    const stampedMessage = `[${new Date().toISOString()}] [Console][Snitch] ${message}`;
     addActivityLogEntry(stampedMessage);
   }
 
@@ -102,7 +108,10 @@ function initializeLogging({ logapi = null, documentRef = document, consoleRef =
     const closeBtn = documentRef.getElementById("close-log-btn");
     if (logapi) {
       try {
-        const [path, entries] = await Promise.all([logapi.getPath(), logapi.getEntries()]);
+        const [path, entries] = await Promise.all([
+          logapi.getPath(),
+          logapi.getEntries(),
+        ]);
         if (Array.isArray(entries)) {
           activityLogEntries.splice(0);
           entries.forEach((entry) => {

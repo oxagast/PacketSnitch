@@ -26,7 +26,11 @@ module.exports = {
     },
     {
       name: "@electron-forge/maker-rpm",
-      config: {},
+      config: {
+        options: {
+          name: "packetsnitch",
+        },
+      },
     },
   ],
   plugins: [
