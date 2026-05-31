@@ -49,12 +49,23 @@ Download a pre-built release from the [releases](https://github.com/oxasploits/P
 
 Launch the app with `packetsnitch` or click the desktop icon.
 
+### Building from Source
+
+1. Clone the repository, this can be done via: `git clone https://github.com/oxasploits/PacketSnitch.git`.
+2. Move into the PacketSnitch direcotry: `cd PacketSnitch`.
+3. Use NPM to install build dependancies: `npm install`.
+4. If on Linux (specifically Fedora) run: `npm run patch-rpm-build`.
+5. Build the project, this compiles the backend and frontend: `npm run make`.
+6. You can now launch the dev version using: `npm start`!
+
 ### Basic Workflow
 
 1. **Load PCAP** — Click **Load PCAP** to run the backend on a `.pcap` file
 2. **Browse packets** — Use **Prev / Next** buttons or select a host from the dropdown
 3. **Filter** — Type expressions like `tcp.dst.port:443` and press **Enter**
 4. **Summarize** — Click **Summary** for LLM-generated analysis (requires Ollama)
+
+
 
 ---
 
@@ -127,9 +138,6 @@ payload.entropy:>=7.0
 
 # HTTP POST with JSON
 http.method:POST && payload.mime:application/json
-
-# Large encrypted payloads from external IPs
-tcp.dst.port:443 && payload.len:>500 && payload.entropy:>=7.0 && ip.src.class:!=Localnet
 ```
 
 - String comparisons are **case-insensitive**
