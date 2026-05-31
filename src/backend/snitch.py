@@ -60,14 +60,15 @@ import yaml
 
 frame = None
 
-warnings.simplefilter("once")
+warnings.simplefilter("module")
+os.environ["PYTHONWARNINGS"] = "module"
 try:
     frame = sys._getframe(1)
 except Exception:
-    frame = "Master"
+    frame = "Main"
 
 warnings.formatwarning = lambda msg, cat, fname, ln, file=None, line=None: (
-    f"[{frame}] {cat.__name__} {msg}\n"
+    f"[{frame}] {cat.__name__} {msg}"
 )
 # from tqdm import tqdm
 import ipaddress
@@ -487,7 +488,9 @@ def getServBanner(ip, port, timeout, hostname, serviceName=None):
             if sslVersion != "N/A"
             else "N/A",
         }
-    # Store in cache so repeated calls for the same (ip, port) are free
+        # Store in cache so repeated calls for the same (ip, port) are free
+    if tcpSocket:
+        tcpSocket.close()
     with cachedBannersLock:
         cachedBanners[ipPortKey] = bannerInfo
     return bannerInfo
@@ -523,7 +526,7 @@ def writeTestcase(data, outputDirPath, portDir, index):
         try:
             os.mkdir(destDir)
         except Exception:
-            print("[Minor] Error: Nonfatal: Could not create minor dir.")
+            print("[Worker] Could not create minor dir.")
     with open(destDir + "/pcap.data_packet." + str(index) + ".dat", "wb") as out:
         out.write(data)
 
@@ -2767,6 +2770,9 @@ def packetLoop(p, packetIndex, srcPortFilter, dstPortFilter, timeout):
     the filename index so files from concurrent threads do not collide.
     Returns the merged info dict, or None if the packet should be skipped.
     """
+    # for every 500 packets, print a progress update with the packet index
+    if packetIndex % 500 == 0:
+        print(f"[Worker] Processing packet #{packetIndex}")
     srcMacAddr = p.src if p.haslayer("Ethernet") else "N/A"
     dstMacAddr = p.dst if p.haslayer("Ethernet") else "N/A"
     srcMacVendor = macAddrToVendor(srcMacAddr) if srcMacAddr != "N/A" else "N/A"
@@ -3301,7 +3307,7 @@ def startThreading():
     """
     if __name__ == "__main__":
         print(
-            f"[Master] Spooling up {numWorkerThreads} worker threads to process {totalPackets} packets...",
+            f"[Main] Spooling up {numWorkerThreads} worker threads to process {totalPackets} packets...",
             file=sys.stderr,
         )
         # Build the list of packet indices that belong to TCP, UDP, or ICMP packets
@@ -3320,13 +3326,6 @@ def startThreading():
 
         def processChunk(chunk):
             """Process a chunk of packet indices."""
-            print(
-                "[Worker] Processing chunk of packets: indices "
-                + str(chunk[0])
-                + " to "
-                + str(chunk[-1]),
-                file=sys.stderr,
-            )
             results = []
             for idx in chunk:
                 if stopEvent.is_set():
@@ -3455,7 +3454,7 @@ icannCsvPath = scriptDir + "common/service-names-port-numbers.csv"
 if os.path.exists(geoDbPath):
     geoIpReader = geoip2.database.Reader(geoDbPath)
 else:
-    print("[Master] Warning: GeoIP database not found at " + geoDbPath, file=sys.stderr)
+    print("[Main] Warning: GeoIP database not found at " + geoDbPath, file=sys.stderr)
 
 # --- Load ICANN port-description CSV into a dict for O(1) per-packet lookups.
 # Without this, every call to getPortDescription() would scan the full CSV.
@@ -3472,7 +3471,7 @@ if os.path.exists(icannCsvPath):
                 pass
 else:
     print(
-        "[Master] Warning: ICANN port CSV not found at " + icannCsvPath, file=sys.stderr
+        "[Main] Warning: ICANN port CSV not found at " + icannCsvPath, file=sys.stderr
     )
 
 # --- Load MAC vendor CSV into a dict for O(1) per-packet lookups.
@@ -3484,7 +3483,7 @@ if os.path.exists(macVendorsPath):
                 macVendorMap[csvRow["Mac Prefix"].upper()] = csvRow["Vendor Name"]
 else:
     print(
-        "[Master] Warning: MAC vendor CSV not found at " + macVendorsPath,
+        "[Main] Warning: MAC vendor CSV not found at " + macVendorsPath,
         file=sys.stderr,
     )
 
@@ -3497,19 +3496,17 @@ totalPackets = len(
     [p for p in packets if p.haslayer("TCP") or p.haslayer("UDP") or p.haslayer("ICMP")]
 )
 if totalPackets == 0:
-    print(
-        "[Master] No TCP, UDP, or ICMP packets found in the capture.", file=sys.stderr
-    )
+    print("[Main] No TCP, UDP, or ICMP packets found in the capture.", file=sys.stderr)
     sys.exit(1)
 if "threads" in config and config["threads"]:
     numWorkerThreads = config["threads"]
 outputDir = currentDir + "/" + "testcases"
 if args.output and args.output != "testcases":
     outputDir = args.output
-    print("[Master] Using output directory: " + args.output, file=sys.stderr)
+    print("[Main] Using output directory: " + args.output, file=sys.stderr)
 if "output_dir" in config:
     outputDir = currentDir + "/" + config["output_dir"]
-    print("[Master] Using output directory from config: " + outputDir, file=sys.stderr)
+    print("[Main] Using output directory from config: " + outputDir, file=sys.stderr)
 if not args.active_recon:
     if config["active_recon"]:
         activeRecon = config["active_recon"]
@@ -3526,12 +3523,12 @@ if "ollama" in config and config["ollama"].get("model"):
         llmModelName = config["ollama"]["model"]
         if config["ollama"]["llm_brief"]:
             print(
-                "[Master] LLM brief generation enabled. Only packet metadata will be sent through the LLM.",
+                "[LLM] LLM brief generation enabled. Only packet metadata will be sent through the LLM.",
                 file=sys.stderr,
             )
         else:
             print(
-                "[Master] LLM brief generation disabled. LLM will be used for full data packets!  This will take significantly more time, but will provide more detailed llmSummaries for each packet.",
+                "[LLM] LLM brief generation disabled. LLM will be used for full data packets!  This will take significantly more time, but will provide more detailed llmSummaries for each packet.",
                 file=sys.stderr,
             )
     llmResponseLength = config["ollama"].get("response_length", 200)
@@ -3560,7 +3557,7 @@ if llmModelName and useLlm:
                 file=sys.stderr,
             )
 print(
-    "[Master] Preparing to process "
+    "[Main] Preparing to process "
     + str(totalPackets)
     + " TCP/UDP/ICMP packets with "
     + str(numWorkerThreads)
@@ -3580,7 +3577,7 @@ try:
         threadingResult = startThreading()
     except Exception as startErr:
         print(
-            f"[Master] Warning: startThreading raised an exception ({startErr}); retrying.",
+            f"[Main] Warning: startThreading raised an exception ({startErr}); retrying.",
             file=sys.stderr,
         )
         threadingResult = startThreading()
@@ -3614,10 +3611,9 @@ finally:
                 outputDir + "/final_summary.txt", "w", encoding="utf-8"
             ) as summaryFile:
                 summaryFile.write(finalSummary)
-            print("\n" + finalSummary)
-            print("\n[LLM] Final summary saved to: " + outputDir + "/final_summary.txt")
+            print("[LLM] Final summary saved to: " + outputDir + "/final_summary.txt")
         except Exception as e:
-            print("\n[LLM] LLM Final summary generation error: " + str(e))
+            print("[LLM] LLM Final summary generation error: " + str(e))
 
     # Always write hosts.json so the frontend can load data regardless of
     # whether LLM summarisation was enabled or succeeded.
@@ -3628,7 +3624,7 @@ finally:
         geoIpReader.close()
 
     print(
-        "[Master] Processing complete. Generated testcases and info files are located in: "
+        "[Main] Processing complete. Generated testcases and info files are located in: "
         + outputDir,
         file=sys.stderr,
     )

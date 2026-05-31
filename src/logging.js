@@ -53,6 +53,9 @@ function initializeLogging({
   }
 
   function writeConsoleLogEntry(message) {
+    if (message.length > 300) {
+      message = message.substring(0, 300) + " [truncated]";
+    }
     const stampedMessage = `[${new Date().toISOString()}] [Console][Renderer] ${message}`;
     addActivityLogEntry(stampedMessage);
   }

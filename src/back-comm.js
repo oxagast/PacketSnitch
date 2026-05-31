@@ -30,7 +30,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
     fs.rmSync(testcaseOutputDir, { recursive: true, force: true });
   }
 
-  global.logBackend("[Bridge] Exec: ", backendCommand);
+  global.logBackend("[Bridge] ", backendCommand);
 
   function sendError(message) {
     const mainWin = BrowserWindow.getAllWindows()[0]; // or track your main window
@@ -69,6 +69,6 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
       },
     );
 
-    global.logBackend("[Bridge] Backend packet processing initiated");
+    global.logBackend("[Bridge] Backend started");
   });
 });
