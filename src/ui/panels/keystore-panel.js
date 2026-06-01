@@ -873,6 +873,7 @@ function createKeystorePanel({
     const confirmBtn = document.getElementById(
       "crypt-keystore-unlock-confirm-btn",
     );
+    const resetBtn = document.getElementById("crypt-keystore-unlock-reset-btn");
     if (titleEl) {
       titleEl.textContent = isSetup
         ? "Set Keychain Password"
@@ -894,6 +895,9 @@ function createKeystorePanel({
     }
     if (confirmBtn) {
       confirmBtn.textContent = isSetup ? "Set password" : "Unlock";
+    }
+    if (resetBtn) {
+      resetBtn.hidden = isSetup;
     }
   }
 
@@ -937,6 +941,13 @@ function createKeystorePanel({
     resolveKeystoreUnlockPassword({
       password: inputEl?.value || "",
       confirmPassword: confirmEl?.value || "",
+      mode: cryptKeystoreUnlockDialogMode,
+    });
+  }
+
+  function requestPersistentKeystoreResetFromUnlockDialog() {
+    resolveKeystoreUnlockPassword({
+      action: "reset",
       mode: cryptKeystoreUnlockDialogMode,
     });
   }
@@ -1049,6 +1060,9 @@ function createKeystorePanel({
     const dialogResult = await requestKeystoreUnlockPassword(
       isInitialSetup ? "setup" : "unlock",
     );
+    if (dialogResult?.action === "reset") {
+      return resetPersistentKeystorePassword();
+    }
     const normalizedPassword = (dialogResult?.password || "").trim();
     if (!normalizedPassword) {
       statusUpdate("Status: Keychain remains locked");
@@ -1249,6 +1263,7 @@ function createKeystorePanel({
     unlockPersistentKeystoreAndLoad,
     resetPersistentKeystorePassword,
     submitKeystoreUnlockDialog,
+    requestPersistentKeystoreResetFromUnlockDialog,
     resolveKeystoreUnlockPassword,
     submitManualUriFromContextMenuDialog,
     resolveManualUriFromContextMenuDialog,

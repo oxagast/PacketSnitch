@@ -3673,6 +3673,12 @@ document
   .getElementById("crypt-keystore-unlock-confirm-btn")
   .addEventListener("click", keystorePanel.submitKeystoreUnlockDialog);
 document
+  .getElementById("crypt-keystore-unlock-reset-btn")
+  .addEventListener(
+    "click",
+    keystorePanel.requestPersistentKeystoreResetFromUnlockDialog,
+  );
+document
   .getElementById("crypt-keystore-unlock-cancel-btn")
   .addEventListener("click", () =>
     keystorePanel.resolveKeystoreUnlockPassword(null),
