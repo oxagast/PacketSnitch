@@ -3673,6 +3673,9 @@ document
   .getElementById("crypt-keystore-unlock-confirm-btn")
   .addEventListener("click", keystorePanel.submitKeystoreUnlockDialog);
 document
+  .getElementById("crypt-keystore-unlock-reset-btn")
+  .addEventListener("click", keystorePanel.requestPersistentKeystoreReset);
+document
   .getElementById("crypt-keystore-unlock-cancel-btn")
   .addEventListener("click", () =>
     keystorePanel.resolveKeystoreUnlockPassword(null),
@@ -3892,6 +3895,11 @@ document
 document.getElementById("crypt-open-link-btn").addEventListener("click", () => {
   void keystorePanel.openSelectedKeystoreLinkInBrowser();
 });
+document
+  .getElementById("crypt-reset-keystore-password-btn")
+  .addEventListener("click", () => {
+    void keystorePanel.resetPersistentKeystorePassword();
+  });
 
 document
   .getElementById("data-tools-convert-btn")
