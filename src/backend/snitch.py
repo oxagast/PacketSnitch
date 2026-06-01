@@ -31,8 +31,14 @@
 #
 # Author: oxagast
 # Import standard and third-party libraries for argument parsing, file handling, networking, compression, and data processing
-import argparse
 import warnings
+
+warnings.simplefilter("module")
+os.environ["PYTHONWARNINGS"] = "module"
+warnings.formatwarning = lambda msg, cat, fname, ln, file=None, line=None: (
+    f"[Main] {cat.__name__} {msg}\n"
+)
+import argparse
 import base64
 import csv
 import json
@@ -58,18 +64,7 @@ import ollama
 import requests
 import yaml
 
-frame = None
 
-warnings.simplefilter("module")
-os.environ["PYTHONWARNINGS"] = "module"
-try:
-    frame = sys._getframe(1)
-except Exception:
-    frame = "Main"
-
-warnings.formatwarning = lambda msg, cat, fname, ln, file=None, line=None: (
-    f"[{frame}] {cat.__name__} {msg}"
-)
 # from tqdm import tqdm
 import ipaddress
 from bs4 import BeautifulSoup
