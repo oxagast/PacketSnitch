@@ -989,55 +989,55 @@ function createKeystorePanel({
     resolveManualUriFromContextMenuDialog(inputEl?.value || "");
   }
 
+  async function resetPersistentKeystorePassword() {
+    if (!(window.crypto && window.crypto.subtle)) {
+      doError("WebCrypto API is unavailable; cannot reset keychain password.");
+      return false;
+    }
+
+    const shouldReset = window.confirm(CRYPT_KEYSTORE_RESET_CONFIRMATION_MESSAGE);
+    if (!shouldReset) {
+      statusUpdate("Status: Keychain password reset cancelled");
+      return false;
+    }
+
+    const dialogResult = await requestKeystoreUnlockPassword("setup");
+    const normalizedPassword = (dialogResult?.password || "").trim();
+    if (!normalizedPassword) {
+      statusUpdate("Status: Keychain password reset cancelled");
+      return false;
+    }
+    if (normalizedPassword.length < CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH) {
+      doError(
+        `Keychain password must be at least ${CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH} characters.`,
+      );
+      return false;
+    }
+    if (normalizedPassword !== String(dialogResult?.confirmPassword || "").trim()) {
+      doError("Keychain password confirmation does not match.");
+      return false;
+    }
+
+    try {
+      const keyMaterial = await importCryptKeyMaterial(normalizedPassword);
+      await savePersistentCryptKeystoreEntries([], keyMaterial);
+      cryptPersistentKeystoreEntries = [];
+      cryptKeystoreUnlockKeyMaterial = keyMaterial;
+      renderCryptKeystoreList();
+      statusUpdate("Status: Keychain password reset and persistent keychain wiped");
+      writeLogEntry("Persistent keychain password reset; entries wiped");
+      return true;
+    } catch (error) {
+      logErrorEntry("crypt-keystore-reset-password", error);
+      doError("Could not reset persistent keychain password.");
+      return false;
+    }
+  }
+
   async function unlockPersistentKeystoreAndLoad() {
     if (!(window.crypto && window.crypto.subtle)) {
       doError("WebCrypto API is unavailable; cannot unlock keychain.");
       return false;
-    }
-
-    async function resetPersistentKeystorePassword() {
-      if (!(window.crypto && window.crypto.subtle)) {
-        doError("WebCrypto API is unavailable; cannot reset keychain password.");
-        return false;
-      }
-
-      const shouldReset = window.confirm(CRYPT_KEYSTORE_RESET_CONFIRMATION_MESSAGE);
-      if (!shouldReset) {
-        statusUpdate("Status: Keychain password reset cancelled");
-        return false;
-      }
-
-      const dialogResult = await requestKeystoreUnlockPassword("setup");
-      const normalizedPassword = (dialogResult?.password || "").trim();
-      if (!normalizedPassword) {
-        statusUpdate("Status: Keychain password reset cancelled");
-        return false;
-      }
-      if (normalizedPassword.length < CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH) {
-        doError(
-          `Keychain password must be at least ${CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH} characters.`,
-        );
-        return false;
-      }
-      if (normalizedPassword !== String(dialogResult?.confirmPassword || "").trim()) {
-        doError("Keychain password confirmation does not match.");
-        return false;
-      }
-
-      try {
-        const keyMaterial = await importCryptKeyMaterial(normalizedPassword);
-        await savePersistentCryptKeystoreEntries([], keyMaterial);
-        cryptPersistentKeystoreEntries = [];
-        cryptKeystoreUnlockKeyMaterial = keyMaterial;
-        renderCryptKeystoreList();
-        statusUpdate("Status: Keychain password reset and persistent keychain wiped");
-        writeLogEntry("Persistent keychain password reset; entries wiped");
-        return true;
-      } catch (error) {
-        logErrorEntry("crypt-keystore-reset-password", error);
-        doError("Could not reset persistent keychain password.");
-        return false;
-      }
     }
     if (cryptKeystoreUnlockKeyMaterial) return true;
 
