@@ -4,6 +4,8 @@ const CRYPT_KEYSTORE_STORE_NAME = "entries";
 const CRYPT_KEYSTORE_RECORD_KEY = "default";
 const CRYPT_KEYSTORE_SCHEMA_VERSION = 2;
 const CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH = 8;
+const CRYPT_KEYSTORE_RESET_CONFIRMATION_MESSAGE =
+  "Resetting the keychain password will wipe your current persistent keychain entries. Continue?";
 const CRYPT_KEYSTORE_MODE_SESSION = "session";
 const CRYPT_KEYSTORE_MODE_PERSISTENT = "persistent";
 const SESSION_KEYCHAIN_LABEL = "session keychain";
@@ -999,9 +1001,7 @@ function createKeystorePanel({
         return false;
       }
 
-      const shouldReset = window.confirm(
-        "Resetting the keychain password will wipe your current persistent keychain entries. Continue?",
-      );
+      const shouldReset = window.confirm(CRYPT_KEYSTORE_RESET_CONFIRMATION_MESSAGE);
       if (!shouldReset) {
         statusUpdate("Status: Keychain password reset cancelled");
         return false;
