@@ -1012,6 +1012,10 @@ function createKeystorePanel({
     }
 
     const dialogResult = await requestKeystoreUnlockPassword("setup");
+    if (dialogResult?.action === "reset") {
+      statusUpdate("Status: Keychain password reset cancelled");
+      return false;
+    }
     const normalizedPassword = (dialogResult?.password || "").trim();
     if (!normalizedPassword) {
       statusUpdate("Status: Keychain password reset cancelled");
