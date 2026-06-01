@@ -945,7 +945,7 @@ function createKeystorePanel({
     });
   }
 
-  function requestPersistentKeystoreResetFromUnlockDialog() {
+  function requestPersistentKeystoreReset() {
     resolveKeystoreUnlockPassword({
       action: "reset",
     });
@@ -1262,7 +1262,7 @@ function createKeystorePanel({
     unlockPersistentKeystoreAndLoad,
     resetPersistentKeystorePassword,
     submitKeystoreUnlockDialog,
-    requestPersistentKeystoreResetFromUnlockDialog,
+    requestPersistentKeystoreReset,
     resolveKeystoreUnlockPassword,
     submitManualUriFromContextMenuDialog,
     resolveManualUriFromContextMenuDialog,
