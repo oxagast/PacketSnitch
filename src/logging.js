@@ -103,6 +103,15 @@ function initializeLogging({
     }
   };
 
+  const originalConsoleError = consoleRef.error.bind(consoleRef);
+  consoleRef.error = (...args) => {
+    originalConsoleError(...args);
+    const message = formatConsoleArgs(args);
+    if (message) {
+      writeConsoleLogEntry(message);
+    }
+  };
+
   async function initializeActivityLog() {
     const pathEl = documentRef.getElementById("activity-log-path");
     const panelEl = documentRef.getElementById("activity-log-panel");
