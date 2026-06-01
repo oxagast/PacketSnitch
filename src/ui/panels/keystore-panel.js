@@ -3,6 +3,7 @@ const CRYPT_KEYSTORE_DB_VERSION = 1;
 const CRYPT_KEYSTORE_STORE_NAME = "entries";
 const CRYPT_KEYSTORE_RECORD_KEY = "default";
 const CRYPT_KEYSTORE_SCHEMA_VERSION = 2;
+const CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH = 8;
 const CRYPT_KEYSTORE_MODE_SESSION = "session";
 const CRYPT_KEYSTORE_MODE_PERSISTENT = "persistent";
 const SESSION_KEYCHAIN_LABEL = "session keychain";
@@ -877,7 +878,7 @@ function createKeystorePanel({
     }
     if (descriptionEl) {
       descriptionEl.textContent = isSetup
-        ? "Create the initial password for the persistent keychain (minimum 8 characters). You will only be asked when selecting the keychain tab."
+        ? `Create the initial password for the persistent keychain (minimum ${CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH} characters). You will only be asked when selecting the keychain tab.`
         : "Enter password to unlock the persistent keychain.";
     }
     if (passwordEl) {
@@ -1012,8 +1013,10 @@ function createKeystorePanel({
         statusUpdate("Status: Keychain password reset cancelled");
         return false;
       }
-      if (normalizedPassword.length < 8) {
-        doError("Keychain password must be at least 8 characters.");
+      if (normalizedPassword.length < CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH) {
+        doError(
+          `Keychain password must be at least ${CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH} characters.`,
+        );
         return false;
       }
       if (normalizedPassword !== String(dialogResult?.confirmPassword || "").trim()) {
@@ -1048,8 +1051,10 @@ function createKeystorePanel({
       statusUpdate("Status: Keychain remains locked");
       return false;
     }
-    if (normalizedPassword.length < 8) {
-      doError("Keychain password must be at least 8 characters.");
+    if (normalizedPassword.length < CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH) {
+      doError(
+        `Keychain password must be at least ${CRYPT_KEYSTORE_MIN_PASSWORD_LENGTH} characters.`,
+      );
       return false;
     }
     if (
