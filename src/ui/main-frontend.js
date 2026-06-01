@@ -3892,6 +3892,11 @@ document
 document.getElementById("crypt-open-link-btn").addEventListener("click", () => {
   void keystorePanel.openSelectedKeystoreLinkInBrowser();
 });
+document
+  .getElementById("crypt-reset-keystore-password-btn")
+  .addEventListener("click", () => {
+    void keystorePanel.resetPersistentKeystorePassword();
+  });
 
 document
   .getElementById("data-tools-convert-btn")
