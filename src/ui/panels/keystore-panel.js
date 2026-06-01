@@ -948,7 +948,6 @@ function createKeystorePanel({
   function requestPersistentKeystoreResetFromUnlockDialog() {
     resolveKeystoreUnlockPassword({
       action: "reset",
-      mode: cryptKeystoreUnlockDialogMode,
     });
   }
 
