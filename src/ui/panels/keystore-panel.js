@@ -1013,7 +1013,10 @@ function createKeystorePanel({
       );
       return false;
     }
-    if (normalizedPassword !== String(dialogResult?.confirmPassword || "").trim()) {
+    const normalizedConfirmPassword = String(
+      dialogResult?.confirmPassword || "",
+    ).trim();
+    if (normalizedPassword !== normalizedConfirmPassword) {
       doError("Keychain password confirmation does not match.");
       return false;
     }
