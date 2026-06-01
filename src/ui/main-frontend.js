@@ -4913,7 +4913,6 @@ window.jsonapi.onJsonData((jsonData) => {
   processFile(
     new File([jsonData], "capture.json", { type: "application/json" }),
   );
-  document.getElementById("loading-container").style.display = "none";
   const loadEndTime = performance.now();
   document.getElementById("load-time").textContent =
     "Load time: " + ((loadEndTime - startTime) / 1000).toFixed(2) + " seconds";
