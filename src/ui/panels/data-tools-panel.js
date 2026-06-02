@@ -253,17 +253,23 @@ function guessDataType(rawInput) {
     candidates.push({ label: "UUID / GUID", score: 98 });
   }
 
-  // JWT token (three base64url segments separated by dots)
-  if (/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(trimmed)) {
+  // JWT token — three base64url segments each at least 10 chars (prevents
+  // false positives like 'abc.def.ghi')
+  if (
+    /^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/.test(
+      trimmed,
+    )
+  ) {
     candidates.push({ label: "JWT Token", score: 95 });
   }
 
-  // Hex hash / hex data (strip optional 0x prefix and separators)
+  // Hex hash / hex data (strip optional 0x prefix and colon/space separators)
   const cleanHex = trimmed
     .toLowerCase()
     .replace(/^0x/i, "")
     .replace(/[\s:]/g, "");
-  if (/^[0-9a-f]+$/.test(cleanHex)) {
+  const isLikelyHex = /^[0-9a-f]+$/.test(cleanHex);
+  if (isLikelyHex) {
     switch (cleanHex.length) {
       case 32:
         candidates.push({ label: "MD5 / NTLM Hash", score: 90 });
@@ -290,13 +296,28 @@ function guessDataType(rawInput) {
     }
   }
 
-  // Base64 / Base64URL detection
+  // Base64 / Base64URL detection.
+  // Skip strings already identified as hex, UUID, or JWT to avoid false
+  // positives (e.g. a hex string is valid base64 by charset alone).
   const noWs = trimmed.replace(/\s+/g, "");
-  if (noWs.length >= 4 && /^[A-Za-z0-9+/]+=*$/.test(noWs)) {
-    const score = noWs.length % 4 === 0 ? 80 : 50;
-    candidates.push({ label: "Base64 Encoded Data", score });
-  } else if (noWs.length >= 8 && /^[A-Za-z0-9_-]+$/.test(noWs)) {
-    candidates.push({ label: "Base64URL Encoded Data", score: 45 });
+  const alreadySpecific =
+    isLikelyHex ||
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      trimmed,
+    ) ||
+    /^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/.test(
+      trimmed,
+    );
+  if (noWs.length >= 4 && !alreadySpecific) {
+    const hasUrlChars = /[-_]/.test(noWs);
+    if (hasUrlChars && /^[A-Za-z0-9_-]+$/.test(noWs)) {
+      // Unambiguously base64url (contains - or _)
+      candidates.push({ label: "Base64URL Encoded Data", score: 80 });
+    } else if (/^[A-Za-z0-9+/]+=*$/.test(noWs)) {
+      // Standard base64 (may or may not contain + or /)
+      const score = noWs.length % 4 === 0 ? 80 : 50;
+      candidates.push({ label: "Base64 Encoded Data", score });
+    }
   }
 
   candidates.sort((a, b) => b.score - a.score);
