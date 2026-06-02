@@ -1346,7 +1346,7 @@ const navButtons = {
 };
 
 function buildHostTargetFilterQuery(selectedHost) {
-  const safeHost = typeof selectedHost === "string" ? selectedHost.trim() : "";
+  const safeHost = sanitizeFilterTerm(selectedHost);
   if (!safeHost) return "";
   return `ip.src.addr: ${safeHost} || ip.dst.addr: ${safeHost}`;
 }
