@@ -125,6 +125,9 @@ const filterHighlightEl = getCachedElement("filterStr-highlight");
 const filterClearButtonEl = getCachedElement("filterStr-clear");
 const filterHistorySelectEl = getCachedElement("filter-history-select");
 const filterHistory = [];
+const dataToolsHistorySelectEl = getCachedElement("data-tools-history-select");
+const dataToolsInputHistory = [];
+const DATA_TOOLS_INPUT_HISTORY_LIMIT = 10;
 const CONTEXT_IPV4_REGEX =
   /\b(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}\b/;
 const STRICT_IPV4_REGEX =
@@ -548,6 +551,59 @@ function addFilterHistory(query) {
   renderFilterHistory();
 }
 
+function buildDataToolsHistoryLabel(entry) {
+  const preview = entry.input.replace(/\s+/g, " ").trim();
+  const truncatedPreview =
+    preview.length > 80 ? `${preview.slice(0, 77)}…` : preview;
+  return `${entry.format.toUpperCase()}: ${truncatedPreview}`;
+}
+
+function renderDataToolsInputHistory() {
+  dataToolsHistorySelectEl.replaceChildren();
+
+  const placeholderOption = document.createElement("option");
+  placeholderOption.value = "";
+  placeholderOption.textContent = dataToolsInputHistory.length
+    ? "Previous inputs"
+    : "No previous inputs";
+  placeholderOption.selected = true;
+  dataToolsHistorySelectEl.appendChild(placeholderOption);
+
+  dataToolsInputHistory.forEach((entry, index) => {
+    const entryOption = document.createElement("option");
+    entryOption.value = String(index);
+    entryOption.textContent = buildDataToolsHistoryLabel(entry);
+    entryOption.title = buildDataToolsHistoryLabel(entry);
+    dataToolsHistorySelectEl.appendChild(entryOption);
+  });
+
+  dataToolsHistorySelectEl.value = "";
+  dataToolsHistorySelectEl.disabled = dataToolsInputHistory.length === 0;
+}
+
+function addDataToolsInputHistory(format, input) {
+  const normalizedFormat = String(format || "hex").trim().toLowerCase() || "hex";
+  const normalizedInput = String(input || "");
+  if (!normalizedInput.trim()) return;
+
+  const existingIndex = dataToolsInputHistory.findIndex(
+    (entry) =>
+      entry.format === normalizedFormat && entry.input === normalizedInput,
+  );
+  if (existingIndex !== -1) {
+    dataToolsInputHistory.splice(existingIndex, 1);
+  }
+
+  dataToolsInputHistory.unshift({
+    format: normalizedFormat,
+    input: normalizedInput,
+  });
+  if (dataToolsInputHistory.length > DATA_TOOLS_INPUT_HISTORY_LIMIT) {
+    dataToolsInputHistory.length = DATA_TOOLS_INPUT_HISTORY_LIMIT;
+  }
+  renderDataToolsInputHistory();
+}
+
 function runFilterQuery(filterQuery, options = {}) {
   const { trackHistory = true } = options;
   try {
@@ -940,6 +996,7 @@ function buildSessionStateSnapshot() {
       hostFilterEl.value ||
       "",
     bookmarkList: [...bookmarkList],
+    convInputHistory: deepCloneSessionData(dataToolsInputHistory, []),
     sessionKeychainEntries: deepCloneSessionData(
       keystorePanel.getSessionKeychainEntries(),
       [],
@@ -1081,6 +1138,27 @@ function restoreSessionState(sessionState) {
     : [];
   bookmarkList = loadedBookmarks;
   rebuildBookmarkDropdown();
+
+  const loadedDataToolsHistory = Array.isArray(sessionState.convInputHistory)
+    ? sessionState.convInputHistory
+        .filter((entry) => entry && typeof entry === "object")
+        .map((entry) => ({
+          format:
+            typeof entry.format === "string" && entry.format.trim()
+              ? entry.format.trim().toLowerCase()
+              : "hex",
+          input:
+            typeof entry.input === "string" ? entry.input : String(entry.input || ""),
+        }))
+        .filter((entry) => entry.input.trim() !== "")
+        .slice(0, DATA_TOOLS_INPUT_HISTORY_LIMIT)
+    : [];
+  dataToolsInputHistory.splice(
+    0,
+    dataToolsInputHistory.length,
+    ...loadedDataToolsHistory,
+  );
+  renderDataToolsInputHistory();
 
   const loadedSessionEntries = Array.isArray(
     sessionState.sessionKeychainEntries,
@@ -2570,6 +2648,7 @@ function runDataToolsConversion() {
 
   try {
     const bytes = parseDataToolsInput(formatEl.value, inputEl.value);
+    addDataToolsInputHistory(formatEl.value, inputEl.value);
     const hexValues = [...bytes].map((byte) =>
       byte.toString(16).padStart(2, "0").toUpperCase(),
     );
@@ -4923,10 +5002,12 @@ document
   .addEventListener("click", runDataToolsConversion);
 bindConvertedOutputExpandHandlers();
 document.getElementById("data-tools-input").addEventListener("input", () => {
+  dataToolsHistorySelectEl.value = "";
   updateDataToolsHexHighlights();
   syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
 });
 document.getElementById("data-tools-format").addEventListener("change", () => {
+  dataToolsHistorySelectEl.value = "";
   updateDataToolsHexHighlights();
 });
 document.getElementById("data-tools-input").addEventListener("scroll", () => {
@@ -4962,11 +5043,24 @@ document
 document
   .getElementById("data-tools-clear-btn")
   .addEventListener("click", () => {
+    dataToolsHistorySelectEl.value = "";
     document.getElementById("data-tools-input").value = "";
     document.getElementById("data-tools-error").textContent = "";
     resetDataToolsOutputs();
     updateDataToolsHexHighlights();
   });
+dataToolsHistorySelectEl.addEventListener("change", () => {
+  const selectedIndex = Number(dataToolsHistorySelectEl.value);
+  if (!Number.isInteger(selectedIndex) || selectedIndex < 0) return;
+  const selectedEntry = dataToolsInputHistory[selectedIndex];
+  if (!selectedEntry) return;
+  document.getElementById("data-tools-format").value = selectedEntry.format;
+  document.getElementById("data-tools-input").value = selectedEntry.input;
+  updateDataToolsHexHighlights();
+  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
+  runDataToolsConversion();
+  dataToolsHistorySelectEl.value = "";
+});
 document
   .getElementById("data-tools-proto-select")
   .addEventListener("change", () => {
@@ -6088,6 +6182,7 @@ filterHistorySelectEl.addEventListener("change", () => {
 });
 
 renderFilterHistory();
+renderDataToolsInputHistory();
 syncFilterHighlight();
 
 window.onerror = (message, source, lineno, colno, error) => {
