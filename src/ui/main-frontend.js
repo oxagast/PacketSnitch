@@ -1442,6 +1442,372 @@ function parseDataToolsInput(format, rawInput) {
   return new TextEncoder().encode(rawInput);
 }
 
+const DATA_TOOLS_TEXT_ENCODER = new TextEncoder();
+const DATA_TOOLS_SELECTION_FIELD_IDS = [
+  "data-tools-input",
+  "data-tools-hex-output",
+  "data-tools-binary-output",
+  "data-tools-decimal-output",
+  "data-tools-ascii-output",
+  "data-tools-base64-output",
+];
+const DATA_TOOLS_HEX_BREAK_BYTES = new Set([
+  0x00, 0x09, 0x0a, 0x0d, 0x20, 0x2c, 0x3a, 0x3b, 0x7c,
+]);
+const dataToolsSelectionState = {
+  bytes: new Uint8Array(),
+  maps: {},
+  selectedByteRange: null,
+  syncingSelection: false,
+};
+
+function escapeDataToolsHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function classifyDataToolsHexByte(byteValue) {
+  if (DATA_TOOLS_HEX_BREAK_BYTES.has(byteValue)) return "data-tools-hex-break";
+  if (
+    (byteValue >= 0x30 && byteValue <= 0x39) ||
+    (byteValue >= 0x41 && byteValue <= 0x5a) ||
+    (byteValue >= 0x61 && byteValue <= 0x7a)
+  ) {
+    return "data-tools-hex-alpha";
+  }
+  return "data-tools-hex-binary";
+}
+
+function buildInputSelectionMap(rawInput, format, bytes) {
+  const text = String(rawInput || "");
+  const charToByte = new Array(text.length).fill(null);
+  const byteRanges = Array.from({ length: bytes.length }, () => ({
+    start: null,
+    end: null,
+  }));
+  const markByteRange = (byteIndex, charIndex) => {
+    if (byteIndex == null || byteIndex < 0 || byteIndex >= byteRanges.length) {
+      return;
+    }
+    if (byteRanges[byteIndex].start == null) byteRanges[byteIndex].start = charIndex;
+    byteRanges[byteIndex].end = charIndex + 1;
+  };
+
+  if (format === "hex") {
+    let hexNibbleIndex = 0;
+    for (let i = 0; i < text.length; i++) {
+      if (!/[0-9a-fA-F]/.test(text[i])) continue;
+      const byteIndex = Math.floor(hexNibbleIndex / 2);
+      charToByte[i] = byteIndex;
+      markByteRange(byteIndex, i);
+      hexNibbleIndex += 1;
+    }
+    return { charToByte, byteRanges };
+  }
+
+  if (format === "binary") {
+    let bitIndex = 0;
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] !== "0" && text[i] !== "1") continue;
+      const byteIndex = Math.floor(bitIndex / 8);
+      charToByte[i] = byteIndex;
+      markByteRange(byteIndex, i);
+      bitIndex += 1;
+    }
+    return { charToByte, byteRanges };
+  }
+
+  if (format === "decimal") {
+    const tokens = text.matchAll(/\d+/g);
+    let byteIndex = 0;
+    for (const token of tokens) {
+      const start = token.index ?? 0;
+      const end = start + token[0].length;
+      for (let i = start; i < end; i++) {
+        charToByte[i] = byteIndex;
+        markByteRange(byteIndex, i);
+      }
+      byteIndex += 1;
+      if (byteIndex >= bytes.length) break;
+    }
+    return { charToByte, byteRanges };
+  }
+
+  if (format === "base64") {
+    const prefixMatch = text.match(/^\s*data:[^;]+;base64,/i);
+    const startOffset = prefixMatch ? prefixMatch[0].length : 0;
+    const indices = [];
+    for (let i = startOffset; i < text.length; i++) {
+      if (!/\s/.test(text[i])) indices.push(i);
+    }
+    let byteCursor = 0;
+    for (let i = 0; i + 3 < indices.length; i += 4) {
+      const c1 = text[indices[i]];
+      const c2 = text[indices[i + 1]];
+      const c3 = text[indices[i + 2]];
+      const c4 = text[indices[i + 3]];
+      const byteCount = c3 === "=" ? 1 : c4 === "=" ? 2 : 3;
+      const quartetTargets = [
+        byteCursor,
+        byteCursor,
+        byteCount > 1 ? byteCursor + 1 : byteCursor,
+        byteCount > 2 ? byteCursor + 2 : byteCursor + byteCount - 1,
+      ];
+      for (let j = 0; j < 4; j++) {
+        const byteIndex = quartetTargets[j];
+        if (!Number.isFinite(byteIndex) || byteIndex >= bytes.length) continue;
+        const charIndex = indices[i + j];
+        charToByte[charIndex] = byteIndex;
+        markByteRange(byteIndex, charIndex);
+      }
+      byteCursor += byteCount;
+      if (byteCursor >= bytes.length) break;
+    }
+    return { charToByte, byteRanges };
+  }
+
+  let byteOffset = 0;
+  for (let i = 0; i < text.length; i++) {
+    const encoded = DATA_TOOLS_TEXT_ENCODER.encode(text[i]);
+    const start = byteOffset;
+    const end = Math.min(byteRanges.length, start + encoded.length);
+    for (let byteIndex = start; byteIndex < end; byteIndex++) {
+      charToByte[i] = byteIndex;
+      markByteRange(byteIndex, i);
+    }
+    byteOffset += encoded.length;
+    if (byteOffset >= byteRanges.length) break;
+  }
+  return { charToByte, byteRanges };
+}
+
+function buildRenderedSelectionMap(values) {
+  const text = values.join(" ");
+  const charToByte = [];
+  const byteRanges = Array.from({ length: values.length }, () => ({
+    start: null,
+    end: null,
+  }));
+  let cursor = 0;
+  values.forEach((value, byteIndex) => {
+    for (let i = 0; i < value.length; i++) {
+      charToByte[cursor + i] = byteIndex;
+    }
+    byteRanges[byteIndex] = { start: cursor, end: cursor + value.length };
+    cursor += value.length;
+    if (byteIndex < values.length - 1) {
+      charToByte[cursor] = null;
+      cursor += 1;
+    }
+  });
+  return { text, charToByte, byteRanges };
+}
+
+function buildBase64SelectionMap(base64Text, bytes) {
+  const charToByte = new Array(base64Text.length).fill(null);
+  const byteRanges = Array.from({ length: bytes.length }, () => ({
+    start: null,
+    end: null,
+  }));
+  const markByteRange = (byteIndex, charIndex) => {
+    if (byteIndex < 0 || byteIndex >= byteRanges.length) return;
+    if (byteRanges[byteIndex].start == null) byteRanges[byteIndex].start = charIndex;
+    byteRanges[byteIndex].end = charIndex + 1;
+  };
+  let byteCursor = 0;
+  for (let i = 0; i + 3 < base64Text.length; i += 4) {
+    const c3 = base64Text[i + 2];
+    const c4 = base64Text[i + 3];
+    const byteCount = c3 === "=" ? 1 : c4 === "=" ? 2 : 3;
+    const targets = [
+      byteCursor,
+      byteCursor,
+      byteCount > 1 ? byteCursor + 1 : byteCursor,
+      byteCount > 2 ? byteCursor + 2 : byteCursor + byteCount - 1,
+    ];
+    for (let j = 0; j < 4; j++) {
+      const byteIndex = targets[j];
+      if (!Number.isFinite(byteIndex) || byteIndex >= bytes.length) continue;
+      charToByte[i + j] = byteIndex;
+      markByteRange(byteIndex, i + j);
+    }
+    byteCursor += byteCount;
+    if (byteCursor >= bytes.length) break;
+  }
+  return { text: base64Text, charToByte, byteRanges };
+}
+
+function getDataToolsByteRangeForSelection(selectionMap, start, end) {
+  if (!selectionMap) return null;
+  const max = selectionMap.charToByte.length;
+  const left = Math.max(0, Math.min(start ?? 0, max));
+  const right = Math.max(0, Math.min(end ?? left, max));
+  let minByte = Number.POSITIVE_INFINITY;
+  let maxByte = -1;
+
+  for (let i = left; i < right; i++) {
+    const byteIndex = selectionMap.charToByte[i];
+    if (byteIndex == null) continue;
+    minByte = Math.min(minByte, byteIndex);
+    maxByte = Math.max(maxByte, byteIndex);
+  }
+
+  if (maxByte >= 0) {
+    return { start: minByte, end: maxByte + 1 };
+  }
+
+  const probeIndexes = [left, left - 1, right, right - 1];
+  for (const probeIndex of probeIndexes) {
+    if (probeIndex < 0 || probeIndex >= max) continue;
+    const byteIndex = selectionMap.charToByte[probeIndex];
+    if (byteIndex == null) continue;
+    return { start: byteIndex, end: byteIndex + 1 };
+  }
+
+  return null;
+}
+
+function getDataToolsSelectionForByteRange(selectionMap, byteRange) {
+  if (!selectionMap || !byteRange) return null;
+  const startByte = Math.max(0, byteRange.start);
+  const endByte = Math.max(startByte + 1, byteRange.end);
+  const startRange = selectionMap.byteRanges[startByte];
+  const endRange = selectionMap.byteRanges[endByte - 1];
+  if (!startRange || !endRange) return null;
+  if (startRange.start == null || endRange.end == null) return null;
+  return { start: startRange.start, end: endRange.end };
+}
+
+function buildColorizedHexHtml(rawText, selectionMap, bytes, byteRange) {
+  const text = String(rawText || "");
+  const hasSelection = Boolean(byteRange);
+  const inSelectedRange = (byteIndex) =>
+    hasSelection &&
+    byteIndex != null &&
+    byteIndex >= byteRange.start &&
+    byteIndex < byteRange.end;
+  let html = "";
+  for (let i = 0; i < text.length; i++) {
+    const byteIndex = selectionMap?.charToByte?.[i] ?? null;
+    let className = "data-tools-hex-separator";
+    if (byteIndex != null && byteIndex < bytes.length) {
+      className = classifyDataToolsHexByte(bytes[byteIndex]);
+    } else if (/[\s,;:-]/.test(text[i])) {
+      className = "data-tools-hex-separator";
+    }
+    if (inSelectedRange(byteIndex)) {
+      className += " data-tools-sync-highlight";
+    }
+    html += `<span class="${className}">${escapeDataToolsHtml(text[i])}</span>`;
+  }
+  return html;
+}
+
+function updateDataToolsHexHighlights() {
+  const inputHighlightEl = document.getElementById("data-tools-input-highlight");
+  const outputHighlightEl = document.getElementById("data-tools-hex-output-highlight");
+  const inputEl = document.getElementById("data-tools-input");
+  const formatEl = document.getElementById("data-tools-format");
+  const outputEl = document.getElementById("data-tools-hex-output");
+  if (!inputHighlightEl || !outputHighlightEl || !inputEl || !formatEl || !outputEl) {
+    return;
+  }
+  const inputMap = dataToolsSelectionState.maps["data-tools-input"] || {
+    charToByte: [],
+  };
+  const outputMap = dataToolsSelectionState.maps["data-tools-hex-output"] || {
+    charToByte: [],
+  };
+  const bytes = dataToolsSelectionState.bytes || new Uint8Array();
+  if (formatEl.value === "hex") {
+    inputHighlightEl.innerHTML = buildColorizedHexHtml(
+      inputEl.value,
+      inputMap,
+      bytes,
+      dataToolsSelectionState.selectedByteRange,
+    );
+  } else {
+    inputHighlightEl.innerHTML = escapeDataToolsHtml(inputEl.value);
+  }
+  outputHighlightEl.innerHTML = buildColorizedHexHtml(
+    outputEl.value,
+    outputMap,
+    bytes,
+    dataToolsSelectionState.selectedByteRange,
+  );
+}
+
+function syncDataToolsHighlightScroll(textareaId, layerId) {
+  const textarea = document.getElementById(textareaId);
+  const layer = document.getElementById(layerId);
+  if (!textarea || !layer) return;
+  layer.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
+}
+
+function clearDataToolsSelectionState() {
+  dataToolsSelectionState.bytes = new Uint8Array();
+  dataToolsSelectionState.maps = {};
+  dataToolsSelectionState.selectedByteRange = null;
+  updateDataToolsHexHighlights();
+  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
+  syncDataToolsHighlightScroll(
+    "data-tools-hex-output",
+    "data-tools-hex-output-highlight",
+  );
+}
+
+function updateDataToolsSelectionMaps(format, rawInput, bytes, outputs) {
+  dataToolsSelectionState.bytes = bytes;
+  dataToolsSelectionState.maps = {
+    "data-tools-input": buildInputSelectionMap(rawInput, format, bytes),
+    "data-tools-hex-output": buildRenderedSelectionMap(outputs.hexValues),
+    "data-tools-binary-output": buildRenderedSelectionMap(outputs.binaryValues),
+    "data-tools-decimal-output": buildRenderedSelectionMap(outputs.decimalValues),
+    "data-tools-ascii-output": {
+      text: outputs.asciiText,
+      charToByte: Array.from({ length: outputs.asciiText.length }, (_, idx) => idx),
+      byteRanges: Array.from({ length: bytes.length }, (_, idx) => ({
+        start: idx,
+        end: idx + 1,
+      })),
+    },
+    "data-tools-base64-output": buildBase64SelectionMap(outputs.base64Text, bytes),
+  };
+}
+
+function syncDataToolsSelectionFromField(sourceFieldId) {
+  if (dataToolsSelectionState.syncingSelection) return;
+  const sourceEl = document.getElementById(sourceFieldId);
+  const sourceMap = dataToolsSelectionState.maps[sourceFieldId];
+  if (!sourceEl || !sourceMap) return;
+
+  const byteRange = getDataToolsByteRangeForSelection(
+    sourceMap,
+    sourceEl.selectionStart,
+    sourceEl.selectionEnd,
+  );
+  dataToolsSelectionState.selectedByteRange = byteRange;
+
+  dataToolsSelectionState.syncingSelection = true;
+  for (const fieldId of DATA_TOOLS_SELECTION_FIELD_IDS) {
+    if (fieldId === sourceFieldId) continue;
+    const targetEl = document.getElementById(fieldId);
+    const targetMap = dataToolsSelectionState.maps[fieldId];
+    if (!targetEl || !targetMap) continue;
+    if (!byteRange) {
+      targetEl.setSelectionRange(0, 0);
+      continue;
+    }
+    const selection = getDataToolsSelectionForByteRange(targetMap, byteRange);
+    if (!selection) continue;
+    targetEl.setSelectionRange(selection.start, selection.end);
+  }
+  dataToolsSelectionState.syncingSelection = false;
+  updateDataToolsHexHighlights();
+}
+
 function bytesToBase64(bytes) {
   let binary = "";
   bytes.forEach((byte) => {
@@ -2090,6 +2456,7 @@ function resetDataToolsOutputs() {
     "Shannon Entropy: 0.00 (Low)";
   resetHashOutputs();
   clearProtoDecoderOutput();
+  clearDataToolsSelectionState();
 }
 
 const HASH_IDS = [
@@ -2155,13 +2522,16 @@ function runDataToolsConversion() {
 
   try {
     const bytes = parseDataToolsInput(formatEl.value, inputEl.value);
-    const hexSpaced = [...bytes]
-      .map((byte) => byte.toString(16).padStart(2, "0").toUpperCase())
-      .join(" ");
-    const binarySpaced = [...bytes]
-      .map((byte) => byte.toString(2).padStart(8, "0"))
-      .join(" ");
-    const decimalBytes = [...bytes].join(" ");
+    const hexValues = [...bytes].map((byte) =>
+      byte.toString(16).padStart(2, "0").toUpperCase(),
+    );
+    const binaryValues = [...bytes].map((byte) =>
+      byte.toString(2).padStart(8, "0"),
+    );
+    const decimalValues = [...bytes].map((byte) => String(byte));
+    const hexSpaced = hexValues.join(" ");
+    const binarySpaced = binaryValues.join(" ");
+    const decimalBytes = decimalValues.join(" ");
     const asciiPreview = bytesToPrintableAscii(bytes);
     const inspectedText = decodeBytesForTextInspection(bytes);
     const base64Value = bytesToBase64(bytes);
@@ -2195,6 +2565,19 @@ function runDataToolsConversion() {
         inputEl.value,
         formatEl.value === "ascii" ? "" : inspectedText,
       ),
+    );
+    updateDataToolsSelectionMaps(formatEl.value, inputEl.value, bytes, {
+      hexValues,
+      binaryValues,
+      decimalValues,
+      asciiText: asciiPreview,
+      base64Text: base64Value,
+    });
+    syncDataToolsSelectionFromField(
+      document.activeElement &&
+        DATA_TOOLS_SELECTION_FIELD_IDS.includes(document.activeElement.id)
+        ? document.activeElement.id
+        : "data-tools-input",
     );
     document.getElementById("data-tools-entropy").textContent =
       `Shannon Entropy: ${entropy.toFixed(2)} (${entropyLabel})`;
@@ -4490,6 +4873,30 @@ document
 document
   .getElementById("data-tools-convert-btn")
   .addEventListener("click", runDataToolsConversion);
+document.getElementById("data-tools-input").addEventListener("input", () => {
+  updateDataToolsHexHighlights();
+  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
+});
+document.getElementById("data-tools-format").addEventListener("change", () => {
+  updateDataToolsHexHighlights();
+});
+document.getElementById("data-tools-input").addEventListener("scroll", () => {
+  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
+});
+document.getElementById("data-tools-hex-output").addEventListener("scroll", () => {
+  syncDataToolsHighlightScroll(
+    "data-tools-hex-output",
+    "data-tools-hex-output-highlight",
+  );
+});
+for (const fieldId of DATA_TOOLS_SELECTION_FIELD_IDS) {
+  const el = document.getElementById(fieldId);
+  if (!el) continue;
+  const syncFromField = () => syncDataToolsSelectionFromField(fieldId);
+  el.addEventListener("select", syncFromField);
+  el.addEventListener("mouseup", syncFromField);
+  el.addEventListener("keyup", syncFromField);
+}
 document
   .getElementById("data-tools-hash-input-reading")
   .addEventListener("input", runDataToolsHashesFromInput);
@@ -4499,6 +4906,7 @@ document
     document.getElementById("data-tools-input").value = "";
     document.getElementById("data-tools-error").textContent = "";
     resetDataToolsOutputs();
+    updateDataToolsHexHighlights();
   });
 document
   .getElementById("data-tools-proto-select")
@@ -5644,6 +6052,12 @@ onload = function () {
   keystorePanel.resetKeystoreState();
   setCryptSubtab(CRYPT_SSL_SUBTAB);
   setConvSubtab(CONV_CONVERSIONS_SUBTAB);
+  updateDataToolsHexHighlights();
+  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
+  syncDataToolsHighlightScroll(
+    "data-tools-hex-output",
+    "data-tools-hex-output-highlight",
+  );
   document.getElementById("packetInfoPane").style.display = "none";
   document.getElementById("packetPayloadPane").style.display = "none";
   document.getElementById("rightside").style.display = "none";
