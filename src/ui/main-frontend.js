@@ -1527,6 +1527,165 @@ function getEntropyLabel(entropy) {
   return "Low";
 }
 
+const DATA_TYPE_GUESS_SCAN_CHUNK_SIZE = 2048;
+const DATA_TYPE_GUESS_SCAN_OVERLAP = 256;
+const DATA_TYPE_GUESS_TOKEN_RE = /[A-Za-z0-9+/_=:$.-]{8,}/g;
+const DATA_TOOLS_UTF8_DECODER = new TextDecoder("utf-8", { fatal: false });
+const DATA_TYPE_GUESS_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DATA_TYPE_GUESS_JWT_RE =
+  /^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/;
+
+function addDataTypeGuessCandidate(candidateScores, label, score) {
+  const currentScore = candidateScores.get(label) || 0;
+  if (score > currentScore) {
+    candidateScores.set(label, score);
+  }
+}
+
+function detectDataTypeGuessFromToken(token, candidateScores) {
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) return;
+
+  if (/^\$2[aby]\$\d{2}\$[A-Za-z0-9./]{53}$/.test(normalizedToken)) {
+    addDataTypeGuessCandidate(candidateScores, "bcrypt Hash", 99);
+  }
+
+  if (DATA_TYPE_GUESS_UUID_RE.test(normalizedToken)) {
+    addDataTypeGuessCandidate(candidateScores, "UUID / GUID", 98);
+  }
+
+  if (DATA_TYPE_GUESS_JWT_RE.test(normalizedToken)) {
+    addDataTypeGuessCandidate(candidateScores, "JWT Token", 95);
+  }
+
+  const cleanHex = normalizedToken
+    .toLowerCase()
+    .replace(/^0x/i, "")
+    .replace(/[\s:]/g, "");
+  const isLikelyHex = /^[0-9a-f]+$/.test(cleanHex);
+  if (isLikelyHex) {
+    switch (cleanHex.length) {
+      case 32:
+        addDataTypeGuessCandidate(candidateScores, "MD5 / NTLM Hash", 90);
+        break;
+      case 40:
+        addDataTypeGuessCandidate(
+          candidateScores,
+          "SHA-1 / RIPEMD-160 Hash",
+          90,
+        );
+        break;
+      case 56:
+        addDataTypeGuessCandidate(
+          candidateScores,
+          "SHA-224 / SHA3-224 Hash",
+          90,
+        );
+        break;
+      case 64:
+        addDataTypeGuessCandidate(candidateScores, "SHA-256 / SHA3-256 Hash", 90);
+        break;
+      case 96:
+        addDataTypeGuessCandidate(candidateScores, "SHA-384 / SHA3-384 Hash", 90);
+        break;
+      case 128:
+        addDataTypeGuessCandidate(
+          candidateScores,
+          "SHA-512 / Whirlpool Hash",
+          90,
+        );
+        break;
+      default:
+        if (cleanHex.length >= 8) {
+          addDataTypeGuessCandidate(candidateScores, "Hexadecimal Data", 55);
+        }
+        break;
+    }
+  }
+
+  const noWhitespace = normalizedToken.replace(/\s+/g, "");
+  const alreadySpecific =
+    isLikelyHex ||
+    DATA_TYPE_GUESS_UUID_RE.test(normalizedToken) ||
+    DATA_TYPE_GUESS_JWT_RE.test(normalizedToken);
+  if (noWhitespace.length >= 4 && !alreadySpecific) {
+    const hasBase64UrlChars = /[-_]/.test(noWhitespace);
+    if (hasBase64UrlChars && /^[A-Za-z0-9_-]+$/.test(noWhitespace)) {
+      addDataTypeGuessCandidate(candidateScores, "Base64URL Encoded Data", 80);
+    } else if (/^[A-Za-z0-9+/]+=*$/.test(noWhitespace)) {
+      addDataTypeGuessCandidate(
+        candidateScores,
+        "Base64 Encoded Data",
+        noWhitespace.length % 4 === 0 ? 80 : 50,
+      );
+    }
+  }
+}
+
+function scanAsciiTextForDataTypeGuesses(inputText, candidateScores) {
+  const sourceText = String(inputText || "");
+  if (!sourceText.trim()) return;
+
+  const stepSize = Math.max(
+    1,
+    DATA_TYPE_GUESS_SCAN_CHUNK_SIZE - DATA_TYPE_GUESS_SCAN_OVERLAP,
+  );
+  for (let offset = 0; offset < sourceText.length; offset += stepSize) {
+    const chunk = sourceText.slice(offset, offset + DATA_TYPE_GUESS_SCAN_CHUNK_SIZE);
+    if (/-----BEGIN PGP/.test(chunk)) {
+      addDataTypeGuessCandidate(
+        candidateScores,
+        "PGP ASCII Armored Data",
+        100,
+      );
+    }
+
+    const chunkTokens = chunk.match(DATA_TYPE_GUESS_TOKEN_RE) || [];
+    chunkTokens.forEach((token) => {
+      detectDataTypeGuessFromToken(token, candidateScores);
+    });
+  }
+}
+
+function deriveDataTypeGuesses(rawInput, decodedAsciiInput = "") {
+  const candidateScores = new Map();
+  scanAsciiTextForDataTypeGuesses(rawInput, candidateScores);
+  const normalizedRaw = String(rawInput || "");
+  const normalizedDecoded = String(decodedAsciiInput || "");
+  if (normalizedDecoded && normalizedDecoded !== normalizedRaw) {
+    scanAsciiTextForDataTypeGuesses(normalizedDecoded, candidateScores);
+  }
+  return [...candidateScores.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([label, score]) => ({
+      label,
+      confidence: score >= 85 ? "High" : score >= 60 ? "Medium" : "Low",
+    }));
+}
+
+function renderDataTypeGuesses(guesses) {
+  const guessesEl = document.getElementById("data-tools-data-type-guesses");
+  if (!guessesEl) return;
+  guessesEl.innerHTML = "";
+  const headerEl = document.createElement("span");
+  headerEl.textContent = "Data Type Guesses:";
+  guessesEl.appendChild(headerEl);
+  if (!guesses || guesses.length === 0) {
+    const noneEl = document.createElement("span");
+    noneEl.textContent = " None";
+    guessesEl.appendChild(noneEl);
+    return;
+  }
+  guesses.forEach((guess, idx) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "data-tools-guess-item";
+    rowEl.textContent = `${idx + 1}. ${guess.label} (${guess.confidence})`;
+    guessesEl.appendChild(rowEl);
+  });
+}
+
 function resetDataToolsOutputs() {
   document.getElementById("data-tools-hex-output").value = "";
   document.getElementById("data-tools-binary-output").value = "";
@@ -1538,6 +1697,7 @@ function resetDataToolsOutputs() {
     "Byte Length: 0";
   document.getElementById("data-tools-mime-type").textContent =
     "MIME Type: Unknown";
+  renderDataTypeGuesses([]);
   document.getElementById("data-tools-entropy").textContent =
     "Shannon Entropy: 0.00 (Low)";
   resetHashOutputs();
@@ -1615,6 +1775,7 @@ function runDataToolsConversion() {
       .join(" ");
     const decimalBytes = [...bytes].join(" ");
     const asciiPreview = bytesToPrintableAscii(bytes);
+    const asciiDecodedOutput = DATA_TOOLS_UTF8_DECODER.decode(bytes);
     const base64Value = bytesToBase64(bytes);
     const entropy = calculateShannonEntropy(bytes);
     const entropyLabel = getEntropyLabel(entropy);
@@ -1634,6 +1795,13 @@ function runDataToolsConversion() {
       `Byte Length: ${bytes.length}`;
     document.getElementById("data-tools-mime-type").textContent =
       `MIME Type: ${inferMimeType(bytes)}`;
+    // ASCII input has already been scanned as raw text; skip duplicate decoded scan.
+    renderDataTypeGuesses(
+      deriveDataTypeGuesses(
+        inputEl.value,
+        formatEl.value === "ascii" ? "" : asciiDecodedOutput,
+      ),
+    );
     document.getElementById("data-tools-entropy").textContent =
       `Shannon Entropy: ${entropy.toFixed(2)} (${entropyLabel})`;
     errorEl.textContent = "";
@@ -2281,6 +2449,7 @@ const convertContextButtons = {
   base64: getCachedElement("convert-context-base64"),
   decimal: getCachedElement("convert-context-decimal"),
   ascii: getCachedElement("convert-context-ascii"),
+  deriveGuess: getCachedElement("convert-context-derive-guess"),
   loadCursorAscii: getCachedElement("convert-context-load-cursor-ascii"),
   loadPayload: getCachedElement("convert-context-load-payload"),
   copyHex: getCachedElement("convert-context-copy-hex"),
@@ -2896,6 +3065,12 @@ function showConvertContextMenu(
   convertContextButtons.loadPayload.style.display = hasPayloadToExport
     ? "block"
     : "none";
+  const hasDeriveGuessInput = Boolean(
+    (sourceText || "").trim() || getTrimmedSelectionText(),
+  );
+  convertContextButtons.deriveGuess.style.display = hasDeriveGuessInput
+    ? "block"
+    : "none";
   const cursorByteIndex = Number.parseInt(
     target?.dataset?.byteIndex ?? "-1",
     10,
@@ -2989,7 +3164,10 @@ function showConvertContextMenu(
   const hasClipboardActions = hasCopyActions || showPaste;
   const hasGeneralActions = hasClipboardActions;
   const hasDataTypeActions =
-    formats.length > 0 || hasPayloadToExport || hasCursorAsciiValue;
+    formats.length > 0 ||
+    hasPayloadToExport ||
+    hasCursorAsciiValue ||
+    hasDeriveGuessInput;
   const hasFilterActions = Object.values(filterQueries).some(Boolean);
   const hasContextTextKeystoreActions =
     showCopySelection || Boolean(sourceText);
@@ -3099,6 +3277,23 @@ function loadContextValueIntoDataTools(format) {
   runDataToolsConversion();
   hideConvertContextMenu();
   writeLogEntry(`Context conversion loaded format=${format}`);
+}
+
+function deriveContextSelectionGuessFromContextMenu() {
+  const selectedText =
+    getTrimmedSelectionText() || (activeContextConversionText || "").trim();
+  hideConvertContextMenu();
+  if (!selectedText) {
+    statusUpdate("Status: No selected/context text available to derive guess");
+    return;
+  }
+  const inputEl = document.getElementById("data-tools-input");
+  const formatEl = document.getElementById("data-tools-format");
+  inputEl.value = selectedText;
+  formatEl.value = "ascii";
+  showDataTools();
+  runDataToolsConversion();
+  writeLogEntry("Derived data type guess from selected/context data");
 }
 
 function loadRawPayloadIntoDataToolsFromContextMenu() {
@@ -3939,6 +4134,9 @@ convertContextButtons.decimal.addEventListener("click", () =>
 convertContextButtons.ascii.addEventListener("click", () =>
   loadContextValueIntoDataTools("ascii"),
 );
+convertContextButtons.deriveGuess.addEventListener("click", () => {
+  deriveContextSelectionGuessFromContextMenu();
+});
 convertContextButtons.loadPayload.addEventListener("click", () => {
   loadRawPayloadIntoDataToolsFromContextMenu();
 });

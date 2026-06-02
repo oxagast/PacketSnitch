@@ -788,6 +788,11 @@ strong {
   border: 1px solid var(--color-3);
 }
 
+.data-tools-guess-item {
+  margin-top: 4px;
+  padding-left: 8px;
+}
+
 .data-tools-proto-section {
   margin-top: 10px;
 }
