@@ -1540,8 +1540,90 @@ const DATA_TYPE_GUESS_JWT_RE =
 const DATA_TYPE_GUESS_URL_RE =
   /\b(?:(?:https?|ftp|file|ws|wss):\/\/|mailto:)[^\s<>"']+/i;
 const DATA_TYPE_GUESS_URI_RE = /\b[a-z][a-z0-9+.-]{1,31}:[^\s<>"']+/i;
-const DATA_TYPE_GUESS_FILENAME_RE =
-  /(?:^|[\s"'([{])(?:[A-Za-z]:[\\/]|\.{0,2}[\\/])?(?:[\w @()+,\-]+[\\/])*[\w @()+,\-]+\.(?:txt|log|cfg|conf|ini|json|xml|html?|js|jsx|mjs|cjs|ts|tsx|css|scss|less|py|rb|php|pl|sh|bash|zsh|fish|ps1|sql|c|cc|cpp|h|hpp|java|go|rs|swift|kt|m|mm|cs|yaml|yml|toml|md|pdf|docx?|xlsx?|pptx?|csv|tsv|zip|tar|gz|bz2|xz|7z|rar|png|jpe?g|gif|svg|pcapng?|pcap|bin)(?=$|[\s"')\]}:,;.!?])/i;
+const DATA_TYPE_GUESS_FILENAME_EXTENSIONS = [
+  "txt",
+  "log",
+  "cfg",
+  "conf",
+  "ini",
+  "json",
+  "xml",
+  "htm",
+  "html",
+  "js",
+  "jsx",
+  "mjs",
+  "cjs",
+  "ts",
+  "tsx",
+  "css",
+  "scss",
+  "less",
+  "py",
+  "rb",
+  "php",
+  "pl",
+  "sh",
+  "bash",
+  "zsh",
+  "fish",
+  "ps1",
+  "sql",
+  "c",
+  "cc",
+  "cpp",
+  "h",
+  "hpp",
+  "java",
+  "go",
+  "rs",
+  "swift",
+  "kt",
+  "m",
+  "mm",
+  "cs",
+  "yaml",
+  "yml",
+  "toml",
+  "md",
+  "pdf",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "ppt",
+  "pptx",
+  "csv",
+  "tsv",
+  "zip",
+  "tar",
+  "gz",
+  "bz2",
+  "xz",
+  "7z",
+  "rar",
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "svg",
+  "pcap",
+  "pcapng",
+  "bin",
+];
+const DATA_TYPE_GUESS_FILENAME_RE = new RegExp(
+  String.raw`(?:^|[\s"'([{])(?:[A-Za-z]:[\\/]|\.{0,2}[\\/])?(?:[\w @()+,\-]+[\\/])*[\w @()+,\-]+\.(?:${DATA_TYPE_GUESS_FILENAME_EXTENSIONS.map((extension) =>
+    extension.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+  ).join("|")})(?=$|[\s"')\]}:,;.!?])`,
+  "i",
+);
+const DATA_TYPE_GUESS_CSS_PATTERN_MAX_CHARS = 240;
+const DATA_TYPE_GUESS_CSS_BLOCK_RE = new RegExp(
+  String.raw`[#.@]?[A-Za-z][\w-]*(?:\s*[>+~]\s*[#.@]?[A-Za-z][\w-]*)*\s*\{[\s\S]{0,${DATA_TYPE_GUESS_CSS_PATTERN_MAX_CHARS}}:[\s\S]{0,${DATA_TYPE_GUESS_CSS_PATTERN_MAX_CHARS}};[\s\S]{0,${DATA_TYPE_GUESS_CSS_PATTERN_MAX_CHARS}}\}`,
+);
+const DATA_TOOLS_LANGUAGE_MIN_LETTERS = 24;
+const DATA_TOOLS_LANGUAGE_MIN_STOPWORD_MATCHES = 3;
+const DATA_TOOLS_LANGUAGE_HIGH_CONFIDENCE_STOPWORD_MATCHES = 6;
 const DATA_TOOLS_LANGUAGE_STOPWORDS = {
   English: [
     "the",
@@ -1617,16 +1699,14 @@ function looksLikeXmlSource(text) {
   return (
     /^<\?xml\b/i.test(text) ||
     /^<svg\b/i.test(text) ||
-    (/^<[\w:-]+(?:\s+[^>]+)?>/.test(text) && /<\/[\w:-]+>\s*$/.test(text))
+    (/^<[\w:-]+(?:\s+[^>]*)?>/.test(text) && /<\/[\w:-]+>\s*$/.test(text))
   );
 }
 
 function looksLikeCssSource(text) {
   return (
     /@(?:media|import|supports|font-face)\b/i.test(text) ||
-    /[#.@]?[A-Za-z][\w-]*(?:\s*[>+~]\s*[#.@]?[A-Za-z][\w-]*)*\s*\{[\s\S]{0,240}:[\s\S]{0,240};[\s\S]{0,240}\}/.test(
-      text,
-    ) ||
+    DATA_TYPE_GUESS_CSS_BLOCK_RE.test(text) ||
     /--[\w-]+\s*:/.test(text)
   );
 }
@@ -1792,12 +1872,13 @@ function guessReadableTextLanguage(text, bytes = null) {
     return { label: "Greek", confidence: "High" };
   }
   if (/[\u4e00-\u9fff]/.test(normalized)) {
-    return { label: "Chinese", confidence: /[\u3040-\u30ff]/.test(normalized) ? "Low" : "Medium" };
+    const hasJapaneseKana = /[\u3040-\u30ff]/.test(normalized);
+    return { label: "Chinese", confidence: hasJapaneseKana ? "Low" : "Medium" };
   }
 
   const letterTokens = normalized.toLowerCase().match(/\p{L}+/gu) || [];
   const joinedLetters = letterTokens.join("");
-  if (joinedLetters.length < 24) return null;
+  if (joinedLetters.length < DATA_TOOLS_LANGUAGE_MIN_LETTERS) return null;
 
   const cyrillicCount = (joinedLetters.match(/[\u0400-\u04ff]/g) || []).length;
   if (cyrillicCount / joinedLetters.length >= 0.4) {
@@ -1821,10 +1902,13 @@ function guessReadableTextLanguage(text, bytes = null) {
     }
   });
 
-  if (bestScore >= 3) {
+  if (bestScore >= DATA_TOOLS_LANGUAGE_MIN_STOPWORD_MATCHES) {
     return {
       label: bestLabel,
-      confidence: bestScore >= 6 ? "High" : "Medium",
+      confidence:
+        bestScore >= DATA_TOOLS_LANGUAGE_HIGH_CONFIDENCE_STOPWORD_MATCHES
+          ? "High"
+          : "Medium",
     };
   }
 
