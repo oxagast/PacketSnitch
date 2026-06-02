@@ -4898,6 +4898,13 @@ document.getElementById("data-tools-format").addEventListener("change", () => {
 document.getElementById("data-tools-input").addEventListener("scroll", () => {
   syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
 });
+// Prevent drag-and-drop from editing the Conv input; keyboard editing remains unaffected.
+document.getElementById("data-tools-input").addEventListener("dragstart", (event) => {
+  event.preventDefault();
+});
+document.getElementById("data-tools-input").addEventListener("drop", (event) => {
+  event.preventDefault();
+});
 document.getElementById("data-tools-hex-output").addEventListener("scroll", () => {
   syncDataToolsHighlightScroll(
     "data-tools-hex-output",
@@ -6036,10 +6043,6 @@ initializeContextMenu({
 
 filterInputEl.addEventListener("input", syncFilterHighlight);
 filterInputEl.addEventListener("scroll", syncFilterHighlightScroll);
-filterInputEl.addEventListener("dragstart", (e) => e.preventDefault());
-filterInputEl.addEventListener("drop", (e) => e.preventDefault());
-hostFilterEl.addEventListener("dragstart", (e) => e.preventDefault());
-hostFilterEl.addEventListener("drop", (e) => e.preventDefault());
 
 filterHistorySelectEl.addEventListener("change", () => {
   const selectedQuery = filterHistorySelectEl.value;
