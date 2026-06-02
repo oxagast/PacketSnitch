@@ -2117,7 +2117,8 @@ function setExpandedConvertedOutput(expandedOutputId) {
 function bindConvertedOutputExpandHandlers() {
   DATA_TOOLS_CONVERTED_OUTPUT_IDS.forEach((outputId) => {
     const outputEl = document.getElementById(outputId);
-    if (!outputEl) return;
+    if (!outputEl || outputEl.dataset.expandBinding === "1") return;
+    outputEl.dataset.expandBinding = "1";
     outputEl.addEventListener("click", () => {
       if (outputEl.classList.contains("data-tools-output-expanded")) {
         setExpandedConvertedOutput(null);
