@@ -505,6 +505,7 @@ strong {
   min-height: 0;
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .crypt-grid {
@@ -704,9 +705,13 @@ strong {
 
 .data-tools-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 0.6fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr);
   gap: 10px;
   color: var(--color-5);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .data-tools-section {
@@ -714,6 +719,8 @@ strong {
   background-color: var(--color-7);
   padding: 10px;
   min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .data-tools-title {
@@ -732,6 +739,9 @@ strong {
 #data-tools-ascii-output,
 #data-tools-base64-output {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: block;
   box-sizing: border-box;
   background-color: var(--data-tools-frame-bg);
   border: 1px solid var(--color-3);
@@ -745,6 +755,9 @@ strong {
 
 .data-tools-highlight-wrap {
   position: relative;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .data-tools-highlight-layer {
