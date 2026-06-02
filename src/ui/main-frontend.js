@@ -1534,6 +1534,7 @@ function getEntropyLabel(entropy) {
 const DATA_TYPE_GUESS_SCAN_CHUNK_SIZE = 2048;
 const DATA_TYPE_GUESS_SCAN_OVERLAP = 256;
 const DATA_TYPE_GUESS_TOKEN_RE = /[A-Za-z0-9+/_=:$.-]{8,}/g;
+const DATA_TOOLS_UTF8_DECODER = new TextDecoder("utf-8", { fatal: false });
 const DATA_TYPE_GUESS_UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATA_TYPE_GUESS_JWT_RE =
@@ -1600,7 +1601,9 @@ function detectDataTypeGuessFromToken(token, candidateScores) {
         );
         break;
       default:
-        addDataTypeGuessCandidate(candidateScores, "Hexadecimal Data", 55);
+        if (cleanHex.length >= 8) {
+          addDataTypeGuessCandidate(candidateScores, "Hexadecimal Data", 55);
+        }
         break;
     }
   }
@@ -1634,8 +1637,6 @@ function scanAsciiTextForDataTypeGuesses(inputText, candidateScores) {
   );
   for (let offset = 0; offset < sourceText.length; offset += stepSize) {
     const chunk = sourceText.slice(offset, offset + DATA_TYPE_GUESS_SCAN_CHUNK_SIZE);
-    if (!chunk) break;
-
     if (/-----BEGIN PGP/.test(chunk)) {
       addDataTypeGuessCandidate(
         candidateScores,
@@ -1681,10 +1682,10 @@ function renderDataTypeGuesses(guesses) {
     guessesEl.appendChild(noneEl);
     return;
   }
-  guesses.forEach((guess, guessIndex) => {
+  guesses.forEach((guess, idx) => {
     const rowEl = document.createElement("div");
     rowEl.className = "data-tools-guess-item";
-    rowEl.textContent = `${guessIndex + 1}. ${guess.label} (${guess.confidence})`;
+    rowEl.textContent = `${idx + 1}. ${guess.label} (${guess.confidence})`;
     guessesEl.appendChild(rowEl);
   });
 }
@@ -1778,9 +1779,7 @@ function runDataToolsConversion() {
       .join(" ");
     const decimalBytes = [...bytes].join(" ");
     const asciiPreview = bytesToPrintableAscii(bytes);
-    const asciiDecodedOutput = new TextDecoder("utf-8", { fatal: false }).decode(
-      bytes,
-    );
+    const asciiDecodedOutput = DATA_TOOLS_UTF8_DECODER.decode(bytes);
     const base64Value = bytesToBase64(bytes);
     const entropy = calculateShannonEntropy(bytes);
     const entropyLabel = getEntropyLabel(entropy);
@@ -1800,6 +1799,7 @@ function runDataToolsConversion() {
       `Byte Length: ${bytes.length}`;
     document.getElementById("data-tools-mime-type").textContent =
       `MIME Type: ${inferMimeType(bytes)}`;
+    // ASCII input has already been scanned as raw text; skip duplicate decoded scan.
     renderDataTypeGuesses(
       deriveDataTypeGuesses(
         inputEl.value,
@@ -3070,7 +3070,7 @@ function showConvertContextMenu(
     ? "block"
     : "none";
   const hasDeriveGuessInput = Boolean(
-    (sourceText && sourceText.trim()) || getTrimmedSelectionText(),
+    (sourceText || "").trim() || getTrimmedSelectionText(),
   );
   convertContextButtons.deriveGuess.style.display = hasDeriveGuessInput
     ? "block"
@@ -3284,9 +3284,10 @@ function loadContextValueIntoDataTools(format) {
 }
 
 function deriveContextSelectionGuessFromContextMenu() {
-  const selectedText = getTrimmedSelectionText() || activeContextConversionText;
+  const selectedText =
+    getTrimmedSelectionText() || (activeContextConversionText || "").trim();
   hideConvertContextMenu();
-  if (!selectedText || !selectedText.trim()) {
+  if (!selectedText) {
     statusUpdate("Status: No selected/context text available to derive guess");
     return;
   }
@@ -3296,7 +3297,7 @@ function deriveContextSelectionGuessFromContextMenu() {
   formatEl.value = "ascii";
   showDataTools();
   runDataToolsConversion();
-  writeLogEntry("Context derive data type guess from selected/context data");
+  writeLogEntry("Derived data type guess from selected/context data");
 }
 
 function loadRawPayloadIntoDataToolsFromContextMenu() {
