@@ -2502,10 +2502,6 @@ function bindConvertedOutputExpandHandlers() {
     if (!outputEl || outputEl.dataset.expandBinding === "1") return;
     outputEl.dataset.expandBinding = "1";
     outputEl.addEventListener("click", () => {
-      if (outputEl.classList.contains("data-tools-output-expanded")) {
-        setExpandedConvertedOutput(null);
-        return;
-      }
       setExpandedConvertedOutput(outputId);
     });
   });
