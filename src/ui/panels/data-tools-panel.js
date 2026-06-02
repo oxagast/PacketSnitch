@@ -226,6 +226,107 @@ function getEntropyLabel(entropy) {
   return "Low";
 }
 
+// ── Data type guesser ─────────────────────────────────────────────────────────
+
+function guessDataType(rawInput) {
+  const trimmed = rawInput.trim();
+  if (!trimmed) return [];
+
+  const candidates = [];
+
+  // PGP ASCII armor
+  if (/^-----BEGIN PGP/.test(trimmed)) {
+    candidates.push({ label: "PGP ASCII Armored Data", score: 100 });
+  }
+
+  // bcrypt hash
+  if (/^\$2[aby]\$\d{2}\$[A-Za-z0-9./]{53}$/.test(trimmed)) {
+    candidates.push({ label: "bcrypt Hash", score: 99 });
+  }
+
+  // UUID / GUID
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      trimmed,
+    )
+  ) {
+    candidates.push({ label: "UUID / GUID", score: 98 });
+  }
+
+  // JWT token (three base64url segments separated by dots)
+  if (/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(trimmed)) {
+    candidates.push({ label: "JWT Token", score: 95 });
+  }
+
+  // Hex hash / hex data (strip optional 0x prefix and separators)
+  const cleanHex = trimmed
+    .toLowerCase()
+    .replace(/^0x/i, "")
+    .replace(/[\s:]/g, "");
+  if (/^[0-9a-f]+$/.test(cleanHex)) {
+    switch (cleanHex.length) {
+      case 32:
+        candidates.push({ label: "MD5 / NTLM Hash", score: 90 });
+        break;
+      case 40:
+        candidates.push({ label: "SHA-1 / RIPEMD-160 Hash", score: 90 });
+        break;
+      case 56:
+        candidates.push({ label: "SHA-224 / SHA3-224 Hash", score: 90 });
+        break;
+      case 64:
+        candidates.push({ label: "SHA-256 / SHA3-256 Hash", score: 90 });
+        break;
+      case 96:
+        candidates.push({ label: "SHA-384 / SHA3-384 Hash", score: 90 });
+        break;
+      case 128:
+        candidates.push({ label: "SHA-512 / Whirlpool Hash", score: 90 });
+        break;
+      default:
+        if (cleanHex.length >= 8) {
+          candidates.push({ label: "Hexadecimal Data", score: 55 });
+        }
+    }
+  }
+
+  // Base64 / Base64URL detection
+  const noWs = trimmed.replace(/\s+/g, "");
+  if (noWs.length >= 4 && /^[A-Za-z0-9+/]+=*$/.test(noWs)) {
+    const score = noWs.length % 4 === 0 ? 80 : 50;
+    candidates.push({ label: "Base64 Encoded Data", score });
+  } else if (noWs.length >= 8 && /^[A-Za-z0-9_-]+$/.test(noWs)) {
+    candidates.push({ label: "Base64URL Encoded Data", score: 45 });
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates.slice(0, 3).map((c) => ({
+    label: c.label,
+    confidence: c.score >= 85 ? "High" : c.score >= 60 ? "Medium" : "Low",
+  }));
+}
+
+function renderDataTypeGuesses(guesses) {
+  const el = document.getElementById("data-tools-data-type-guesses");
+  if (!el) return;
+  el.innerHTML = "";
+  const header = document.createElement("span");
+  header.textContent = "Data Type Guesses:";
+  el.appendChild(header);
+  if (!guesses || guesses.length === 0) {
+    const none = document.createElement("span");
+    none.textContent = " None";
+    el.appendChild(none);
+    return;
+  }
+  guesses.forEach((g, i) => {
+    const row = document.createElement("div");
+    row.className = "data-tools-guess-item";
+    row.textContent = `${i + 1}. ${g.label} (${g.confidence})`;
+    el.appendChild(row);
+  });
+}
+
 // ── Hash outputs ──────────────────────────────────────────────────────────────
 
 function resetHashOutputs() {
@@ -346,6 +447,7 @@ function resetDataToolsOutputs() {
     "Byte Length: 0";
   document.getElementById("data-tools-mime-type").textContent =
     "MIME Type: Unknown";
+  renderDataTypeGuesses([]);
   document.getElementById("data-tools-entropy").textContent =
     "Shannon Entropy: 0.00 (Low)";
   resetHashOutputs();
@@ -386,6 +488,7 @@ function runDataToolsConversion() {
       `Byte Length: ${bytes.length}`;
     document.getElementById("data-tools-mime-type").textContent =
       `MIME Type: ${inferMimeType(bytes)}`;
+    renderDataTypeGuesses(guessDataType(inputEl.value));
     document.getElementById("data-tools-entropy").textContent =
       `Shannon Entropy: ${entropy.toFixed(2)} (${entropyLabel})`;
     errorEl.textContent = "";
