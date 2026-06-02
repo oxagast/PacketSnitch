@@ -277,8 +277,9 @@ document
     if (file) {
       startTime = performance.now();
       statusUpdate("Processing file: " + file.name);
+      const fileSizeKb = (file.size / 1024).toFixed(2);
       writeLogEntry(
-        `User selected JSON file name=${file.name} size_bytes=${file.size}`,
+        `User selected JSON file name=${file.name} size=${fileSizeKb}kb`,
       );
       processFile(file);
       isFileLoaded = true;
@@ -300,7 +301,7 @@ document
               const fileSizeKb = (fileSize / 1024).toFixed(2);
               document.getElementById("pcap-size").textContent =
                 `PCAP size: ${fileSizeKb}kb`;
-              writeLogEntry(`Capture size kb=${fileSizeKb}`);
+              writeLogEntry(`Capture size=${fileSizeKb}kb`);
             })
             .catch((error) => {
               // Handle any errors (e.g., file not found)
