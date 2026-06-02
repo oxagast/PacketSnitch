@@ -736,6 +736,59 @@ strong {
   padding: 6px;
 }
 
+.data-tools-highlight-wrap {
+  position: relative;
+}
+
+.data-tools-highlight-layer {
+  position: absolute;
+  inset: 0;
+  margin: 6px 0 8px;
+  padding: 6px;
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  line-height: 1.3;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+#data-tools-input,
+#data-tools-hex-output {
+  position: relative;
+  background-color: transparent;
+  color: transparent;
+  caret-color: var(--color-5);
+}
+
+#data-tools-input::selection,
+#data-tools-hex-output::selection {
+  color: transparent;
+}
+
+.data-tools-hex-alpha {
+  color: #84f7c0;
+}
+
+.data-tools-hex-break {
+  color: #ffcf6e;
+}
+
+.data-tools-hex-binary {
+  color: #8ab7ff;
+}
+
+.data-tools-hex-separator {
+  color: #6e7681;
+}
+
+.data-tools-sync-highlight {
+  background-color: rgba(255, 128, 0, 0.25);
+}
+
 #data-tools-hex-output,
 #data-tools-binary-output,
 #data-tools-decimal-output,
