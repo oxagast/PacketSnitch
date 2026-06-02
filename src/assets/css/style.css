@@ -731,6 +731,7 @@ strong {
 }
 
 #data-tools-format,
+#data-tools-history-select,
 #data-tools-input,
 #data-tools-hex-output,
 #data-tools-binary-output,
@@ -751,6 +752,15 @@ strong {
   margin-top: 6px;
   margin-bottom: 8px;
   padding: 6px;
+}
+
+#data-tools-history {
+  width: 100%;
+}
+
+#data-tools-history-select:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .data-tools-highlight-wrap {
