@@ -242,9 +242,17 @@
                       placeholder="Paste base64, binary, hex, ascii, or decimal byte values here..."
                     ></textarea>
                   </div>
+                  <div id="data-tools-history">
+                     <select
+                       id="data-tools-history-select"
+                       aria-label="Previous Conv inputs"
+                     >
+                       <option value="" selected>No previous inputs</option>
+                     </select>
+                  </div>
                   <div class="data-tools-actions">
-                    <button id="data-tools-convert-btn">Convert</button>
-                    <button id="data-tools-clear-btn">Clear</button>
+                     <button id="data-tools-convert-btn">Convert</button>
+                     <button id="data-tools-clear-btn">Clear</button>
                   </div>
                   <div id="data-tools-error" role="alert"></div>
                 </div>
