@@ -228,6 +228,13 @@ function getEntropyLabel(entropy) {
 
 // ── Data type guesser ─────────────────────────────────────────────────────────
 
+const GUESS_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const GUESS_JWT_RE =
+  /^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/;
+const BASE64_VALID_PADDING_SCORE = 80;
+const BASE64_MISSING_PADDING_SCORE = 50;
+
 function guessDataType(rawInput) {
   const trimmed = rawInput.trim();
   if (!trimmed) return [];
@@ -245,21 +252,13 @@ function guessDataType(rawInput) {
   }
 
   // UUID / GUID
-  if (
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      trimmed,
-    )
-  ) {
+  if (GUESS_UUID_RE.test(trimmed)) {
     candidates.push({ label: "UUID / GUID", score: 98 });
   }
 
   // JWT token — three base64url segments each at least 10 chars (prevents
   // false positives like 'abc.def.ghi')
-  if (
-    /^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/.test(
-      trimmed,
-    )
-  ) {
+  if (GUESS_JWT_RE.test(trimmed)) {
     candidates.push({ label: "JWT Token", score: 95 });
   }
 
@@ -301,21 +300,18 @@ function guessDataType(rawInput) {
   // positives (e.g. a hex string is valid base64 by charset alone).
   const noWs = trimmed.replace(/\s+/g, "");
   const alreadySpecific =
-    isLikelyHex ||
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      trimmed,
-    ) ||
-    /^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/.test(
-      trimmed,
-    );
+    isLikelyHex || GUESS_UUID_RE.test(trimmed) || GUESS_JWT_RE.test(trimmed);
   if (noWs.length >= 4 && !alreadySpecific) {
     const hasUrlChars = /[-_]/.test(noWs);
     if (hasUrlChars && /^[A-Za-z0-9_-]+$/.test(noWs)) {
       // Unambiguously base64url (contains - or _)
-      candidates.push({ label: "Base64URL Encoded Data", score: 80 });
+      candidates.push({ label: "Base64URL Encoded Data", score: BASE64_VALID_PADDING_SCORE });
     } else if (/^[A-Za-z0-9+/]+=*$/.test(noWs)) {
-      // Standard base64 (may or may not contain + or /)
-      const score = noWs.length % 4 === 0 ? 80 : 50;
+      // Standard base64 — properly padded strings are a more confident match
+      const score =
+        noWs.length % 4 === 0
+          ? BASE64_VALID_PADDING_SCORE
+          : BASE64_MISSING_PADDING_SCORE;
       candidates.push({ label: "Base64 Encoded Data", score });
     }
   }
