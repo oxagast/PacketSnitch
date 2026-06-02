@@ -1611,34 +1611,20 @@ const DATA_TYPE_GUESS_FILENAME_EXTENSIONS = [
   "pcapng",
   "bin",
 ];
-const DATA_TYPE_GUESS_FILENAME_RE = new RegExp(
-  String.raw`(?:^|[\s"'([{])(?:[A-Za-z]:[\\/]|\.{0,2}[\\/])?(?:[\w @()+,\-]+[\\/])*[\w @()+,\-]+\.(?:${DATA_TYPE_GUESS_FILENAME_EXTENSIONS.map((extension) =>
+const DATA_TYPE_GUESS_FILENAME_EXTENSION_PATTERN =
+  DATA_TYPE_GUESS_FILENAME_EXTENSIONS.map((extension) =>
     extension.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-  ).join("|")})(?=$|[\s"')\]}:,;.!?])`,
+  ).join("|");
+const DATA_TYPE_GUESS_FILENAME_RE = new RegExp(
+  String.raw`(?:^|[\s"'([{])(?:[A-Za-z]:[\\/]|\.{0,2}[\\/])?(?:[\w @()+,\-]+[\\/])*[\w @()+,\-]+\.(?:${DATA_TYPE_GUESS_FILENAME_EXTENSION_PATTERN})(?=$|[\s"')\]}:,;.!?])`,
   "i",
 );
-const DATA_TYPE_GUESS_CSS_PATTERN_MAX_CHARS = 240;
-const DATA_TYPE_GUESS_CSS_BLOCK_RE = new RegExp(
-  String.raw`[#.@]?[A-Za-z][\w-]*(?:\s*[>+~]\s*[#.@]?[A-Za-z][\w-]*)*\s*\{[\s\S]{0,${DATA_TYPE_GUESS_CSS_PATTERN_MAX_CHARS}}:[\s\S]{0,${DATA_TYPE_GUESS_CSS_PATTERN_MAX_CHARS}};[\s\S]{0,${DATA_TYPE_GUESS_CSS_PATTERN_MAX_CHARS}}\}`,
-);
+const DATA_TYPE_GUESS_CSS_BLOCK_MAX_CHARS = 600;
 const DATA_TOOLS_LANGUAGE_MIN_LETTERS = 24;
 const DATA_TOOLS_LANGUAGE_MIN_STOPWORD_MATCHES = 3;
 const DATA_TOOLS_LANGUAGE_HIGH_CONFIDENCE_STOPWORD_MATCHES = 6;
 const DATA_TOOLS_LANGUAGE_STOPWORDS = {
-  English: [
-    "the",
-    "and",
-    "with",
-    "that",
-    "this",
-    "from",
-    "have",
-    "http",
-    "host",
-    "user",
-    "content",
-    "request",
-  ],
+  English: ["the", "and", "with", "that", "this", "from", "have"],
   Spanish: ["que", "para", "una", "por", "como", "los", "las", "del", "con"],
   French: ["une", "pour", "avec", "dans", "des", "est", "pas", "sur", "les"],
   German: ["und", "der", "die", "das", "nicht", "mit", "ist", "ein", "den"],
@@ -1704,10 +1690,23 @@ function looksLikeXmlSource(text) {
 }
 
 function looksLikeCssSource(text) {
+  if (/@(?:media|import|supports|font-face)\b/i.test(text) || /--[\w-]+\s*:/.test(text)) {
+    return true;
+  }
+  const blockStart = text.indexOf("{");
+  const blockEnd = blockStart >= 0 ? text.indexOf("}", blockStart + 1) : -1;
+  if (
+    blockStart < 0 ||
+    blockEnd < 0 ||
+    blockEnd - blockStart > DATA_TYPE_GUESS_CSS_BLOCK_MAX_CHARS
+  ) {
+    return false;
+  }
+  const selector = text.slice(0, blockStart).trim();
+  const blockBody = text.slice(blockStart + 1, blockEnd);
   return (
-    /@(?:media|import|supports|font-face)\b/i.test(text) ||
-    DATA_TYPE_GUESS_CSS_BLOCK_RE.test(text) ||
-    /--[\w-]+\s*:/.test(text)
+    /[#.@]?[A-Za-z][\w-]*(?:\s*[>+~]\s*[#.@]?[A-Za-z][\w-]*)*$/.test(selector) &&
+    /(?:^|[;\s])[\w-]+\s*:\s*[^;{}]+;?/.test(blockBody)
   );
 }
 
@@ -1774,6 +1773,24 @@ function looksLikeYamlSource(text) {
   );
 }
 
+function looksLikeAnySourceCode(text) {
+  return (
+    looksLikeHtmlSource(text) ||
+    looksLikeXmlSource(text) ||
+    looksLikeCssSource(text) ||
+    looksLikeJavaScriptSource(text) ||
+    looksLikePythonSource(text) ||
+    looksLikeShellSource(text) ||
+    looksLikePowerShellSource(text) ||
+    looksLikeSqlSource(text) ||
+    looksLikePhpSource(text) ||
+    looksLikeGoSource(text) ||
+    looksLikeRustSource(text) ||
+    looksLikeJavaOrCSharpSource(text) ||
+    looksLikeYamlSource(text)
+  );
+}
+
 function addStructuredTextTypeGuesses(inputText, candidateScores) {
   const text = String(inputText || "");
   const trimmed = text.trim();
@@ -1822,11 +1839,7 @@ function addStructuredTextTypeGuesses(inputText, candidateScores) {
     addDataTypeGuessCandidate(candidateScores, "Java / C# Source Code", 82);
   }
   if (
-    !looksLikeHtmlSource(trimmed) &&
-    !looksLikeCssSource(trimmed) &&
-    !looksLikeJavaScriptSource(trimmed) &&
-    !looksLikeXmlSource(trimmed) &&
-    !looksLikeYamlSource(trimmed) &&
+    !looksLikeAnySourceCode(trimmed) &&
     /[{}();<>]/.test(trimmed) &&
     /\b(?:if|for|while|return|class|function|const|let|var|def|fn|SELECT|echo)\b/.test(
       trimmed,
@@ -1839,20 +1852,7 @@ function addStructuredTextTypeGuesses(inputText, candidateScores) {
 function guessReadableTextLanguage(text, bytes = null) {
   const normalized = String(text || "").trim();
   if (!isLikelyReadableText(normalized, bytes)) return null;
-  if (
-    looksLikeHtmlSource(normalized) ||
-    looksLikeXmlSource(normalized) ||
-    looksLikeCssSource(normalized) ||
-    looksLikeJavaScriptSource(normalized) ||
-    looksLikePythonSource(normalized) ||
-    looksLikeShellSource(normalized) ||
-    looksLikePowerShellSource(normalized) ||
-    looksLikeSqlSource(normalized) ||
-    looksLikePhpSource(normalized) ||
-    looksLikeGoSource(normalized) ||
-    looksLikeRustSource(normalized) ||
-    looksLikeJavaOrCSharpSource(normalized)
-  ) {
+  if (looksLikeAnySourceCode(normalized)) {
     return null;
   }
 
