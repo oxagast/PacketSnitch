@@ -1151,7 +1151,7 @@ function restoreSessionState(sessionState) {
               ? entry.format.trim().toLowerCase()
               : "hex",
           input:
-            typeof entry.input === "string" ? entry.input : String(entry.input || ""),
+            typeof entry.input === "string" ? entry.input : String(entry.input ?? ""),
         }))
         .filter((entry) => entry.input.trim() !== "")
         .slice(0, DATA_TOOLS_INPUT_HISTORY_LIMIT)
