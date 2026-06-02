@@ -93,6 +93,7 @@ const NOTE_FALLBACK_COLORS = [
   "#e91e63",
   "#ffc107",
 ];
+const DEFAULT_DATA_TOOLS_FORMAT = "hex";
 const DATA_TOOLS_CONVERTED_OUTPUT_IDS = [
   "data-tools-hex-output",
   "data-tools-binary-output",
@@ -104,21 +105,27 @@ const DATA_TOOLS_CONVERTED_OUTPUT_IDS = [
 const DATA_TOOLS_OUTPUT_FORMAT_DETAILS = {
   hex: {
     labelSelector: ".data-tools-output-label-hex",
+    outputSelector: "#data-tools-hex-output",
   },
   binary: {
     labelSelector: ".data-tools-output-label-binary",
+    outputSelector: "#data-tools-binary-output",
   },
   decimal: {
     labelSelector: ".data-tools-output-label-decimal",
+    outputSelector: "#data-tools-decimal-output",
   },
   "decimal-integer": {
     labelSelector: ".data-tools-output-label-decimal-integer",
+    outputSelector: "#data-tools-decimal-integer-output",
   },
   ascii: {
     labelSelector: ".data-tools-output-label-ascii",
+    outputSelector: "#data-tools-ascii-output",
   },
   base64: {
     labelSelector: ".data-tools-output-label-base64",
+    outputSelector: "#data-tools-base64-output",
   },
 };
 
@@ -2530,12 +2537,14 @@ function bindConvertedOutputExpandHandlers() {
 
 function updateDataToolsConvertedOutputVisibility() {
   const formatEl = document.getElementById("data-tools-format");
-  const activeFormat = String(formatEl?.value || "hex");
+  const activeFormat = String(formatEl?.value || DEFAULT_DATA_TOOLS_FORMAT);
 
   Object.entries(DATA_TOOLS_OUTPUT_FORMAT_DETAILS).forEach(
     ([outputFormat, details]) => {
       const labelEl = document.querySelector(details.labelSelector);
-      const outputContainerEl = labelEl?.nextElementSibling;
+      const outputEl = document.querySelector(details.outputSelector);
+      const outputContainerEl =
+        outputEl?.closest(".data-tools-highlight-wrap") || outputEl;
       const shouldShow = outputFormat !== activeFormat;
 
       if (labelEl) labelEl.hidden = !shouldShow;
