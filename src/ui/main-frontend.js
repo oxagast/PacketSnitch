@@ -1635,13 +1635,13 @@ const DATA_TOOLS_LANGUAGE_STOPWORDS = {
 function decodeBytesForTextInspection(bytes) {
   if (!bytes || !bytes.length) return "";
   if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
-    return DATA_TOOLS_UTF8_DECODER.decode(bytes.subarray(3));
+    return DATA_TOOLS_UTF8_DECODER.decode(bytes);
   }
   if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
-    return DATA_TOOLS_UTF16LE_DECODER.decode(bytes.subarray(2));
+    return DATA_TOOLS_UTF16LE_DECODER.decode(bytes);
   }
   if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
-    return DATA_TOOLS_UTF16BE_DECODER.decode(bytes.subarray(2));
+    return DATA_TOOLS_UTF16BE_DECODER.decode(bytes);
   }
   return DATA_TOOLS_UTF8_DECODER.decode(bytes);
 }
@@ -1684,7 +1684,6 @@ function looksLikeHtmlSource(text) {
 function looksLikeXmlSource(text) {
   return (
     /^<\?xml\b/i.test(text) ||
-    /^<svg\b/i.test(text) ||
     (/^<[\w:-]+(?:\s+[^>]*)?>/.test(text) && /<\/[\w:-]+>\s*$/.test(text))
   );
 }
@@ -1705,7 +1704,7 @@ function looksLikeCssSource(text) {
   const selector = text.slice(0, blockStart).trim();
   const blockBody = text.slice(blockStart + 1, blockEnd);
   return (
-    /[#.@]?[A-Za-z][\w-]*(?:\s*[>+~]\s*[#.@]?[A-Za-z][\w-]*)*$/.test(selector) &&
+    /[#.]?[A-Za-z][\w-]*(?:\s*[>+~]\s*[#.]?[A-Za-z][\w-]*)*$/.test(selector) &&
     /(?:^|[;\s])[\w-]+\s*:\s*[^;{}]+;?/.test(blockBody)
   );
 }
