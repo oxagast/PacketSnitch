@@ -1145,15 +1145,20 @@ function restoreSessionState(sessionState) {
   const loadedDataToolsHistory = Array.isArray(sessionState.convInputHistory)
     ? sessionState.convInputHistory
         .filter((entry) => entry && typeof entry === "object")
-        .map((entry) => ({
-          format:
-            typeof entry.format === "string" && entry.format.trim()
-              ? entry.format.trim().toLowerCase()
-              : "hex",
-          input:
-            typeof entry.input === "string" ? entry.input : String(entry.input ?? ""),
-        }))
-        .filter((entry) => entry.input.trim() !== "")
+        .flatMap((entry) => {
+          const normalizedInput =
+            typeof entry.input === "string" ? entry.input : String(entry.input ?? "");
+          if (!normalizedInput.trim()) return [];
+          return [
+            {
+              format:
+                typeof entry.format === "string" && entry.format.trim()
+                  ? entry.format.trim().toLowerCase()
+                  : "hex",
+              input: normalizedInput,
+            },
+          ];
+        })
         .slice(0, DATA_TOOLS_INPUT_HISTORY_LIMIT)
     : [];
   dataToolsInputHistory.splice(
@@ -5062,7 +5067,6 @@ dataToolsHistorySelectEl.addEventListener("change", () => {
   updateDataToolsHexHighlights();
   syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
   runDataToolsConversion();
-  dataToolsHistorySelectEl.value = "";
 });
 document
   .getElementById("data-tools-proto-select")
