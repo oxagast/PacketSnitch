@@ -93,6 +93,7 @@ const NOTE_FALLBACK_COLORS = [
   "#e91e63",
   "#ffc107",
 ];
+const DEFAULT_DATA_TOOLS_FORMAT = "hex";
 const DATA_TOOLS_CONVERTED_OUTPUT_IDS = [
   "data-tools-hex-output",
   "data-tools-binary-output",
@@ -101,6 +102,32 @@ const DATA_TOOLS_CONVERTED_OUTPUT_IDS = [
   "data-tools-ascii-output",
   "data-tools-base64-output",
 ];
+const DATA_TOOLS_OUTPUT_FORMAT_DETAILS = {
+  hex: {
+    labelSelector: ".data-tools-output-label-hex",
+    outputSelector: "#data-tools-hex-output",
+  },
+  binary: {
+    labelSelector: ".data-tools-output-label-binary",
+    outputSelector: "#data-tools-binary-output",
+  },
+  decimal: {
+    labelSelector: ".data-tools-output-label-decimal",
+    outputSelector: "#data-tools-decimal-output",
+  },
+  "decimal-integer": {
+    labelSelector: ".data-tools-output-label-decimal-integer",
+    outputSelector: "#data-tools-decimal-integer-output",
+  },
+  ascii: {
+    labelSelector: ".data-tools-output-label-ascii",
+    outputSelector: "#data-tools-ascii-output",
+  },
+  base64: {
+    labelSelector: ".data-tools-output-label-base64",
+    outputSelector: "#data-tools-base64-output",
+  },
+};
 
 // Global variables for DOM elements and state
 let capturedPackets = {}; // Stores parsed packet data from JSON
@@ -2481,6 +2508,7 @@ function resetDataToolsOutputs() {
   clearProtoDecoderOutput();
   clearDataToolsSelectionState();
   setExpandedConvertedOutput(null);
+  updateDataToolsConvertedOutputVisibility();
 }
 
 function setExpandedConvertedOutput(expandedOutputId) {
@@ -2505,6 +2533,24 @@ function bindConvertedOutputExpandHandlers() {
       setExpandedConvertedOutput(outputId);
     });
   });
+}
+
+function updateDataToolsConvertedOutputVisibility() {
+  const formatEl = document.getElementById("data-tools-format");
+  const activeFormat = String(formatEl?.value || DEFAULT_DATA_TOOLS_FORMAT);
+
+  Object.entries(DATA_TOOLS_OUTPUT_FORMAT_DETAILS).forEach(
+    ([outputFormat, details]) => {
+      const labelEl = document.querySelector(details.labelSelector);
+      const outputEl = document.querySelector(details.outputSelector);
+      const outputContainerEl =
+        outputEl?.closest(".data-tools-highlight-wrap") || outputEl;
+      const shouldShow = outputFormat !== activeFormat;
+
+      if (labelEl) labelEl.hidden = !shouldShow;
+      if (outputContainerEl) outputContainerEl.hidden = !shouldShow;
+    },
+  );
 }
 
 const HASH_IDS = [
@@ -2567,6 +2613,7 @@ function runDataToolsConversion() {
   const inputEl = document.getElementById("data-tools-input");
   const formatEl = document.getElementById("data-tools-format");
   const errorEl = document.getElementById("data-tools-error");
+  updateDataToolsConvertedOutputVisibility();
 
   try {
     const bytes = parseDataToolsInput(formatEl.value, inputEl.value);
@@ -4922,11 +4969,13 @@ document
   .getElementById("data-tools-convert-btn")
   .addEventListener("click", runDataToolsConversion);
 bindConvertedOutputExpandHandlers();
+updateDataToolsConvertedOutputVisibility();
 document.getElementById("data-tools-input").addEventListener("input", () => {
   updateDataToolsHexHighlights();
   syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
 });
 document.getElementById("data-tools-format").addEventListener("change", () => {
+  updateDataToolsConvertedOutputVisibility();
   updateDataToolsHexHighlights();
 });
 document.getElementById("data-tools-input").addEventListener("scroll", () => {
