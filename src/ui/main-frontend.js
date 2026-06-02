@@ -1719,9 +1719,11 @@ function updateDataToolsHexHighlights() {
   }
   const inputMap = dataToolsSelectionState.maps["data-tools-input"] || {
     charToByte: [],
+    byteRanges: [],
   };
   const outputMap = dataToolsSelectionState.maps["data-tools-hex-output"] || {
     charToByte: [],
+    byteRanges: [],
   };
   const bytes = dataToolsSelectionState.bytes || new Uint8Array();
   if (formatEl.value === "hex") {
