@@ -755,6 +755,7 @@ strong {
   line-height: 1.3;
   border: 1px solid transparent;
   box-sizing: border-box;
+  background-color: var(--data-tools-frame-bg);
 }
 
 #data-tools-input,
@@ -772,18 +773,22 @@ strong {
 
 .data-tools-hex-alpha {
   color: #84f7c0;
+  background-color: var(--data-tools-frame-bg);
 }
 
 .data-tools-hex-break {
   color: #ffcf6e;
+  background-color: var(--data-tools-frame-bg);
 }
 
 .data-tools-hex-binary {
   color: #8ab7ff;
+  background-color: var(--data-tools-frame-bg);
 }
 
 .data-tools-hex-separator {
   color: #6e7681;
+  background-color: var(--data-tools-frame-bg);
 }
 
 .data-tools-sync-highlight {
