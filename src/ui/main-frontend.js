@@ -93,6 +93,14 @@ const NOTE_FALLBACK_COLORS = [
   "#e91e63",
   "#ffc107",
 ];
+const DATA_TOOLS_CONVERTED_OUTPUT_IDS = [
+  "data-tools-hex-output",
+  "data-tools-binary-output",
+  "data-tools-decimal-output",
+  "data-tools-decimal-integer-output",
+  "data-tools-ascii-output",
+  "data-tools-base64-output",
+];
 
 // Global variables for DOM elements and state
 let capturedPackets = {}; // Stores parsed packet data from JSON
@@ -2090,6 +2098,35 @@ function resetDataToolsOutputs() {
     "Shannon Entropy: 0.00 (Low)";
   resetHashOutputs();
   clearProtoDecoderOutput();
+  setExpandedConvertedOutput(null);
+}
+
+function setExpandedConvertedOutput(expandedOutputId) {
+  DATA_TOOLS_CONVERTED_OUTPUT_IDS.forEach((outputId) => {
+    const outputEl = document.getElementById(outputId);
+    if (!outputEl) return;
+    const isExpanded = expandedOutputId === outputId;
+    outputEl.classList.toggle("data-tools-output-expanded", isExpanded);
+    outputEl.classList.toggle(
+      "data-tools-output-collapsed",
+      Boolean(expandedOutputId) && !isExpanded,
+    );
+  });
+}
+
+function bindConvertedOutputExpandHandlers() {
+  DATA_TOOLS_CONVERTED_OUTPUT_IDS.forEach((outputId) => {
+    const outputEl = document.getElementById(outputId);
+    if (!outputEl || outputEl.dataset.expandBinding === "1") return;
+    outputEl.dataset.expandBinding = "1";
+    outputEl.addEventListener("click", () => {
+      if (outputEl.classList.contains("data-tools-output-expanded")) {
+        setExpandedConvertedOutput(null);
+        return;
+      }
+      setExpandedConvertedOutput(outputId);
+    });
+  });
 }
 
 const HASH_IDS = [
@@ -4490,6 +4527,7 @@ document
 document
   .getElementById("data-tools-convert-btn")
   .addEventListener("click", runDataToolsConversion);
+bindConvertedOutputExpandHandlers();
 document
   .getElementById("data-tools-hash-input-reading")
   .addEventListener("input", runDataToolsHashesFromInput);
