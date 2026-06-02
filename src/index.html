@@ -231,10 +231,17 @@
                     <option value="ascii">ASCII / UTF-8</option>
                     <option value="decimal">Decimal bytes</option>
                   </select>
-                  <textarea
-                    id="data-tools-input"
-                    placeholder="Paste base64, binary, hex, ascii, or decimal byte values here..."
-                  ></textarea>
+                  <div class="data-tools-highlight-wrap">
+                    <pre
+                      id="data-tools-input-highlight"
+                      class="data-tools-highlight-layer"
+                      aria-hidden="true"
+                    ></pre>
+                    <textarea
+                      id="data-tools-input"
+                      placeholder="Paste base64, binary, hex, ascii, or decimal byte values here..."
+                    ></textarea>
+                  </div>
                   <div class="data-tools-actions">
                     <button id="data-tools-convert-btn">Convert</button>
                     <button id="data-tools-clear-btn">Clear</button>
@@ -244,7 +251,14 @@
                 <div class="data-tools-section">
                   <div class="data-tools-title">Converted Output</div>
                   <div class="data-tools-output-label">Hex</div>
-                  <textarea id="data-tools-hex-output" readonly></textarea>
+                  <div class="data-tools-highlight-wrap">
+                    <pre
+                      id="data-tools-hex-output-highlight"
+                      class="data-tools-highlight-layer"
+                      aria-hidden="true"
+                    ></pre>
+                    <textarea id="data-tools-hex-output" readonly></textarea>
+                  </div>
                   <div class="data-tools-output-label">Binary</div>
                   <textarea id="data-tools-binary-output" readonly></textarea>
                   <div class="data-tools-output-label">Decimal bytes</div>
