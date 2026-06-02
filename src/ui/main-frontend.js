@@ -1459,6 +1459,7 @@ const dataToolsSelectionState = {
   maps: {},
   selectedByteRange: null,
   syncingSelection: false,
+  lastSelectionSignature: "",
 };
 
 function escapeDataToolsHtml(value) {
@@ -1574,7 +1575,9 @@ function buildInputSelectionMap(rawInput, format, bytes) {
     const start = byteOffset;
     const end = Math.min(byteRanges.length, start + encoded.length);
     for (let byteIndex = start; byteIndex < end; byteIndex++) {
-      charToByte[i] = byteIndex;
+      if (charToByte[i] == null) {
+        charToByte[i] = byteIndex;
+      }
       markByteRange(byteIndex, i);
     }
     byteOffset += encoded.length;
@@ -1750,6 +1753,7 @@ function clearDataToolsSelectionState() {
   dataToolsSelectionState.bytes = new Uint8Array();
   dataToolsSelectionState.maps = {};
   dataToolsSelectionState.selectedByteRange = null;
+  dataToolsSelectionState.lastSelectionSignature = "";
   updateDataToolsHexHighlights();
   syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
   syncDataToolsHighlightScroll(
@@ -1760,6 +1764,7 @@ function clearDataToolsSelectionState() {
 
 function updateDataToolsSelectionMaps(format, rawInput, bytes, outputs) {
   dataToolsSelectionState.bytes = bytes;
+  dataToolsSelectionState.lastSelectionSignature = "";
   dataToolsSelectionState.maps = {
     "data-tools-input": buildInputSelectionMap(rawInput, format, bytes),
     "data-tools-hex-output": buildRenderedSelectionMap(outputs.hexValues),
@@ -1782,6 +1787,11 @@ function syncDataToolsSelectionFromField(sourceFieldId) {
   const sourceEl = document.getElementById(sourceFieldId);
   const sourceMap = dataToolsSelectionState.maps[sourceFieldId];
   if (!sourceEl || !sourceMap) return;
+  const signature = `${sourceFieldId}:${sourceEl.selectionStart}:${sourceEl.selectionEnd}`;
+  if (signature === dataToolsSelectionState.lastSelectionSignature) {
+    return;
+  }
+  dataToolsSelectionState.lastSelectionSignature = signature;
 
   const byteRange = getDataToolsByteRangeForSelection(
     sourceMap,
@@ -1791,20 +1801,23 @@ function syncDataToolsSelectionFromField(sourceFieldId) {
   dataToolsSelectionState.selectedByteRange = byteRange;
 
   dataToolsSelectionState.syncingSelection = true;
-  for (const fieldId of DATA_TOOLS_SELECTION_FIELD_IDS) {
-    if (fieldId === sourceFieldId) continue;
-    const targetEl = document.getElementById(fieldId);
-    const targetMap = dataToolsSelectionState.maps[fieldId];
-    if (!targetEl || !targetMap) continue;
-    if (!byteRange) {
-      targetEl.setSelectionRange(0, 0);
-      continue;
+  try {
+    for (const fieldId of DATA_TOOLS_SELECTION_FIELD_IDS) {
+      if (fieldId === sourceFieldId) continue;
+      const targetEl = document.getElementById(fieldId);
+      const targetMap = dataToolsSelectionState.maps[fieldId];
+      if (!targetEl || !targetMap) continue;
+      if (!byteRange) {
+        targetEl.setSelectionRange(0, 0);
+        continue;
+      }
+      const selection = getDataToolsSelectionForByteRange(targetMap, byteRange);
+      if (!selection) continue;
+      targetEl.setSelectionRange(selection.start, selection.end);
     }
-    const selection = getDataToolsSelectionForByteRange(targetMap, byteRange);
-    if (!selection) continue;
-    targetEl.setSelectionRange(selection.start, selection.end);
+  } finally {
+    dataToolsSelectionState.syncingSelection = false;
   }
-  dataToolsSelectionState.syncingSelection = false;
   updateDataToolsHexHighlights();
 }
 
