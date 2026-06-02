@@ -892,7 +892,8 @@ strong {
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
   padding: 4px 0;
-  min-width: 190px;
+  min-width: 240px;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
 }
@@ -943,7 +944,8 @@ strong {
   position: absolute;
   left: calc(100% - 2px);
   top: -4px;
-  min-width: 210px;
+  min-width: 240px;
+  max-width: 500px;
   background-color: var(--color-4);
   border: 1px solid var(--color-1);
   border-radius: 6px;
