@@ -8,6 +8,12 @@
   --color-6: #b5b5b5;
   --color-7: #413f6e;
   --data-tools-frame-bg: #0d1f47;
+  --data-tools-hex-color: #84f7c0;
+  --data-tools-binary-color: #8ab7ff;
+  --data-tools-decimal-color: #ffcf6e;
+  --data-tools-decimal-integer-color: #d6a5ff;
+  --data-tools-ascii-color: #f2a7c7;
+  --data-tools-base64-color: #9be7ff;
   --sidebar-width: 20%;
 }
 
@@ -841,6 +847,59 @@ strong {
   color: var(--color-1);
   font-size: 12px;
   margin-top: 4px;
+}
+
+.data-tools-output-label-hex {
+  color: var(--data-tools-hex-color);
+}
+
+.data-tools-output-label-binary {
+  color: var(--data-tools-binary-color);
+}
+
+.data-tools-output-label-decimal {
+  color: var(--data-tools-decimal-color);
+}
+
+.data-tools-output-label-decimal-integer {
+  color: var(--data-tools-decimal-integer-color);
+}
+
+.data-tools-output-label-ascii {
+  color: var(--data-tools-ascii-color);
+}
+
+.data-tools-output-label-base64 {
+  color: var(--data-tools-base64-color);
+}
+
+#data-tools-hex-output {
+  border-color: var(--data-tools-hex-color);
+}
+
+#data-tools-binary-output {
+  border-color: var(--data-tools-binary-color);
+  color: var(--data-tools-binary-color);
+}
+
+#data-tools-decimal-output {
+  border-color: var(--data-tools-decimal-color);
+  color: var(--data-tools-decimal-color);
+}
+
+#data-tools-decimal-integer-output {
+  border-color: var(--data-tools-decimal-integer-color);
+  color: var(--data-tools-decimal-integer-color);
+}
+
+#data-tools-ascii-output {
+  border-color: var(--data-tools-ascii-color);
+  color: var(--data-tools-ascii-color);
+}
+
+#data-tools-base64-output {
+  border-color: var(--data-tools-base64-color);
+  color: var(--data-tools-base64-color);
 }
 
 .data-tools-actions {
