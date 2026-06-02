@@ -4904,6 +4904,9 @@ document.getElementById("data-tools-hex-output").addEventListener("scroll", () =
     "data-tools-hex-output-highlight",
   );
 });
+document.getElementById("data-tools-hex-output").addEventListener("dragstart", (event) => {
+  event.preventDefault();
+});
 for (const fieldId of DATA_TOOLS_SELECTION_FIELD_IDS) {
   const el = document.getElementById(fieldId);
   if (!el) continue;

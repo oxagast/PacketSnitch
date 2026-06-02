@@ -7,6 +7,7 @@
   --color-5: #ccbdde;
   --color-6: #b5b5b5;
   --color-7: #413f6e;
+  --data-tools-frame-bg: #0d1f47;
   --sidebar-width: 20%;
 }
 
@@ -726,7 +727,7 @@ strong {
 #data-tools-base64-output {
   width: 100%;
   box-sizing: border-box;
-  background-color: #000;
+  background-color: var(--data-tools-frame-bg);
   border: 1px solid var(--color-3);
   color: var(--color-5);
   font-family: "Courier New", Courier, monospace;
@@ -799,6 +800,12 @@ strong {
   resize: vertical;
 }
 
+#data-tools-hex-output {
+  resize: none;
+  user-select: text;
+  -webkit-user-drag: none;
+}
+
 #data-tools-input {
   min-height: 450px;
   resize: vertical;
@@ -853,7 +860,7 @@ strong {
 #data-tools-proto-select {
   width: 100%;
   box-sizing: border-box;
-  background-color: #000;
+  background-color: var(--data-tools-frame-bg);
   border: 1px solid var(--color-3);
   color: var(--color-5);
   font-family: "Courier New", Courier, monospace;
@@ -918,7 +925,7 @@ strong {
   min-height: 48px;
   box-sizing: border-box;
   resize: vertical;
-  background-color: #000;
+  background-color: var(--data-tools-frame-bg);
   border: 1px solid var(--color-3);
   color: var(--color-5);
   font-family: "Courier New", Courier, monospace;
@@ -929,7 +936,7 @@ strong {
 .data-tools-hash-output {
   width: 100%;
   box-sizing: border-box;
-  background-color: #000;
+  background-color: var(--data-tools-frame-bg);
   border: 1px solid var(--color-3);
   color: var(--color-5);
   font-family: "Courier New", Courier, monospace;
