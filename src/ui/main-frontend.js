@@ -582,8 +582,11 @@ function renderDataToolsInputHistory() {
 }
 
 function addDataToolsInputHistory(format, input) {
-  const normalizedFormat = String(format || "hex").trim().toLowerCase() || "hex";
-  const normalizedInput = String(input || "");
+  const normalizedFormat =
+    typeof format === "string" && format.trim()
+      ? format.trim().toLowerCase()
+      : "hex";
+  const normalizedInput = String(input ?? "");
   if (!normalizedInput.trim()) return;
 
   const existingIndex = dataToolsInputHistory.findIndex(
