@@ -1345,27 +1345,23 @@ const navButtons = {
   setBookmark: getCachedElement("setBookmark"),
 };
 
-// Update host filter when a new host is selected from dropdown
+function buildHostTargetFilterQuery(selectedHost) {
+  const safeHost = sanitizeFilterTerm(selectedHost);
+  if (!safeHost) return "";
+  return `ip.src.addr: ${safeHost} || ip.dst.addr: ${safeHost}`;
+}
+
+// Update host and apply associated filter when a new host is selected from dropdown
 getCachedElement("target_hosts").addEventListener("change", function () {
   const selected = getCachedElement("target_hosts").value;
-  let hostFilterEl = getCachedElement("host_filter");
-  filteredPackets = []; // reset filter when host changes
   writeLogEntry(`Host target changed host=${selected}`);
   if (hostFilterEl.value !== selected) {
     hostFilterEl.value = selected;
   }
-});
-
-getCachedElement("target_hosts").addEventListener("click", function () {
-  const selected = getCachedElement("target_hosts").value;
-  filteredPackets = filterPackets(
-    capturedPackets,
-    "ip.src.addr: " + selected + "|| ip.dst.addr: " + selected,
-  );
-  writeLogEntry(
-    `Host target clicked host=${selected} packets_returned=${filteredPackets.length}`,
-  );
-  handlePacketNavigation("filtered", null);
+  const hostFilterQuery = buildHostTargetFilterQuery(selected);
+  filterInputEl.value = hostFilterQuery;
+  syncFilterHighlight();
+  runFilterQuery(hostFilterQuery, { trackHistory: false });
 });
 
 function parseDataToolsInput(format, rawInput) {
