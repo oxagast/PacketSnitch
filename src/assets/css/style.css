@@ -803,6 +803,27 @@ strong {
 #data-tools-base64-output {
   min-height: 58px;
   resize: vertical;
+  cursor: pointer;
+  transition: min-height 0.2s ease, max-height 0.2s ease;
+}
+
+#data-tools-hex-output.data-tools-output-collapsed,
+#data-tools-binary-output.data-tools-output-collapsed,
+#data-tools-decimal-output.data-tools-output-collapsed,
+#data-tools-decimal-integer-output.data-tools-output-collapsed,
+#data-tools-ascii-output.data-tools-output-collapsed,
+#data-tools-base64-output.data-tools-output-collapsed {
+  min-height: 40px;
+  max-height: 40px;
+}
+
+#data-tools-hex-output.data-tools-output-expanded,
+#data-tools-binary-output.data-tools-output-expanded,
+#data-tools-decimal-output.data-tools-output-expanded,
+#data-tools-decimal-integer-output.data-tools-output-expanded,
+#data-tools-ascii-output.data-tools-output-expanded,
+#data-tools-base64-output.data-tools-output-expanded {
+  min-height: 320px;
 }
 
 #data-tools-hex-output {
