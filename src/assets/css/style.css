@@ -8,12 +8,12 @@
   --color-6: #b5b5b5;
   --color-7: #413f6e;
   --data-tools-frame-bg: #0d1f47;
-  --data-tools-hex-color: #84f7c0;
-  --data-tools-binary-color: #8ab7ff;
-  --data-tools-decimal-color: #ffcf6e;
-  --data-tools-decimal-integer-color: #d6a5ff;
-  --data-tools-ascii-color: #f2a7c7;
-  --data-tools-base64-color: #9be7ff;
+  --data-tools-hex-color: #ccbdde;
+  --data-tools-binary-color: #ccbdde;
+  --data-tools-decimal-color: #ccbdde;
+  --data-tools-decimal-integer-color: #ccbdde;
+  --data-tools-ascii-color: #ccbdde;
+  --data-tools-base64-color: #ccbdde;
   --sidebar-width: 20%;
 }
 
@@ -801,7 +801,7 @@ strong {
 }
 
 .data-tools-hex-alpha {
-  color: #84f7c0;
+  color: #f0b3f5;
   background-color: var(--data-tools-frame-bg);
 }
 
@@ -833,7 +833,9 @@ strong {
   min-height: 58px;
   resize: vertical;
   cursor: pointer;
-  transition: min-height 0.2s ease, max-height 0.2s ease;
+  transition:
+    min-height 0.2s ease,
+    max-height 0.2s ease;
 }
 
 #data-tools-hex-output.data-tools-output-collapsed,
