@@ -30,7 +30,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
     fs.rmSync(testcaseOutputDir, { recursive: true, force: true });
   }
 
-  global.logBackend("[Bridge] ", backendCommand);
+  global.logBackend("[Bridge]", backendCommand);
 
   function sendError(message) {
     const mainWin = BrowserWindow.getAllWindows()[0]; // or track your main window
@@ -42,7 +42,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   return new Promise((resolve) => {
     exec(
       backendCommand,
-      { maxBuffer: 1024 * 1024 * 50 },
+      { maxBuffer: 1024 * 1024 * 20 },
       (error, stdout, stderr) => {
         resolve(stdout);
         global.logBackend("", stdout);
@@ -57,14 +57,12 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
             sendError("[Bridge] Backend execution error! " + error);
           }
         } else {
-          setTimeout(() => {
-            const hostsJsonPath = path.join(testcaseOutputDir, "hosts.json");
-            const mainWin = BrowserWindow.getAllWindows()[0];
-            if (mainWin && fs.existsSync(hostsJsonPath)) {
-              const hostsJsonData = fs.readFileSync(hostsJsonPath, "utf8");
-              mainWin.webContents.send("json-data", hostsJsonData);
-            }
-          }, 200);
+          const hostsJsonPath = path.join(testcaseOutputDir, "hosts.json");
+          const mainWin = BrowserWindow.getAllWindows()[0];
+          if (mainWin && fs.existsSync(hostsJsonPath)) {
+            const hostsJsonData = fs.readFileSync(hostsJsonPath, "utf8");
+            mainWin.webContents.send("json-data", hostsJsonData);
+          }
         }
       },
     );
