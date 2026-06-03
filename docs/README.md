@@ -14,25 +14,16 @@ PacketSnitch is a network packet analysis tool consisting of a Python backend fo
 
 ## Quick Start
 
-**Backend** — extract packet data from a pcap file:
+**Launch** — launch the desktop app:
+
+Install then:
 
 ```bash
-python3 snitch.py traffic.pcap -o output_dir -a -v
-```
-
-**Frontend** — launch the desktop app:
-
-```bash
-# Development
-npm install
-(chown/chmod electron binary)
-npm run make
-npm start
-
-# Or run the pre-built binary
 ./packetsnitch          # Linux
 packetsnitch.exe        # Windows
 ```
+
+Load a pcap or pcapng file, and start analyzing!
 
 ## License
 
