@@ -80,8 +80,10 @@ function checkNewInstall() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    minWidth: 1550,
-    minHeight: 800,
+    minWidth: 1275,
+    minHeight: 600,
+    width: 1400,
+    height: 820,
     icon: path.join(__dirname, "./assets/icons/icons/png/64x64.png"),
     frame: false,
     webPreferences: {
@@ -92,7 +94,7 @@ function createWindow() {
   });
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   mainWindow.webContents.on("did-finish-load", () => {
-    mainWindow.webContents.setZoomFactor(0.8); // makes everything fit snuggly
+    mainWindow.webContents.setZoomFactor(0.7); // makes everything fit snuggly
   });
   mainWindow.once("close", () => {
     appendActivityLogLine(
@@ -223,10 +225,6 @@ app.whenReady().then(() => {
       if (canceled) return null;
       console.log("Accepted pcapng.. Checking for json existence...");
       isBackendLoaded = true;
-      // Remove stale output directory so snitch always starts with a clean slate
-      if (fs.existsSync(testcaseTempDir)) {
-        fs.rmSync(testcaseTempDir, { recursive: true, force: true });
-      }
       console.log("File selected:", filePaths[0]);
       selectedFilePath = filePaths[0];
       return filePaths[0];
