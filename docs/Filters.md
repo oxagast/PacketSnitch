@@ -550,7 +550,7 @@ tcp.dst.port:80 || tcp.dst.port:443
 ip.len:>1000
 ```
 
-### Payload and Entropy Filtering
+### Payload Filtering
 
 ```
 # Payloads likely encrypted or compressed (high entropy)
@@ -587,8 +587,8 @@ payload.mime:application/json && ip.src.addr:10.0.0.5
 # Packets originating from China (GeoIP)
 loc.src.country:China
 
-# Packets destined for Germany
-loc.dst.country:Germany
+# Packets destined for anywhere except Germany
+!loc.dst.country:Germany
 
 # Packets from a specific city
 loc.src.city:Hangzhou
@@ -706,8 +706,8 @@ dns.qr:false && ip.src.class:Localnet
 # Large encrypted TCP packets from external sources
 tcp.dst.port:443 && payload.len:>500 && payload.entropy:>=7.0 && ip.src.class:!=Localnet
 
-# HTTP POST requests carrying JSON payloads
-http.method:POST && payload.mime:application/json
+# HTTP POST requests carrying JSON payloads that don't go to the oxasploits.com domain
+(http.method:POST && payload.mime:application/json) && !dns.qname:oxasploits.com
 
 # SIP calls destined for a specific domain
 sip.method:INVITE && sip.to:example.com
@@ -732,4 +732,4 @@ GPL v3
 
 ## Author
 
-Marshall Whittaker
+Marshall Whittaker/ oxagast
