@@ -32,12 +32,6 @@
 # Author: oxagast
 # Import standard and third-party libraries for argument parsing, file handling, networking, compression, and data processing
 import warnings
-
-warnings.simplefilter("module")
-os.environ["PYTHONWARNINGS"] = "module"
-warnings.formatwarning = lambda msg, cat, fname, ln, file=None, line=None: (
-    f"[Main] {cat.__name__} {msg}\n"
-)
 import argparse
 import base64
 import csv
@@ -52,10 +46,6 @@ import textwrap
 import threading
 import time
 import zlib
-from urllib.parse import unquote_plus
-from datetime import datetime
-from decimal import Decimal
-from functools import lru_cache
 import chardet
 import geoip2.database
 import magic
@@ -63,15 +53,22 @@ import numpy as np
 import ollama
 import requests
 import yaml
-
-
-# from tqdm import tqdm
 import ipaddress
 from bs4 import BeautifulSoup
 from ollama import ResponseError
 from scipy.stats import entropy
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import unquote_plus
+from datetime import datetime
+from decimal import Decimal
+from functools import lru_cache
 
+
+warnings.simplefilter("module")
+os.environ["PYTHONWARNINGS"] = "module"
+warnings.formatwarning = lambda msg, cat, fname, ln, file=None, line=None: (
+    f"[Main] {cat.__name__} {msg}\n"
+)
 stopEvent = threading.Event()
 
 try:
@@ -3301,10 +3298,6 @@ def startThreading():
     amounts of time (e.g. when active-recon network calls vary in latency).
     """
     if __name__ == "__main__":
-        print(
-            f"[Main] Spooling up {numWorkerThreads} worker threads to process {totalPackets} packets...",
-            file=sys.stderr,
-        )
         # Build the list of packet indices that belong to TCP, UDP, or ICMP packets
         packetIndices = [
             i
@@ -3436,7 +3429,6 @@ except Exception:
             "server_call_threads": 5,
             "batch_size": 65,
         },
-        "threads": 16,
         "final_summary": True,
     }
 pcapFilePath = args.pcap_file
@@ -3493,8 +3485,7 @@ totalPackets = len(
 if totalPackets == 0:
     print("[Main] No TCP, UDP, or ICMP packets found in the capture.", file=sys.stderr)
     sys.exit(1)
-if "threads" in config and config["threads"]:
-    numWorkerThreads = config["threads"]
+numWorkerThreads = os.cpu_count() or 4
 outputDir = currentDir + "/" + "testcases"
 if args.output and args.output != "testcases":
     outputDir = args.output
@@ -3537,7 +3528,6 @@ if args.nollm:
             "use_llm": False,
             "llm_brief": False,
         },
-        "threads": 16,
         "final_summary": False,
     }
 
