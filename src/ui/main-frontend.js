@@ -1174,7 +1174,9 @@ function restoreSessionState(sessionState) {
         .filter((entry) => entry && typeof entry === "object")
         .flatMap((entry) => {
           const normalizedInput =
-            typeof entry.input === "string" ? entry.input : String(entry.input ?? "");
+            typeof entry.input === "string"
+              ? entry.input
+              : String(entry.input ?? "");
           if (!normalizedInput.trim()) return [];
           return [
             {
@@ -1335,6 +1337,8 @@ function processFile(file) {
     getCachedElement("error-container").style.display = "none";
 
     // Use chunked parsing for large files (>1MB)
+    document.getElementById("loading-container").style.display = "block";
+    document.getElementById("loading-text").textContent = "Loading packets...";
     const fileSize = event.target.result.length;
     if (fileSize > 1024 * 1024) {
       statusUpdate(
@@ -1352,6 +1356,8 @@ function processFile(file) {
             fileLoaded(false);
             return;
           }
+          document.getElementById("loading-text").textContent =
+            "Initializing session...";
           capturedPackets = normalizedPayload.captureData;
           loadedSessionState = normalizedPayload.sessionState;
           jsonCapture = JSON.stringify(capturedPackets, null, 2);
@@ -1613,7 +1619,8 @@ function buildInputSelectionMap(rawInput, format, bytes) {
     if (byteIndex == null || byteIndex < 0 || byteIndex >= byteRanges.length) {
       return;
     }
-    if (byteRanges[byteIndex].start == null) byteRanges[byteIndex].start = charIndex;
+    if (byteRanges[byteIndex].start == null)
+      byteRanges[byteIndex].start = charIndex;
     byteRanges[byteIndex].end = charIndex + 1;
   };
 
@@ -1737,7 +1744,8 @@ function buildBase64SelectionMap(base64Text, bytes) {
   }));
   const markByteRange = (byteIndex, charIndex) => {
     if (byteIndex < 0 || byteIndex >= byteRanges.length) return;
-    if (byteRanges[byteIndex].start == null) byteRanges[byteIndex].start = charIndex;
+    if (byteRanges[byteIndex].start == null)
+      byteRanges[byteIndex].start = charIndex;
     byteRanges[byteIndex].end = charIndex + 1;
   };
   let byteCursor = 0;
@@ -1830,12 +1838,22 @@ function buildColorizedHexHtml(rawText, selectionMap, bytes, byteRange) {
 }
 
 function updateDataToolsHexHighlights() {
-  const inputHighlightEl = document.getElementById("data-tools-input-highlight");
-  const outputHighlightEl = document.getElementById("data-tools-hex-output-highlight");
+  const inputHighlightEl = document.getElementById(
+    "data-tools-input-highlight",
+  );
+  const outputHighlightEl = document.getElementById(
+    "data-tools-hex-output-highlight",
+  );
   const inputEl = document.getElementById("data-tools-input");
   const formatEl = document.getElementById("data-tools-format");
   const outputEl = document.getElementById("data-tools-hex-output");
-  if (!inputHighlightEl || !outputHighlightEl || !inputEl || !formatEl || !outputEl) {
+  if (
+    !inputHighlightEl ||
+    !outputHighlightEl ||
+    !inputEl ||
+    !formatEl ||
+    !outputEl
+  ) {
     return;
   }
   const inputMap = dataToolsSelectionState.maps["data-tools-input"] || {
@@ -1878,7 +1896,10 @@ function clearDataToolsSelectionState() {
   dataToolsSelectionState.selectedByteRange = null;
   dataToolsSelectionState.lastSelectionSignature = "";
   updateDataToolsHexHighlights();
-  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
+  syncDataToolsHighlightScroll(
+    "data-tools-input",
+    "data-tools-input-highlight",
+  );
   syncDataToolsHighlightScroll(
     "data-tools-hex-output",
     "data-tools-hex-output-highlight",
@@ -1892,16 +1913,24 @@ function updateDataToolsSelectionMaps(format, rawInput, bytes, outputs) {
     "data-tools-input": buildInputSelectionMap(rawInput, format, bytes),
     "data-tools-hex-output": buildRenderedSelectionMap(outputs.hexValues),
     "data-tools-binary-output": buildRenderedSelectionMap(outputs.binaryValues),
-    "data-tools-decimal-output": buildRenderedSelectionMap(outputs.decimalValues),
+    "data-tools-decimal-output": buildRenderedSelectionMap(
+      outputs.decimalValues,
+    ),
     "data-tools-ascii-output": {
       text: outputs.asciiText,
-      charToByte: Array.from({ length: outputs.asciiText.length }, (_, idx) => idx),
+      charToByte: Array.from(
+        { length: outputs.asciiText.length },
+        (_, idx) => idx,
+      ),
       byteRanges: Array.from({ length: bytes.length }, (_, idx) => ({
         start: idx,
         end: idx + 1,
       })),
     },
-    "data-tools-base64-output": buildBase64SelectionMap(outputs.base64Text, bytes),
+    "data-tools-base64-output": buildBase64SelectionMap(
+      outputs.base64Text,
+      bytes,
+    ),
   };
 }
 
@@ -2033,8 +2062,12 @@ const DATA_TYPE_GUESS_SCAN_CHUNK_SIZE = 2048;
 const DATA_TYPE_GUESS_SCAN_OVERLAP = 256;
 const DATA_TYPE_GUESS_TOKEN_RE = /[A-Za-z0-9+/_=:$.-]{8,}/g;
 const DATA_TOOLS_UTF8_DECODER = new TextDecoder("utf-8", { fatal: false });
-const DATA_TOOLS_UTF16LE_DECODER = new TextDecoder("utf-16le", { fatal: false });
-const DATA_TOOLS_UTF16BE_DECODER = new TextDecoder("utf-16be", { fatal: false });
+const DATA_TOOLS_UTF16LE_DECODER = new TextDecoder("utf-16le", {
+  fatal: false,
+});
+const DATA_TOOLS_UTF16BE_DECODER = new TextDecoder("utf-16be", {
+  fatal: false,
+});
 const DATA_TYPE_GUESS_UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATA_TYPE_GUESS_JWT_RE =
@@ -2136,7 +2169,12 @@ const DATA_TOOLS_LANGUAGE_STOPWORDS = {
 
 function decodeBytesForTextInspection(bytes) {
   if (!bytes || !bytes.length) return "";
-  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+  if (
+    bytes.length >= 3 &&
+    bytes[0] === 0xef &&
+    bytes[1] === 0xbb &&
+    bytes[2] === 0xbf
+  ) {
     return DATA_TOOLS_UTF8_DECODER.decode(bytes);
   }
   if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
@@ -2172,7 +2210,10 @@ function isLikelyReadableText(text, bytes = null) {
       readableChars += 1;
     }
   }
-  return readableChars / normalized.length >= DATA_TOOLS_TEXT_MIME_PRINTABLE_THRESHOLD;
+  return (
+    readableChars / normalized.length >=
+    DATA_TOOLS_TEXT_MIME_PRINTABLE_THRESHOLD
+  );
 }
 
 function looksLikeHtmlSource(text) {
@@ -2191,7 +2232,10 @@ function looksLikeXmlSource(text) {
 }
 
 function looksLikeCssSource(text) {
-  if (/@(?:media|import|supports|font-face)\b/i.test(text) || /--[\w-]+\s*:/.test(text)) {
+  if (
+    /@(?:media|import|supports|font-face)\b/i.test(text) ||
+    /--[\w-]+\s*:/.test(text)
+  ) {
     return true;
   }
   const blockStart = text.indexOf("{");
@@ -2215,8 +2259,7 @@ function looksLikeJavaScriptSource(text) {
   return (
     /\b(?:const|let|var|function|export|import|async|await|document|window|console)\b/.test(
       text,
-    ) ||
-    /=>/.test(text)
+    ) || /=>/.test(text)
   );
 }
 
@@ -2232,12 +2275,15 @@ function looksLikePythonSource(text) {
 function looksLikeShellSource(text) {
   return (
     /^\s*#!\/(?:usr\/bin\/env\s+)?(?:bash|sh|zsh|fish)\b/m.test(text) ||
-    (/\b(?:echo|export|grep|awk|sed|fi|done|then)\b/.test(text) && /\$\w+/.test(text))
+    (/\b(?:echo|export|grep|awk|sed|fi|done|then)\b/.test(text) &&
+      /\$\w+/.test(text))
   );
 }
 
 function looksLikePowerShellSource(text) {
-  return /\b(?:Get-|Set-|Write-Host|New-Object|Param\s*\(|\$env:)\b/i.test(text);
+  return /\b(?:Get-|Set-|Write-Host|New-Object|Param\s*\(|\$env:)\b/i.test(
+    text,
+  );
 }
 
 function looksLikeSqlSource(text) {
@@ -2255,7 +2301,9 @@ function looksLikeGoSource(text) {
 }
 
 function looksLikeRustSource(text) {
-  return /\bfn\s+\w+\s*\(/.test(text) && /\b(?:let\s+mut|impl|use\s+\w)/.test(text);
+  return (
+    /\bfn\s+\w+\s*\(/.test(text) && /\b(?:let\s+mut|impl|use\s+\w)/.test(text)
+  );
 }
 
 function looksLikeJavaOrCSharpSource(text) {
@@ -2385,23 +2433,26 @@ function guessReadableTextLanguage(text, bytes = null) {
   if (cyrillicCount / joinedLetters.length >= 0.4) {
     return {
       label: "Russian",
-      confidence: cyrillicCount / joinedLetters.length >= 0.8 ? "High" : "Medium",
+      confidence:
+        cyrillicCount / joinedLetters.length >= 0.8 ? "High" : "Medium",
     };
   }
 
   let bestLabel = "";
   let bestScore = 0;
-  Object.entries(DATA_TOOLS_LANGUAGE_STOPWORDS).forEach(([label, stopwords]) => {
-    const stopwordSet = new Set(stopwords);
-    const score = letterTokens.reduce(
-      (total, token) => total + (stopwordSet.has(token) ? 1 : 0),
-      0,
-    );
-    if (score > bestScore) {
-      bestLabel = label;
-      bestScore = score;
-    }
-  });
+  Object.entries(DATA_TOOLS_LANGUAGE_STOPWORDS).forEach(
+    ([label, stopwords]) => {
+      const stopwordSet = new Set(stopwords);
+      const score = letterTokens.reduce(
+        (total, token) => total + (stopwordSet.has(token) ? 1 : 0),
+        0,
+      );
+      if (score > bestScore) {
+        bestLabel = label;
+        bestScore = score;
+      }
+    },
+  );
 
   if (bestScore >= DATA_TOOLS_LANGUAGE_MIN_STOPWORD_MATCHES) {
     return {
@@ -2464,10 +2515,18 @@ function detectDataTypeGuessFromToken(token, candidateScores) {
         );
         break;
       case 64:
-        addDataTypeGuessCandidate(candidateScores, "SHA-256 / SHA3-256 Hash", 90);
+        addDataTypeGuessCandidate(
+          candidateScores,
+          "SHA-256 / SHA3-256 Hash",
+          90,
+        );
         break;
       case 96:
-        addDataTypeGuessCandidate(candidateScores, "SHA-384 / SHA3-384 Hash", 90);
+        addDataTypeGuessCandidate(
+          candidateScores,
+          "SHA-384 / SHA3-384 Hash",
+          90,
+        );
         break;
       case 128:
         addDataTypeGuessCandidate(
@@ -2513,13 +2572,12 @@ function scanAsciiTextForDataTypeGuesses(inputText, candidateScores) {
     DATA_TYPE_GUESS_SCAN_CHUNK_SIZE - DATA_TYPE_GUESS_SCAN_OVERLAP,
   );
   for (let offset = 0; offset < sourceText.length; offset += stepSize) {
-    const chunk = sourceText.slice(offset, offset + DATA_TYPE_GUESS_SCAN_CHUNK_SIZE);
+    const chunk = sourceText.slice(
+      offset,
+      offset + DATA_TYPE_GUESS_SCAN_CHUNK_SIZE,
+    );
     if (/-----BEGIN PGP/.test(chunk)) {
-      addDataTypeGuessCandidate(
-        candidateScores,
-        "PGP ASCII Armored Data",
-        100,
-      );
+      addDataTypeGuessCandidate(candidateScores, "PGP ASCII Armored Data", 100);
     }
 
     const chunkTokens = chunk.match(DATA_TYPE_GUESS_TOKEN_RE) || [];
@@ -5060,7 +5118,10 @@ updateDataToolsConvertedOutputVisibility();
 document.getElementById("data-tools-input").addEventListener("input", () => {
   dataToolsHistorySelectEl.value = "";
   updateDataToolsHexHighlights();
-  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
+  syncDataToolsHighlightScroll(
+    "data-tools-input",
+    "data-tools-input-highlight",
+  );
 });
 document.getElementById("data-tools-format").addEventListener("change", () => {
   dataToolsHistorySelectEl.value = "";
@@ -5068,24 +5129,35 @@ document.getElementById("data-tools-format").addEventListener("change", () => {
   updateDataToolsHexHighlights();
 });
 document.getElementById("data-tools-input").addEventListener("scroll", () => {
-  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
-});
-// Prevent drag-and-drop from editing the Conv input; keyboard editing remains unaffected.
-document.getElementById("data-tools-input").addEventListener("dragstart", (event) => {
-  event.preventDefault();
-});
-document.getElementById("data-tools-input").addEventListener("drop", (event) => {
-  event.preventDefault();
-});
-document.getElementById("data-tools-hex-output").addEventListener("scroll", () => {
   syncDataToolsHighlightScroll(
-    "data-tools-hex-output",
-    "data-tools-hex-output-highlight",
+    "data-tools-input",
+    "data-tools-input-highlight",
   );
 });
-document.getElementById("data-tools-hex-output").addEventListener("dragstart", (event) => {
-  event.preventDefault();
-});
+// Prevent drag-and-drop from editing the Conv input; keyboard editing remains unaffected.
+document
+  .getElementById("data-tools-input")
+  .addEventListener("dragstart", (event) => {
+    event.preventDefault();
+  });
+document
+  .getElementById("data-tools-input")
+  .addEventListener("drop", (event) => {
+    event.preventDefault();
+  });
+document
+  .getElementById("data-tools-hex-output")
+  .addEventListener("scroll", () => {
+    syncDataToolsHighlightScroll(
+      "data-tools-hex-output",
+      "data-tools-hex-output-highlight",
+    );
+  });
+document
+  .getElementById("data-tools-hex-output")
+  .addEventListener("dragstart", (event) => {
+    event.preventDefault();
+  });
 for (const fieldId of DATA_TOOLS_SELECTION_FIELD_IDS) {
   const el = document.getElementById(fieldId);
   if (!el) continue;
@@ -5114,7 +5186,10 @@ dataToolsHistorySelectEl.addEventListener("change", () => {
   document.getElementById("data-tools-format").value = selectedEntry.format;
   document.getElementById("data-tools-input").value = selectedEntry.input;
   updateDataToolsHexHighlights();
-  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
+  syncDataToolsHighlightScroll(
+    "data-tools-input",
+    "data-tools-input-highlight",
+  );
   runDataToolsConversion();
 });
 document
@@ -6263,7 +6338,10 @@ onload = function () {
   setCryptSubtab(CRYPT_SSL_SUBTAB);
   setConvSubtab(CONV_CONVERSIONS_SUBTAB);
   updateDataToolsHexHighlights();
-  syncDataToolsHighlightScroll("data-tools-input", "data-tools-input-highlight");
+  syncDataToolsHighlightScroll(
+    "data-tools-input",
+    "data-tools-input-highlight",
+  );
   syncDataToolsHighlightScroll(
     "data-tools-hex-output",
     "data-tools-hex-output-highlight",
