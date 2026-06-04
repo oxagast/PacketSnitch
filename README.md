@@ -94,8 +94,18 @@ Launch the app with `packetsnitch` or click the desktop icon.
 | ------- | ----------- |
 | **Summary** | Switch to LLM analysis view |
 | **Data** | Return to packet data view |
+| **Conv** | Data conversion workbench |
+| **Crypt** | Encryption workbench |
+| **Keystore** | Keystore of collected secrets |
+| **Stats** | Packet statistics |
+| **List** | Packet list view |
+| **Notes** | Take notes here |
+| **Log** | The activity log readout |
 | **Prev / Next** | Step through packet list |
 | **Filter bar** | Enter filter expressions |
+
+| Load Bar | Descripton |
+| -------- | ---------- |
 | **Load JSON** | Load previously generated `hosts.json` |
 | **Load PCAP** | Run backend on a `.pcap` file |
 | **Use LLM** | Toggle Ollama-powered summaries |
