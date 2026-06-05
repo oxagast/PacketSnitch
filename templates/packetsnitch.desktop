@@ -8,3 +8,5 @@ Type=Application
 StartupNotify=true
 Categories=Utility;Network;
 MimeType=application/x-pcap;application/x-pcapng;application/pcapng;application/vnd.tcpdump.pcap
+Terminal=false
+Keywords=network;traffic;analysis;monitoring;security;packet;sniffer;pcap;visualization;protocol;inspector;networking;
