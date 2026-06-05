@@ -14,6 +14,7 @@ module.exports = {
       name: "@electron-forge/maker-squirrel",
       config: {
         loadingGif: path.resolve(__dirname, "ps-install-loop.gif"),
+        iconUrl: path.resolve(__dirname, "ps-icon.ico"),
         setupIcon: path.resolve(__dirname, "ps-installer-icon.ico"),
         name: "PacketSnitch",
         setupExe: "PacketSnitchInstaller.exe",
@@ -21,6 +22,8 @@ module.exports = {
         copyright: "Copyright (c) 2026 oxasploits, llc",
         primaryIcon: path.resolve(__dirname, "ps-icon.ico"),
         productName: "PacketSnitch",
+        description:
+          "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices. It provides insights into the data being transmitted and received, allowing users to identify potential security threats, troubleshoot network issues, and gain a deeper understanding of their network traffic.",
       },
     },
     {
