@@ -19,6 +19,8 @@ module.exports = {
         setupExe: "PacketSnitchInstaller.exe",
         authors: "oxasploits, llc",
         copyright: "Copyright (c) 2026 oxasploits, llc",
+        primaryIcon: path.resolve(__dirname, "ps-icon.ico"),
+        productName: "PacketSnitch",
       },
     },
     {
@@ -27,13 +29,22 @@ module.exports = {
     },
     {
       name: "@electron-forge/maker-deb",
-      config: {},
+      config: {
+        primaryIcon: path.resolve(__dirname, "ps-icon.png"),
+        authors: "oxasploits, llc",
+        copyright: "Copyright (c) 2026 oxasploits, llc",
+        productName: "PacketSnitch",
+      },
     },
     {
       name: "@electron-forge/maker-rpm",
       config: {
         options: {
           name: "packetsnitch",
+          primaryIcon: path.resolve(__dirname, "ps-icon.png"),
+          authors: "oxasploits, llc",
+          copyright: "Copyright (c) 2026 oxasploits, llc",
+          productName: "PacketSnitch",
         },
       },
     },
