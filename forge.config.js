@@ -13,7 +13,12 @@ module.exports = {
     {
       name: "@electron-forge/maker-squirrel",
       config: {
+        loadingGif: path.resolve(__dirname, "ps-install-loop.gif"),
+        setupIcon: path.resolve(__dirname, "ps-installer-icon.ico"),
         name: "PacketSnitch",
+        setupExe: "PacketSnitchInstaller.exe",
+        authors: "oxasploits, llc",
+        copyright: "Copyright (c) 2026 oxasploits, llc",
       },
     },
     {
