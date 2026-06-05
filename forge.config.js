@@ -6,22 +6,22 @@ module.exports = {
     asar: true,
     extraResource: ["src/backend/"],
     icon: "ps-icon",
-    setupIcon: path.resolve(__dirname, "ps-installer-icon.ico"),
+    setupIcon: path.resolve(__dirname, "logo/ps-installer-icon.ico"),
   },
   rebuildConfig: {},
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
       config: {
-        loadingGif: path.resolve(__dirname, "ps-install-loop.gif"),
-        iconUrl: path.resolve(__dirname, "ps-icon.ico"),
-        setupIcon: path.resolve(__dirname, "ps-installer-icon.ico"),
+        loadingGif: path.resolve(__dirname, "logo/ps-install-loop.gif"),
+        iconUrl: path.resolve(__dirname, "logo/ps-icon.ico"),
+        setupIcon: path.resolve(__dirname, "logo/ps-installer-icon.ico"),
         name: "PacketSnitch",
         setupExe: "PacketSnitchInstaller.exe",
         vendor: "oxasploits, llc",
         authors: "Marshall Whittaker",
         copyright: "Copyright (c) 2026 oxasploits, llc",
-        primaryIcon: path.resolve(__dirname, "ps-icon.ico"),
+        primaryIcon: path.resolve(__dirname, "logo/ps-icon.ico"),
         productName: "PacketSnitch",
         description:
           "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.",
@@ -34,7 +34,7 @@ module.exports = {
     {
       name: "@electron-forge/maker-deb",
       config: {
-        primaryIcon: path.resolve(__dirname, "ps-icon.png"),
+        primaryIcon: path.resolve(__dirname, "logo/ps-icon.png"),
         authors: "Marshall Whittaker",
         copyright: "Copyright (c) 2026 oxasploits, llc",
         productName: "PacketSnitch",
@@ -44,6 +44,12 @@ module.exports = {
         maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
         categories: ["Utility", "Network"],
         vendor: "oxasploits, llc",
+        icon: path.resolve(__dirname, "logo/ps-icon.png"),
+        desktopTemplate: path.join(
+          __dirname,
+          "templates",
+          "packetsnitch.desktop",
+        ),
       },
     },
     {
@@ -51,7 +57,6 @@ module.exports = {
       config: {
         options: {
           name: "packetsnitch",
-          primaryIcon: path.resolve(__dirname, "ps-icon.png"),
           authors: "oxasploits, llc",
           copyright: "Copyright (c) 2026 oxasploits, llc",
           productName: "PacketSnitch",
@@ -61,6 +66,12 @@ module.exports = {
           maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
           categories: ["Utility", "Network"],
           vendor: "oxasploits, llc",
+          icon: path.resolve(__dirname, "logo/ps-icon-rounded.png"),
+          desktopTemplate: path.join(
+            __dirname,
+            "templates",
+            "packetsnitch.desktop",
+          ),
         },
       },
     },
