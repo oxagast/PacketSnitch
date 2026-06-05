@@ -24,6 +24,10 @@
     "win": {
       "target": "nsis",
       "icon": "ps-icon.ico"
+    },
+    "squirrelWindows": {
+      "iconUrl": "https://raw.githubusercontent.com/oxasploits/packetsnitch/main/ps-icon.ico",
+      "loadingGif": "ps-install-loop.gif"
     }
   },
   "keywords": [
