@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=PacketSnitch
+Comment=A network traffic analysis tool, designed to help users understand and monitor network activity on their devices
+GenericName=packetsnitch
+Exec=packetsnitch %U
+Icon=/usr/share/pixmaps/packetsnitch.png
+Type=Application
+StartupNotify=true
+Categories=Utility;Network;
+MimeType=application/x-pcap;application/x-pcapng;application/pcapng;application/vnd.tcpdump.pcap

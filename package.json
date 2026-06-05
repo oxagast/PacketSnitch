@@ -23,7 +23,7 @@
   "build": {
     "win": {
       "target": "nsis",
-      "icon": "ps-icon.ico"
+      "icon": "logo/ps-icon.ico"
     },
     "squirrelWindows": {}
   },

@@ -84,7 +84,7 @@ function createWindow() {
     minHeight: 600,
     width: 1400,
     height: 820,
-    icon: path.join(__dirname, "./assets/icons/icons/png/64x64.png"),
+    icon: path.join("/", "usr", "share", "pixmaps", "packetsnitch.png"),
     frame: false,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
