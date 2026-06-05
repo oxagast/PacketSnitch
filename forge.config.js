@@ -5,7 +5,7 @@ module.exports = {
   packagerConfig: {
     asar: true,
     extraResource: ["src/backend/"],
-    icon: path.resolve(__dirname, "ps-icon.ico"),
+    icon: "ps-icon",
     setupIcon: path.resolve(__dirname, "ps-installer-icon.ico"),
   },
   rebuildConfig: {},
@@ -18,12 +18,13 @@ module.exports = {
         setupIcon: path.resolve(__dirname, "ps-installer-icon.ico"),
         name: "PacketSnitch",
         setupExe: "PacketSnitchInstaller.exe",
-        authors: "oxasploits, llc",
+        vendor: "oxasploits, llc",
+        authors: "Marshall Whittaker",
         copyright: "Copyright (c) 2026 oxasploits, llc",
         primaryIcon: path.resolve(__dirname, "ps-icon.ico"),
         productName: "PacketSnitch",
         description:
-          "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices. It provides insights into the data being transmitted and received, allowing users to identify potential security threats, troubleshoot network issues, and gain a deeper understanding of their network traffic.",
+          "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.",
       },
     },
     {
@@ -34,9 +35,15 @@ module.exports = {
       name: "@electron-forge/maker-deb",
       config: {
         primaryIcon: path.resolve(__dirname, "ps-icon.png"),
-        authors: "oxasploits, llc",
+        authors: "Marshall Whittaker",
         copyright: "Copyright (c) 2026 oxasploits, llc",
         productName: "PacketSnitch",
+        description:
+          "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.",
+        homepage: "https://github.com/oxasploits/PacketSnitch",
+        maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
+        categories: ["Utility", "Network"],
+        vendor: "oxasploits, llc",
       },
     },
     {
@@ -48,6 +55,12 @@ module.exports = {
           authors: "oxasploits, llc",
           copyright: "Copyright (c) 2026 oxasploits, llc",
           productName: "PacketSnitch",
+          description:
+            "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.",
+          homepage: "https://github.com/oxasploits/PacketSnitch",
+          maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
+          categories: ["Utility", "Network"],
+          vendor: "oxasploits, llc",
         },
       },
     },
