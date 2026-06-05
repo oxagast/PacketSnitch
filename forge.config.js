@@ -44,7 +44,7 @@ module.exports = {
         maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
         categories: ["Utility", "Network"],
         vendor: "oxasploits, llc",
-        icon: path.resolve(__dirname, "logo/ps-icon.png"),
+        icon: path.resolve(__dirname, "logo/ps-icon-rounded.png"),
         desktopTemplate: path.join(
           __dirname,
           "templates",
