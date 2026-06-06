@@ -79,7 +79,14 @@ module.exports = {
         description: desc,
         homepage: "https://github.com/oxasploits/PacketSnitch",
         maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
-        categories: ["Utility", "Network"],
+        categories: [
+          "Utility",
+          "Network",
+          "kali-network-information",
+          "kali-network-service-discovery",
+          "kali-network-sniffing",
+        ],
+
         vendor: "oxasploits, llc",
         icon: path.resolve(__dirname, "logo/ps-icon-rounded.png"),
         desktopTemplate: path.resolve(__dirname, "desktop.ejs"),
@@ -99,11 +106,7 @@ module.exports = {
           categories: ["Utility", "Network"],
           vendor: "oxasploits, llc",
           icon: path.resolve(__dirname, "logo/ps-icon-rounded.png"),
-          desktopTemplate: path.join(
-            __dirname,
-            "templates",
-            "packetsnitch.desktop",
-          ),
+          desktopTemplate: path.join(__dirname, "desktop.ejs"),
         },
       },
     },

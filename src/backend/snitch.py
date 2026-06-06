@@ -63,6 +63,11 @@ from datetime import datetime
 from decimal import Decimal
 from functools import lru_cache
 
+try:
+    import ollama
+except ImportError:
+    useLlm = False
+
 
 warnings.simplefilter("module")
 os.environ["PYTHONWARNINGS"] = "module"
