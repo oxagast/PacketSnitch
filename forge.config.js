@@ -4,6 +4,9 @@ const path = require("path");
 const fs = require("fs");
 const { execSync } = require("child_process");
 
+const desc =
+  "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.";
+
 module.exports = {
   packagerConfig: {
     asar: true,
@@ -59,8 +62,7 @@ module.exports = {
         copyright: "Copyright (c) 2026 oxasploits, llc",
         primaryIcon: path.resolve(__dirname, "logo/ps-icon.ico"),
         productName: "PacketSnitch",
-        description:
-          "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.",
+        description: desc,
       },
     },
     {
@@ -74,18 +76,13 @@ module.exports = {
         authors: "Marshall Whittaker",
         copyright: "Copyright (c) 2026 oxasploits, llc",
         productName: "PacketSnitch",
-        description:
-          "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.",
+        description: desc,
         homepage: "https://github.com/oxasploits/PacketSnitch",
         maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
         categories: ["Utility", "Network"],
         vendor: "oxasploits, llc",
         icon: path.resolve(__dirname, "logo/ps-icon-rounded.png"),
-        desktopTemplate: path.join(
-          __dirname,
-          "templates",
-          "packetsnitch.desktop",
-        ),
+        desktopTemplate: path.resolve(__dirname, "desktop.ejs"),
       },
     },
     {
@@ -96,8 +93,7 @@ module.exports = {
           authors: "oxasploits, llc",
           copyright: "Copyright (c) 2026 oxasploits, llc",
           productName: "PacketSnitch",
-          description:
-            "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.",
+          description: desc,
           homepage: "https://github.com/oxasploits/PacketSnitch",
           maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
           categories: ["Utility", "Network"],
