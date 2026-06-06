@@ -1,6 +1,9 @@
 const { FusesPlugin } = require("@electron-forge/plugin-fuses");
 const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 const path = require("path");
+const fs = require("fs");
+const { execSync } = require("child_process");
+
 module.exports = {
   packagerConfig: {
     asar: true,
@@ -8,6 +11,41 @@ module.exports = {
     icon: "ps-icon",
     setupIcon: path.resolve(__dirname, "logo/ps-installer-icon.ico"),
   },
+  // hooks: {
+  //   async postPackage(config, options) {
+  //     const outputPath = options.outputPaths[0];
+  //
+  //     let executablePath;
+  //
+  //     if (options.platform === "win32") {
+  //       executablePath = path.join(
+  //         outputPath,
+  //         `${options.executableName || "packetsnitch"}.exe`,
+  //       );
+  //     } else if (options.platform === "linux") {
+  //       executablePath = path.join(
+  //         outputPath,
+  //         options.executableName || "packetsnitch",
+  //       );
+  //     } else {
+  //       console.log(`Skipping UPX for platform ${options.platform}`);
+  //       return;
+  //     }
+  //
+  //     if (!fs.existsSync(executablePath)) {
+  //       throw new Error(`Executable not found: ${executablePath}`);
+  //     }
+  //
+  //     console.log(`Compressing ${executablePath} with UPX...`);
+  //
+  //     execSync("upx --best --lzma " + executablePath, {
+  //       stdio: "inherit",
+  //     });
+  //
+  //     console.log("UPX compression complete.");
+  //   },
+  // },
+  //
   rebuildConfig: {},
   makers: [
     {
