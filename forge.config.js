@@ -11,12 +11,14 @@ module.exports = {
     icon: "ps-icon",
     setupIcon: path.resolve(__dirname, "logo/ps-installer-icon.ico"),
   },
+  // The following bin compression works, but it significantly increases the time the binary
+  // takes to load, while not reducing the file size of the installers much becaseu they are
+  // already compressed by NSIS and DEB/RPM packaging. For now, it's better to have faster
+  // load times than slightly larger installers.  Maybe we can revisit this later.
   // hooks: {
   //   async postPackage(config, options) {
   //     const outputPath = options.outputPaths[0];
-  //
   //     let executablePath;
-  //
   //     if (options.platform === "win32") {
   //       executablePath = path.join(
   //         outputPath,
@@ -31,17 +33,13 @@ module.exports = {
   //       console.log(`Skipping UPX for platform ${options.platform}`);
   //       return;
   //     }
-  //
   //     if (!fs.existsSync(executablePath)) {
   //       throw new Error(`Executable not found: ${executablePath}`);
   //     }
-  //
   //     console.log(`Compressing ${executablePath} with UPX...`);
-  //
   //     execSync("upx --best --lzma " + executablePath, {
   //       stdio: "inherit",
   //     });
-  //
   //     console.log("UPX compression complete.");
   //   },
   // },
