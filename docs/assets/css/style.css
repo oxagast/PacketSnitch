@@ -8,3 +8,7 @@ a:visited {
   color: #dddbdf;
   text-decoration: none;
 }
+
+h1 {
+  visibility: hidden;
+}
