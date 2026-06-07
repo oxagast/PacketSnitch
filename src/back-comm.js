@@ -10,7 +10,7 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   global.logBackend(`[Bridge] Received pcap: ${filename}`);
   const isDev = !require("electron").app.isPackaged;
   const basePath = isDev
-    ? path.join(__dirname, "../../src/")
+    ? path.join(__dirname, "../../src/backend/")
     : process.resourcesPath;
   let snitchExePath;
 

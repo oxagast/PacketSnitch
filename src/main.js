@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
+const appLock = app.requestSingleInstanceLock();
 const fs = require("fs");
 const path = require("path");
 const { pathToFileURL } = require("url");
@@ -19,6 +20,21 @@ const activityLogEntries = [];
 const pendingActivityLogEntries = [];
 let isFirstRunAfterInstall = false;
 let cachedOllamaInstalled = false;
+if (!appLock) {
+  console.error(
+    "Another instance of PacketSnitch is already running. Exiting this instance.",
+  );
+  app.quit();
+  process.exit(0);
+}
+app.on("second-instance", () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.focus();
+  }
+});
 
 if (require("electron-squirrel-startup")) {
   app.quit();
@@ -235,34 +251,29 @@ app.whenReady().then(() => {
 ipcMain.handle("check-first-run", async () => {
   const isDev = !app.isPackaged;
   const basePath = isDev
-    ? path.join(__dirname, "../../src/")
+    ? path.join(__dirname, "../../src/backend/")
     : process.resourcesPath;
   const backendExe = platform === "win32" ? "snitch.exe" : "snitch";
   const filesToCheck = [
     {
       name: "PacketSnitch Backend (" + backendExe + ")",
-      path: path.join(basePath, "backend/snitch/", backendExe),
+      path: path.join(basePath, "snitch", backendExe),
     },
     {
       name: "GeoIP Database (GeoLite2-City.mmdb)",
-      path: path.join(basePath, "backend", "common", "GeoLite2-City.mmdb"),
+      path: path.join(basePath, "common", "GeoLite2-City.mmdb"),
     },
     {
       name: "MAC Vendors Database (mac-vendors-export.csv)",
-      path: path.join(basePath, "backend", "common", "mac-vendors-export.csv"),
+      path: path.join(basePath, "common", "mac-vendors-export.csv"),
     },
     {
       name: "Services Database (service-names-port-numbers.csv)",
-      path: path.join(
-        basePath,
-        "backend",
-        "common",
-        "service-names-port-numbers.csv",
-      ),
+      path: path.join(basePath, "common", "service-names-port-numbers.csv"),
     },
     {
-      name: "Frontend Interface (*.html *.js *.css)",
-      path: path.join(basePath, "index.html"),
+      name: "Frontend Interface (app.asar)",
+      path: path.join(process.resourcesPath, "app.asar"),
     },
   ];
   const installedFiles = filesToCheck.map((f) => ({
@@ -279,14 +290,16 @@ ipcMain.handle("check-first-run", async () => {
 });
 
 ipcMain.handle("dismiss-first-run", async () => {
-  const currentVersion = app.getVersion();
-  try {
-    fs.writeFileSync(versionFilePath, currentVersion, "utf8");
-    isFirstRunAfterInstall = false;
-    return { success: true };
-  } catch (err) {
-    console.error("Failed to write version file:", err);
-    return { success: false, error: err.message };
+  if (app.isPackaged) {
+    const currentVersion = app.getVersion();
+    try {
+      fs.writeFileSync(versionFilePath, currentVersion, "utf8");
+      isFirstRunAfterInstall = false;
+      return { success: true };
+    } catch (err) {
+      console.error("Failed to write version file:", err);
+      return { success: false, error: err.message };
+    }
   }
 });
 
