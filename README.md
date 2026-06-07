@@ -67,7 +67,7 @@ Launch the app with `packetsnitch` or click the desktop icon.
 
 ## Documentation
 
-- 🚀 [Startup Docs](docs/README.md) --  Quickstart Documentation
+- 🚀 [Startup Docs](docs/README.md)  — Quickstart Documentation
 - 📖 [Frontend Docs](docs/Frontend.md) — UI reference, installation, developer setup
 - ⚙️ [Backend Docs](docs/Backend.md) — `snitch.py` usage, arguments, output structure
 - 🔎 [Filter Reference](docs/Filters.md) — Complete filter keys, operators, examples
