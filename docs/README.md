@@ -46,3 +46,15 @@ GPL v3
 ### Author
 
 Marshall Whittaker <marshall@oxasploits.com>
+
+### Thanks / Contibutions
+
+- blissfulboy (frontend design suggestions and feedback)
+- kusanagi (frontend feedback and some sponsorship stuff)
+- Martin Ollivere (Rat on wheel spinning gif)
+- tiamo64 (Performance optimizations)
+- Everyone else who has tested or contributed in some way, big or small, thank you!
+
+### Sponsors
+
+_If you sponsor PacketSnitch, your name and a link of your choice will be added here!_
