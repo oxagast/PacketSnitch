@@ -27,13 +27,13 @@ Linux:
 
 Windows:
 
-- Windows 11:
-  Click on PacketSnitchInstaller.exe
+- Click:
+  `PacketSnitchInstaller.exe`
 
 **Launch** — launch the desktop app:
 
 ```bash
-packetsnitch          # Linux
+packetsnitch            # Linux
 packetsnitch.exe        # Windows
 ```
 
