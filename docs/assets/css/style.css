@@ -1,3 +1,10 @@
 body {
-  background-color: #43416e; /* Replace with your hex code */
+  background-color: #43416e;
+  color: #ffffff;
+}
+
+a:link,
+a:visited {
+  color: #dddbdf;
+  text-decoration: none;
 }
