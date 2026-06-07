@@ -159,9 +159,9 @@ See the [Filter Reference](Documentation/Filters.md) for the complete list of ke
 
 ## Documentation
 
-- 📖 [Frontend Docs](Documentation/Frontend.md) — UI reference, installation, developer setup
-- ⚙️ [Backend Docs](Documentation/Backend.md) — `snitch.py` usage, arguments, output structure
-- 🔎 [Filter Reference](Documentation/Filters.md) — Complete filter keys, operators, examples
+- 📖 [Frontend Docs](docs/Frontend.md) — UI reference, installation, developer setup
+- ⚙️ [Backend Docs](docs/Backend.md) — `snitch.py` usage, arguments, output structure
+- 🔎 [Filter Reference](docs/Filters.md) — Complete filter keys, operators, examples
 
 ---
 
