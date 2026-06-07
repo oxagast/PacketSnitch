@@ -2,7 +2,7 @@
   "name": "packetsnitch",
   "executableName": "packetsnitch",
   "productName": "packetsnitch",
-  "version": "1.5.718",
+  "version": "1.5.731",
   "description": "A High Level Network Analysis Tool",
   "main": ".webpack/main",
   "private": false,
