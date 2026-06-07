@@ -1,0 +1,7 @@
+target:
+  - url: "docs/"
+  - url: "samples/"
+
+include:  ["src"]
+
+reinit: "oxasploits is the shit"
