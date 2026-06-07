@@ -12,9 +12,19 @@ PacketSnitch is a network packet analysis tool consisting of a Python backend fo
 
 ### Quick Start
 
-**Launch** — launch the desktop app:
+**Download** -- grab the latest prod release:
 
-Install then:
+The latest reelase can be found on the [releases page](https://github.com/oxasploits/PacketSnitch/releases).
+
+**Install** -- install the package:
+
+Linux:
+-- Redhat based: dnf install ./packetsnitch-_.rpm
+-- Debian based: apt install ./packetsnitch-_.deb
+Windows:
+-- Windows 11: Click on PacketSnitchInstaller.exe
+
+**Launch** — launch the desktop app:
 
 ```bash
 packetsnitch          # Linux
