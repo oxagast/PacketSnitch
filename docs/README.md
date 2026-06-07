@@ -16,6 +16,18 @@ PacketSnitch is a network packet analysis tool consisting of a Python backend fo
 
 The latest release can be found on the [releases page](https://github.com/oxasploits/PacketSnitch/releases).
 
+_OR..._
+
+**Build** -- build it from source code:
+
+1. Clone the repository, this can be done via: `git clone https://github.com/oxasploits/PacketSnitch.git`.
+2. Move into the PacketSnitch direcotry: `cd PacketSnitch`.
+3. Use NPM to install build dependancies: `npm install`.
+4. If on Linux (specifically Fedora) run: `npm run patch-rpm-build`.
+5. Build the project, this compiles the backend and frontend: `npm run make`.
+6. You can now launch the dev version using: `npm start`!
+7. Note: _The installer is also packaged at_: `./out/make/*`
+
 **Install** -- install the package:
 
 Linux:
