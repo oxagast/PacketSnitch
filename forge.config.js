@@ -8,7 +8,7 @@ const desc =
 
 module.exports = {
   packagerConfig: {
-    icon: path.join(__dirname, "ps-icon"),
+    icon: path.join(__dirname, "logo", "ps-icon"),
     asar: true,
     extraResource: ["src/backend/snitch", "src/backend/common/"],
   },
@@ -16,7 +16,7 @@ module.exports = {
   // takes to load, while not reducing the file size of the installers much becaseu they are
   // already compressed by NSIS and DEB/RPM packaging. For now, it's better to have faster
   // load times than slightly larger installers.  Maybe we can revisit this later.
-  hooks: {
+/*   hooks: {
     async postPackage(config, options) {
       const outputPath = options.outputPaths[0];
       let executablePath;
@@ -42,7 +42,7 @@ module.exports = {
       });
       console.log("UPX compression complete.");
     },
-  },
+  }, */
   rebuildConfig: {},
   makers: [
     {
