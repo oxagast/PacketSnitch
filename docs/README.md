@@ -14,7 +14,7 @@ PacketSnitch is a network packet analysis tool consisting of a Python backend fo
 
 **Download** -- grab the latest prod release:
 
-The latest reelase can be found on the [releases page](https://github.com/oxasploits/PacketSnitch/releases).
+The latest release can be found on the [releases page](https://github.com/oxasploits/PacketSnitch/releases).
 
 **Install** -- install the package:
 
