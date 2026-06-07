@@ -15,11 +15,11 @@ ipcMain.handle("run-backend-command", async (event, filename, useLLM) => {
   let snitchExePath;
 
   if (platform === "win32") {
-    snitchExePath = path.join(basePath, "\\backend\\snitch\\snitch.exe");
+    snitchExePath = path.join(basePath, "\\snitch\\snitch.exe");
   } else if (platform === "linux") {
-    snitchExePath = path.join(basePath, "/backend/snitch/snitch");
+    snitchExePath = path.join(basePath, "/snitch/snitch");
   } else {
-    snitchExePath = path.join(basePath, "/backend/snitch/snitch");
+    snitchExePath = path.join(basePath, "/snitch/snitch");
   }
 
   const backendCommand = `"${snitchExePath}" "${filename}" -v -a -o "${testcaseOutputDir}"${useLLM ? "" : " --nollm"}`;
