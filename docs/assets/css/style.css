@@ -12,3 +12,8 @@ a:visited {
 h1 {
   visibility: hidden;
 }
+
+h2 {
+  visibility: visible;
+  color: #43416e;
+}
