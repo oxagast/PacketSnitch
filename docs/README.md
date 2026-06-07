@@ -38,21 +38,20 @@ _OR..._
 
 Linux:
 
-- Redhat based:
-  `dnf install ./packetsnitch-_.rpm`
-- Debian based:
-  `apt install ./packetsnitch-_.deb`
+```bash
+sudo dnf install ./out/make/*/packetsnitch-*.rpm  # redhat/centos/fedora
+sudo apt install ./out/make/*/packetsnitch-*.deb  # debian/kali/ubuntu
+```
 
 Windows:
 
-- Click:
-  `PacketSnitchInstaller.exe`
+Click: `PacketSnitchInstaller.exe`
 
 **Launch** — launch the desktop app:
 
 ```bash
-packetsnitch            # Linux
-packetsnitch.exe        # Windows
+packetsnitch                      # Linux
+packetsnitch.exe (or click)       # Windows
 ```
 
 Load a pcap or pcapng file, and start analyzing!
