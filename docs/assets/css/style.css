@@ -5,15 +5,15 @@ body {
 
 a:link,
 a:visited {
-  color: #dddbdf;
+  color: #878ab6;
   text-decoration: none;
 }
 
 h1 {
-  visibility: hidden;
+  display: none;
 }
 
 h2 {
   visibility: visible;
-  color: #43416e;
+  color: #878ab6;
 }
