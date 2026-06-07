@@ -20,13 +20,7 @@
   "engines": {
     "node": ">=12.11.0"
   },
-  "build": {
-    "win": {
-      "target": "nsis",
-      "icon": "logo/ps-icon.ico"
-    },
-    "squirrelWindows": {}
-  },
+
   "keywords": [
     "packet sniffer",
     "network analysis",

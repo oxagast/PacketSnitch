@@ -3,16 +3,14 @@ const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 const path = require("path");
 const fs = require("fs");
 const { execSync } = require("child_process");
-
 const desc =
   "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.";
 
 module.exports = {
   packagerConfig: {
+	icon: path.join(__dirname, "ps-icon"),
     asar: true,
-    extraResource: ["src/backend/"],
-    icon: "ps-icon",
-    setupIcon: path.resolve(__dirname, "logo/ps-installer-icon.ico"),
+    extraResource: ["src/backend/snitch", "src/backend/common/"],
   },
   // The following bin compression works, but it significantly increases the time the binary
   // takes to load, while not reducing the file size of the installers much becaseu they are
@@ -53,7 +51,7 @@ module.exports = {
       name: "@electron-forge/maker-squirrel",
       config: {
         loadingGif: path.resolve(__dirname, "logo/ps-install-loop.gif"),
-        iconUrl: path.resolve(__dirname, "logo/ps-icon.ico"),
+        iconUrl: "https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/logo/ps-icon.ico",
         setupIcon: path.resolve(__dirname, "logo/ps-installer-icon.ico"),
         name: "PacketSnitch",
         setupExe: "PacketSnitchInstaller.exe",
@@ -73,6 +71,7 @@ module.exports = {
       name: "@electron-forge/maker-deb",
       config: {
         primaryIcon: path.resolve(__dirname, "logo/ps-icon.png"),
+		name: "packetsnitch",
         authors: "Marshall Whittaker",
         copyright: "Copyright (c) 2026 oxasploits, llc",
         productName: "PacketSnitch",
