@@ -8,7 +8,7 @@ const desc =
 
 module.exports = {
   packagerConfig: {
-	icon: path.join(__dirname, "ps-icon"),
+    icon: path.join(__dirname, "ps-icon"),
     asar: true,
     extraResource: ["src/backend/snitch", "src/backend/common/"],
   },
@@ -16,42 +16,41 @@ module.exports = {
   // takes to load, while not reducing the file size of the installers much becaseu they are
   // already compressed by NSIS and DEB/RPM packaging. For now, it's better to have faster
   // load times than slightly larger installers.  Maybe we can revisit this later.
-  // hooks: {
-  //   async postPackage(config, options) {
-  //     const outputPath = options.outputPaths[0];
-  //     let executablePath;
-  //     if (options.platform === "win32") {
-  //       executablePath = path.join(
-  //         outputPath,
-  //         `${options.executableName || "packetsnitch"}.exe`,
-  //       );
-  //     } else if (options.platform === "linux") {
-  //       executablePath = path.join(
-  //         outputPath,
-  //         options.executableName || "packetsnitch",
-  //       );
-  //     } else {
-  //       console.log(`Skipping UPX for platform ${options.platform}`);
-  //       return;
-  //     }
-  //     if (!fs.existsSync(executablePath)) {
-  //       throw new Error(`Executable not found: ${executablePath}`);
-  //     }
-  //     console.log(`Compressing ${executablePath} with UPX...`);
-  //     execSync("upx --best --lzma " + executablePath, {
-  //       stdio: "inherit",
-  //     });
-  //     console.log("UPX compression complete.");
-  //   },
-  // },
-  //
+  hooks: {
+    async postPackage(config, options) {
+      const outputPath = options.outputPaths[0];
+      let executablePath;
+      if (options.platform === "win32") {
+        executablePath = path.join(
+          outputPath,
+          `${options.executableName || "packetsnitch"}.exe`,
+        );
+      } else if (options.platform === "linux") {
+        executablePath = path.join(
+          outputPath,
+          options.executableName || "packetsnitch",
+        );
+      } else {
+        console.log(`Skipping UPX for platform ${options.platform}`);
+        return;
+      }
+      if (!fs.existsSync(executablePath)) {
+        throw new Error(`Executable not found: ${executablePath}`);
+      }
+      execSync("upx -q -4 " + executablePath, {
+        stdio: "ignore",
+      });
+      console.log("UPX compression complete.");
+    },
+  },
   rebuildConfig: {},
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
       config: {
         loadingGif: path.resolve(__dirname, "logo/ps-install-loop.gif"),
-        iconUrl: "https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/logo/ps-icon.ico",
+        iconUrl:
+          "https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/logo/ps-icon.ico",
         setupIcon: path.resolve(__dirname, "logo/ps-installer-icon.ico"),
         name: "PacketSnitch",
         setupExe: "PacketSnitchInstaller.exe",
@@ -71,7 +70,7 @@ module.exports = {
       name: "@electron-forge/maker-deb",
       config: {
         primaryIcon: path.resolve(__dirname, "logo/ps-icon.png"),
-		name: "packetsnitch",
+        name: "packetsnitch",
         authors: "Marshall Whittaker",
         copyright: "Copyright (c) 2026 oxasploits, llc",
         productName: "PacketSnitch",
