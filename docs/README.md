@@ -19,10 +19,16 @@ The latest reelase can be found on the [releases page](https://github.com/oxaspl
 **Install** -- install the package:
 
 Linux:
--- Redhat based: dnf install ./packetsnitch-_.rpm
--- Debian based: apt install ./packetsnitch-_.deb
+
+- Redhat based:
+  `dnf install ./packetsnitch-_.rpm`
+- Debian based:
+  `apt install ./packetsnitch-_.deb`
+
 Windows:
--- Windows 11: Click on PacketSnitchInstaller.exe
+
+- Windows 11:
+  Click on PacketSnitchInstaller.exe
 
 **Launch** — launch the desktop app:
 
