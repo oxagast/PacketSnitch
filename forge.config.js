@@ -5,6 +5,119 @@ const fs = require("fs");
 const { execSync } = require("child_process");
 const desc =
   "A network traffic analysis tool, designed to help users understand and monitor network activity on their devices.";
+const vendor = "oxasploits, llc";
+const author = "Marshall Whittaker";
+const copyright = `Copyright (c) 2026 ${vendor}`;
+const homepage = "https://oxasploits.github.io/PacketSnitch/";
+const maintainer = "Marshall Whittaker <marshall@oxasploit.com>";
+
+function detectPlatformFamily() {
+  switch (process.platform) {
+    case "win32":
+      return "windows";
+
+    case "linux":
+      try {
+        const osRelease = fs.readFileSync("/etc/os-release", "utf8");
+
+        if (
+          osRelease.includes("ID=debian") ||
+          osRelease.includes("ID=ubuntu") ||
+          osRelease.includes("ID_LIKE=debian")
+        ) {
+          return "debian";
+        }
+
+        if (
+          osRelease.includes("ID=fedora") ||
+          osRelease.includes("ID=rhel") ||
+          osRelease.includes("ID=centos") ||
+          osRelease.includes('ID_LIKE="rhel fedora"') ||
+          osRelease.includes("ID_LIKE=fedora") ||
+          osRelease.includes("ID_LIKE=rhel")
+        ) {
+          return "redhat";
+        }
+      } catch {
+        // ignore
+      }
+
+      return "linux";
+
+    default:
+      return process.platform;
+  }
+}
+
+const platform = detectPlatformFamily();
+const makers = [];
+if (platform === "windows") {
+  makers.push({
+    name: "@electron-forge/maker-squirrel",
+    config: {
+      loadingGif: path.resolve(__dirname, "logo/ps-install-loop.gif"),
+      iconUrl:
+        "https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/logo/ps-icon.ico",
+      setupIcon: path.resolve(__dirname, "logo/ps-installer-icon.ico"),
+      name: "PacketSnitch",
+      setupExe: "PacketSnitchInstaller.exe",
+      vendor: vendor,
+      authors: author,
+      copyright: copyright,
+      primaryIcon: path.resolve(__dirname, "logo/ps-icon.ico"),
+      productName: "PacketSnitch",
+      description: desc,
+    },
+  });
+}
+
+if (platform === "debian") {
+  makers.push({
+    name: "@electron-forge/maker-deb",
+    config: {
+      primaryIcon: path.resolve(__dirname, "logo/ps-icon.png"),
+      name: "packetsnitch",
+      authors: author,
+      copyright: copyright,
+      productName: "PacketSnitch",
+      description: desc,
+      homepage: homepage,
+      maintainer: maintainer,
+      categories: [
+        "Utility",
+        "Network",
+        "kali-network-information",
+        "kali-network-service-discovery",
+        "kali-network-sniffing",
+      ],
+
+      vendor: vendor,
+      icon: path.resolve(__dirname, "logo/ps-icon-rounded.png"),
+      desktopTemplate: path.resolve(__dirname, "desktop.ejs"),
+    },
+  });
+}
+
+if (platform === "redhat") {
+  makers.push({
+    name: "@electron-forge/maker-rpm",
+    config: {
+      options: {
+        name: "packetsnitch",
+        authors: author,
+        copyright: copyright,
+        productName: "PacketSnitch",
+        description: desc,
+        homepage: homepage,
+        maintainer: maintainer,
+        categories: ["Utility", "Network"],
+        vendor: vendor,
+        icon: path.resolve(__dirname, "logo/ps-icon-rounded.png"),
+        desktopTemplate: path.join(__dirname, "desktop.ejs"),
+      },
+    },
+  });
+}
 
 module.exports = {
   packagerConfig: {
@@ -12,103 +125,8 @@ module.exports = {
     asar: true,
     extraResource: ["src/backend/snitch", "src/backend/common/"],
   },
-  // The following bin compression works, but it significantly increases the time the binary
-  // takes to load, while not reducing the file size of the installers much becaseu they are
-  // already compressed by NSIS and DEB/RPM packaging. For now, it's better to have faster
-  // load times than slightly larger installers.  Maybe we can revisit this later.
-/*   hooks: {
-    async postPackage(config, options) {
-      const outputPath = options.outputPaths[0];
-      let executablePath;
-      if (options.platform === "win32") {
-        executablePath = path.join(
-          outputPath,
-          `${options.executableName || "packetsnitch"}.exe`,
-        );
-      } else if (options.platform === "linux") {
-        executablePath = path.join(
-          outputPath,
-          options.executableName || "packetsnitch",
-        );
-      } else {
-        console.log(`Skipping UPX for platform ${options.platform}`);
-        return;
-      }
-      if (!fs.existsSync(executablePath)) {
-        throw new Error(`Executable not found: ${executablePath}`);
-      }
-      execSync("upx -q -4 " + executablePath, {
-        stdio: "ignore",
-      });
-      console.log("UPX compression complete.");
-    },
-  }, */
   rebuildConfig: {},
-  makers: [
-    {
-      name: "@electron-forge/maker-squirrel",
-      config: {
-        loadingGif: path.resolve(__dirname, "logo/ps-install-loop.gif"),
-        iconUrl:
-          "https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/logo/ps-icon.ico",
-        setupIcon: path.resolve(__dirname, "logo/ps-installer-icon.ico"),
-        name: "PacketSnitch",
-        setupExe: "PacketSnitchInstaller.exe",
-        vendor: "oxasploits, llc",
-        authors: "Marshall Whittaker",
-        copyright: "Copyright (c) 2026 oxasploits, llc",
-        primaryIcon: path.resolve(__dirname, "logo/ps-icon.ico"),
-        productName: "PacketSnitch",
-        description: desc,
-      },
-    },
-    {
-      name: "@electron-forge/maker-zip",
-      platforms: ["darwin"],
-    },
-    {
-      name: "@electron-forge/maker-deb",
-      config: {
-        primaryIcon: path.resolve(__dirname, "logo/ps-icon.png"),
-        name: "packetsnitch",
-        authors: "Marshall Whittaker",
-        copyright: "Copyright (c) 2026 oxasploits, llc",
-        productName: "PacketSnitch",
-        description: desc,
-        homepage: "https://github.com/oxasploits/PacketSnitch",
-        maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
-        categories: [
-          "Utility",
-          "Network",
-          "kali-network-information",
-          "kali-network-service-discovery",
-          "kali-network-sniffing",
-        ],
-
-        vendor: "oxasploits, llc",
-        icon: path.resolve(__dirname, "logo/ps-icon-rounded.png"),
-        desktopTemplate: path.resolve(__dirname, "desktop.ejs"),
-      },
-    },
-    {
-      name: "@electron-forge/maker-rpm",
-      config: {
-        options: {
-          name: "packetsnitch",
-          authors: "oxasploits, llc",
-          copyright: "Copyright (c) 2026 oxasploits, llc",
-          productName: "PacketSnitch",
-          description: desc,
-          homepage: "https://github.com/oxasploits/PacketSnitch",
-          maintainer: "Marshall Whittaker <marshall@oxasploits.com>",
-          categories: ["Utility", "Network"],
-          vendor: "oxasploits, llc",
-          icon: path.resolve(__dirname, "logo/ps-icon-rounded.png"),
-          desktopTemplate: path.join(__dirname, "desktop.ejs"),
-        },
-      },
-    },
-  ],
+  makers,
   plugins: [
     {
       name: "@electron-forge/plugin-auto-unpack-natives",
