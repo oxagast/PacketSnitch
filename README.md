@@ -1,7 +1,6 @@
-# PacketSnitch
 
-<p align="center">
-  <img src="https://github.com/oxasploits/PacketSnitch/blob/main/logo/ps-tagline.png" alt="PacketSnitch" width="400">
+<p align="center"><a href="https://github.com/oxasploits/PacketSnitch">
+  <img src="https://github.com/oxasploits/PacketSnitch/blob/main/logo/ps-tagline.png" alt="PacketSnitch" width="400"></a>
 </p>
 
 <p align="center">
@@ -59,7 +58,7 @@ Launch the app with `packetsnitch` or click the desktop icon.
 ## Documentation
 
 - 🚀 [Startup Docs](docs/README.md)  — Quickstart Documentation
-- 📖 [Frontend Docs](docs/Frontend.md) — UI reference, installation, developer setup
+- 📖 [Frontend Docs](docs/Frontend.md) — UI reference, conversions, encryption, notes
 - ⚙️ [Backend Docs](docs/Backend.md) — `snitch.py` usage, arguments, output structure
 - 🔎 [Filter Reference](docs/Filters.md) — Complete filter keys, operators, examples
 
@@ -82,15 +81,14 @@ Launch the app with `packetsnitch` or click the desktop icon.
 If you find PacketSnitch useful, please consider supporting its development:
 
 <p align="center">
-  <a href="https://thanks.dev/oxasploits">
-    <img src="https://img.shields.io/badge/Thanks.dev-Donate-orange" alt="Thanks.dev">
+  <a href="https://github.com/sponsors/oxagast">
+  Sponsor on Github
   </a>
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/docs/bitcoin-qr.png" width="120" alt="Bitcoin">
-  &nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/docs/paypal-qr.png" width="120" alt="PayPal">
-  &nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/docs/venmo-qr.png" width="120" alt="Venmo">
+  <br>
+  <a href="https://thanks.dev/oxasploits">
+    Sponsor on Thanks.Dev
+  </a><br>
+  <a href="https://buymeacoffee.com/oxagast">
+    Sponsor on Buy me a Coffee
+  </a>
 </p>
