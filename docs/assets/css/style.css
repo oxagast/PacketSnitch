@@ -17,3 +17,16 @@ h2 {
   visibility: visible;
   color: #878ab6;
 }
+
+table,
+th,
+td {
+  border: 1px solid #878ab6;
+}
+
+tr:hover {
+  background-color: #696f96;
+}
+tr:nth-child(even) {
+  background-color: #4a4f70;
+}
