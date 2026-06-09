@@ -1,4 +1,6 @@
+<p align="center">
 <a href="https://oxasploits.github.io/PacketSnitch/" alt="PacketSnitch by oxasploits"><img src="https://raw.githubusercontent.com/oxasploits/PacketSnitch/refs/heads/main/logo/ps-tagline.png"></a>
+</p>
 
 ## Backend Documentation
 
