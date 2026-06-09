@@ -24,6 +24,10 @@ td {
   border: 1px solid #878ab6;
 }
 
+tr {
+  background-color: #5b5f80;
+}
+
 tr:hover {
   background-color: #696f96;
 }
