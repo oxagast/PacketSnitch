@@ -3515,6 +3515,8 @@ const convertContextButtons = {
   httpFileSave: getCachedElement("ctx-http-file-save"),
   httpFileLoad: getCachedElement("ctx-http-file-load"),
   httpFilePreview: getCachedElement("ctx-http-file-preview"),
+  followStreamConv: getCachedElement("ctx-follow-stream-conv"),
+  followStreamCrypt: getCachedElement("ctx-follow-stream-crypt"),
 };
 const convertContextSubmenus = {
   copy: getCachedElement("ctx-copy-submenu"),
@@ -3534,6 +3536,7 @@ const convertContextSubmenus = {
   keystoreCookie: getCachedElement("ctx-keystore-cookie-submenu"),
   keystoreUri: getCachedElement("ctx-keystore-uri-submenu"),
   httpFile: getCachedElement("ctx-http-file-submenu"),
+  followStream: getCachedElement("ctx-follow-stream-submenu"),
 };
 const convertContextDividerEl = getCachedElement("convert-context-divider");
 const convertContextSaveDividerEl = getCachedElement(
@@ -4237,6 +4240,10 @@ function showConvertContextMenu(
   convertContextSubmenus.httpFile.style.display = hasHttpBody
     ? "block"
     : "none";
+  const hasFollowStreamActions = Boolean(getCurrentStreamTuple());
+  convertContextSubmenus.followStream.style.display = hasFollowStreamActions
+    ? "block"
+    : "none";
   if (
     !hasGeneralActions &&
     !hasDataTypeActions &&
@@ -4246,7 +4253,8 @@ function showConvertContextMenu(
     !hasNotesActions &&
     !hasKeystoreActions &&
     !hasExportActions &&
-    !hasHttpBody
+    !hasHttpBody &&
+    !hasFollowStreamActions
   ) {
     hideConvertContextMenu();
     return;
@@ -4378,6 +4386,216 @@ function getActivePacketCursor() {
     ? activePacketCursor
     : null;
 }
+
+/**
+ * Returns the total number of packets across all hosts in capturedPackets.
+ * Used to decide whether to show the stream-loading overlay.
+ */
+function getTotalPacketCount() {
+  const hosts = capturedPackets?.["Host"];
+  if (!hosts || typeof hosts !== "object") return 0;
+  return Object.values(hosts).reduce(
+    (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
+    0,
+  );
+}
+
+// Minimum total-packet count that triggers the stream-loading overlay.
+// getFollowStreamPackets() iterates every packet across all hosts, so captures
+// with ~500+ packets produce a noticeable pause without the overlay.
+const STREAM_LOADING_THRESHOLD = 500;
+
+/**
+ * Shows the loading-container overlay with a stream-specific message.
+ * The caller is responsible for hiding it with hideStreamLoadingOverlay().
+ */
+function showStreamLoadingOverlay() {
+  const loadingTextEl = document.getElementById("loading-text");
+  const loadingContainerEl = document.getElementById("loading-container");
+  if (loadingTextEl) loadingTextEl.textContent = "Preparing stream...";
+  if (loadingContainerEl) loadingContainerEl.style.display = "block";
+}
+
+/** Hides the loading-container overlay shown by showStreamLoadingOverlay(). */
+function hideStreamLoadingOverlay() {
+  const loadingContainerEl = document.getElementById("loading-container");
+  if (loadingContainerEl) loadingContainerEl.style.display = "none";
+}
+
+/**
+ * Returns metadata about the current packet's stream (4-tuple: srcIp, srcPort,
+ * dstIp, dstPort, protocol), or null if no current packet is loaded.
+ */
+function getCurrentStreamTuple() {
+  const cursor = getActivePacketCursor();
+  if (cursor === null) return null;
+  const packetInfo = packetsForHost?.[cursor]?.["Packet Info"];
+  if (!packetInfo) return null;
+  const srcIp = packetInfo["IP"]?.["Source IP"];
+  const dstIp = packetInfo["IP"]?.["Destination IP"];
+  const protocol = packetInfo["Protocol"] || "TCP";
+  const transportData = packetInfo[protocol] || {};
+  const srcPort = transportData["Source port"] ?? null;
+  const dstPort = transportData["Destination port"] ?? null;
+  if (!srcIp || !dstIp) return null;
+  return { srcIp, srcPort, dstIp, dstPort, protocol };
+}
+
+/**
+ * Collects all packets across all hosts in capturedPackets that belong to the
+ * same bidirectional conversation as the current packet, sorted by timestamp.
+ * Returns an array of packet objects, or [] when no stream can be determined.
+ */
+function getFollowStreamPackets() {
+  const tuple = getCurrentStreamTuple();
+  if (!tuple) return [];
+  const { srcIp, srcPort, dstIp, dstPort, protocol } = tuple;
+  const hasPorts = srcPort !== null && dstPort !== null;
+  const matches = [];
+  const hosts = capturedPackets?.["Host"];
+  if (!hosts || typeof hosts !== "object") return [];
+  for (const host of Object.values(hosts)) {
+    if (!Array.isArray(host)) continue;
+    for (const pkt of host) {
+      const pi = pkt?.["Packet Info"];
+      if (!pi) continue;
+      const pProto = pi["Protocol"] || "TCP";
+      if (pProto !== protocol) continue;
+      const pSrcIp = pi["IP"]?.["Source IP"];
+      const pDstIp = pi["IP"]?.["Destination IP"];
+      if (!pSrcIp || !pDstIp) continue;
+      const pTransport = pi[pProto] || {};
+      const pSrcPort = pTransport["Source port"] ?? null;
+      const pDstPort = pTransport["Destination port"] ?? null;
+      const forwardMatch =
+        pSrcIp === srcIp &&
+        pDstIp === dstIp &&
+        (!hasPorts || (pSrcPort === srcPort && pDstPort === dstPort));
+      const reverseMatch =
+        pSrcIp === dstIp &&
+        pDstIp === srcIp &&
+        (!hasPorts || (pSrcPort === dstPort && pDstPort === srcPort));
+      if (forwardMatch || reverseMatch) {
+        matches.push(pkt);
+      }
+    }
+  }
+  // Sort by packet timestamp, falling back to Index for stable ordering.
+  matches.sort((a, b) => {
+    const tsA = a?.["Packet Info"]?.["Packet Timestamp"] ?? "";
+    const tsB = b?.["Packet Info"]?.["Packet Timestamp"] ?? "";
+    if (tsA < tsB) return -1;
+    if (tsA > tsB) return 1;
+    const idxA = Number(a?.["Packet Info"]?.["Index"] ?? 0);
+    const idxB = Number(b?.["Packet Info"]?.["Index"] ?? 0);
+    return idxA - idxB;
+  });
+  return matches;
+}
+
+/**
+ * Returns a hex string with all payloads from the stream concatenated, and a
+ * summary label for logging.  Returns null when no payload data is found.
+ */
+function buildStreamHex(streamPackets) {
+  if (!streamPackets.length) return null;
+  let combined = "";
+  for (const pkt of streamPackets) {
+    const payloadHex =
+      pkt?.["Packet Info"]?.["Raw data"]?.["Payload"]?.["Hex Encoded"];
+    if (typeof payloadHex === "string" && payloadHex.length > 0) {
+      combined += payloadHex;
+    }
+  }
+  return combined || null;
+}
+
+function followStreamToConv() {
+  hideConvertContextMenu();
+  const isLarge = getTotalPacketCount() >= STREAM_LOADING_THRESHOLD;
+  if (isLarge) {
+    showStreamLoadingOverlay();
+    setTimeout(() => {
+      try {
+        _doFollowStreamToConv();
+      } finally {
+        hideStreamLoadingOverlay();
+      }
+    }, 0);
+  } else {
+    _doFollowStreamToConv();
+  }
+}
+
+function _doFollowStreamToConv() {
+  const streamPackets = getFollowStreamPackets();
+  if (!streamPackets.length) {
+    statusUpdate("Status: No stream packets found for current packet");
+    return;
+  }
+  const combinedHex = buildStreamHex(streamPackets);
+  if (!combinedHex) {
+    statusUpdate("Status: Stream packets have no payload data");
+    return;
+  }
+  const inputEl = document.getElementById("data-tools-input");
+  const formatEl = document.getElementById("data-tools-format");
+  inputEl.value = combinedHex;
+  formatEl.value = "hex";
+  showDataTools();
+  runDataToolsConversion();
+  writeLogEntry(
+    `Follow stream loaded ${streamPackets.length} packets into Conv tab`,
+  );
+}
+
+function followStreamToCrypt() {
+  hideConvertContextMenu();
+  const isLarge = getTotalPacketCount() >= STREAM_LOADING_THRESHOLD;
+  if (isLarge) {
+    showStreamLoadingOverlay();
+    setTimeout(() => {
+      try {
+        _doFollowStreamToCrypt();
+      } finally {
+        hideStreamLoadingOverlay();
+      }
+    }, 0);
+  } else {
+    _doFollowStreamToCrypt();
+  }
+}
+
+function _doFollowStreamToCrypt() {
+  const streamPackets = getFollowStreamPackets();
+  if (!streamPackets.length) {
+    statusUpdate("Status: No stream packets found for current packet");
+    return;
+  }
+  const combinedHex = buildStreamHex(streamPackets);
+  if (!combinedHex) {
+    statusUpdate("Status: Stream packets have no payload data");
+    return;
+  }
+  let asciiContent;
+  try {
+    asciiContent = hexToAscii(combinedHex);
+  } catch {
+    statusUpdate("Status: Could not convert stream payload to ASCII");
+    return;
+  }
+  const certInputEl = document.getElementById("crypt-cert-input");
+  const certPreviewEl = document.getElementById("crypt-cert-preview");
+  if (certInputEl) certInputEl.value = asciiContent;
+  if (certPreviewEl) {
+    certPreviewEl.textContent = `Stream data: ${streamPackets.length} packets, ${Math.round(combinedHex.length / 2)} bytes`;
+  }
+  showCryptWorkspace();
+  writeLogEntry(
+    `Follow stream loaded ${streamPackets.length} packets into Crypt tab`,
+  );
+}
+
 
 function setActivePacketCursor(nextIndex) {
   const parsedIndex = Number.parseInt(nextIndex, 10);
@@ -5423,6 +5641,14 @@ convertContextButtons.httpFileLoad.addEventListener(
 convertContextButtons.httpFilePreview.addEventListener(
   "click",
   previewHttpBodyInBrowserFromContextMenu,
+);
+convertContextButtons.followStreamConv.addEventListener(
+  "click",
+  followStreamToConv,
+);
+convertContextButtons.followStreamCrypt.addEventListener(
+  "click",
+  followStreamToCrypt,
 );
 
 // Handle bookmark selection from dropdown
