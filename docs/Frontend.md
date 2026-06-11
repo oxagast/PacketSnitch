@@ -157,8 +157,8 @@ After clicking **Convert**, the following representations are shown simultaneous
 | **Byte Length**        | Total number of bytes represented by the input.                                                           |
 | **MIME Type**          | Magic-byte inferred MIME type of the data.                                                                |
 | **Text Language**      | Detected natural language of the content (when the data is text).                                        |
-| **Data Type Guesses**  | Up to three ranked guesses for the semantic data type (e.g. JWT Token, bcrypt Hash, Base64 Encoded Data) with a confidence level (High / Medium / Low). |
-| **Shannon Entropy**    | Shannon entropy value and qualitative label (Low / Medium / High).                                        |
+| **Data Type Guesses**  | Up to three ranked guesses for the semantic data type (e.g. JWT Token, bcrypt Hash, Base64 Encoded Data) with a match confidence (High / Medium / Low, where High means a strong structural match). |
+| **Shannon Entropy**    | Shannon entropy value (0–8 bits/byte) and qualitative label: Low (< 4.5), Medium (4.5–6.8), High (> 6.8).                                                |
 
 ##### Hashes Sub-tab
 
@@ -220,7 +220,7 @@ The **Stats** tab shows aggregate statistics computed across the entire loaded c
 | **Transport Protocols**    | Transport layer protocols seen (TCP, UDP, ICMP).                                                                                                            |
 | **All Hosts Addressed**    | All unique source and destination IP addresses and target host values.                                                                                      |
 | **Hostnames (DNS)**        | Resolved hostnames from DNS or reverse-lookup data.                                                                                                         |
-| **Physical Locations**     | City/country pairs from GeoIP with occurrence counts, sorted by frequency. Location tags are not clickable (no direct filter query).                        |
+| **Physical Locations**     | City/country pairs from GeoIP with occurrence counts, sorted by frequency. Unlike other sections, location tags are display-only and do not generate a filter query when clicked. |
 | **Ports Seen**             | All source and destination port numbers observed.                                                                                                           |
 | **MAC Vendors**            | Ethernet MAC vendor strings identified from OUI lookup.                                                                                                     |
 | **MIME Types**             | All distinct MIME types found in payload data.                                                                                                              |
