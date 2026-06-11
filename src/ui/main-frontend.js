@@ -4510,12 +4510,18 @@ function followStreamToCrypt() {
     statusUpdate("Status: Stream packets have no payload data");
     return;
   }
-  const asciiContent = hexToAscii(combinedHex);
+  let asciiContent;
+  try {
+    asciiContent = hexToAscii(combinedHex);
+  } catch {
+    statusUpdate("Status: Could not convert stream payload to ASCII");
+    return;
+  }
   const certInputEl = document.getElementById("crypt-cert-input");
   const certPreviewEl = document.getElementById("crypt-cert-preview");
   if (certInputEl) certInputEl.value = asciiContent;
   if (certPreviewEl) {
-    certPreviewEl.textContent = `Stream follow: ${streamPackets.length} packets, ${Math.round(combinedHex.length / 2)} bytes`;
+    certPreviewEl.textContent = `Stream data: ${streamPackets.length} packets, ${Math.round(combinedHex.length / 2)} bytes`;
   }
   showCryptWorkspace();
   writeLogEntry(
