@@ -6,7 +6,7 @@
 
 ### Overview
 
-The PacketSnitch frontend is an Electron-based desktop application that provides an interactive interface for loading, browsing, and filtering the JSON output produced by the backend (`snitch.py`). It visualizes packet metadata, payloads, protocol details, and GeoIP information, and supports LLM-powered analysis summaries. The frontend also includes a data conversion workspace (Conv), an encryption/certificate workspace (Crypt), an aggregate statistics view (Stats), a sortable packet list (List), an encrypted local key and credential store (Keystore), and a persistent activity log (Log).
+The PacketSnitch frontend is an Electron-based desktop application that provides an interactive interface for loading, browsing, and filtering the JSON output produced by the backend (`snitch.py`). It visualizes packet metadata, payloads, protocol details, and GeoIP information, and supports LLM-powered analysis summaries. The frontend also includes a data conversion workspace (Conv), an encryption/certificate workspace (Crypt), an aggregate statistics view (Stats), a sortable packet list (List), an encrypted local key and credential store (Keystore), a session notes workspace (Notes), and a persistent activity log (Log).
 
 ### Requirements
 
@@ -62,6 +62,7 @@ The toolbar at the top of the content area contains navigation and view-switchin
 | **Keystore**    | Open the local credential store for managing session and persistent keychain entries (passwords, keys, certificates, cookies).                                    |
 | **Stats**       | Show capture-level aggregate statistics (protocols, hosts, ports, MIME types, GeoIP locations, etc.) derived from the full loaded dataset.                        |
 | **List**        | Show all packets in a searchable, sortable, stream-groupable list view.                                                                                           |
+| **Notes**       | Open the session notes workspace for creating, editing, color-tagging, and exporting freeform notes tied to the current session.                                  |
 | **Log**         | Toggle the Activity Log panel, which records all GUI and backend actions with timestamps.                                                                         |
 | **Prev / Next** | Navigate backwards and forwards through the packet list (or filtered set).                                                                                        |
 | **Filter bar**  | Enter a filter expression to narrow the displayed packets (see [Filtering](#filtering)).                                                                          |
@@ -122,18 +123,21 @@ An interactive hex dump of the full raw payload. Clicking a cell in the hex grid
 
 #### Conv Tab (Data Conversion)
 
-The **Conv** tab is a self-contained data conversion workspace accessible at any time by clicking **Conv** in the toolbar.
+The **Conv** tab is a self-contained data conversion workspace accessible at any time by clicking **Conv** in the toolbar. It has three sub-tabs: **Conversions**, **Hashes**, and **Decodes**.
 
-##### Input
+##### Conversions Sub-tab
 
-| Control            | Description                                                                                            |
-| ------------------ | ------------------------------------------------------------------------------------------------------ |
-| **Input format**   | Choose the encoding of the text you are pasting: Base64, Binary, Hex, ASCII / UTF-8, or Decimal bytes. |
-| **Input textarea** | Paste raw encoded data here (hex strings, base64 blobs, binary sequences, etc.).                       |
-| **Convert**        | Parse the input according to the selected format and populate all output fields.                       |
-| **Clear**          | Erase the input and all output fields.                                                                 |
+###### Input
 
-##### Converted Output
+| Control                   | Description                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Input format**          | Choose the encoding of the text you are pasting: Base64, Binary, Hex, ASCII / UTF-8, or Decimal bytes. |
+| **Input textarea**        | Paste raw encoded data here (hex strings, base64 blobs, binary sequences, etc.).                       |
+| **Previous inputs**       | Dropdown history of previous Conv inputs for the current session; select an entry to reload it.        |
+| **Convert**               | Parse the input according to the selected format and populate all output fields.                       |
+| **Clear**                 | Erase the input and all output fields.                                                                 |
+
+###### Converted Output
 
 After clicking **Convert**, the following representations are shown simultaneously:
 
@@ -146,17 +150,37 @@ After clicking **Convert**, the following representations are shown simultaneous
 | **ASCII**           | Printable ASCII / UTF-8 representation.          |
 | **Base64**          | Standard base64 encoding.                        |
 
-##### Data Insights
+###### Data Insights
 
-| Field               | Description                                                                    |
-| ------------------- | ------------------------------------------------------------------------------ |
-| **Byte Length**     | Total number of bytes represented by the input.                                |
-| **MIME Type**       | Magic-byte inferred MIME type of the data.                                     |
-| **Shannon Entropy** | Shannon entropy value and qualitative label (Low / Medium / High / Very High). |
+| Field                  | Description                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Byte Length**        | Total number of bytes represented by the input.                                                           |
+| **MIME Type**          | Magic-byte inferred MIME type of the data.                                                                |
+| **Text Language**      | Detected natural language of the content (when the data is text).                                        |
+| **Data Type Guesses**  | Up to three ranked guesses for the semantic data type (e.g. JWT Token, bcrypt Hash, Base64 Encoded Data) with a confidence level (High / Medium / Low). |
+| **Shannon Entropy**    | Shannon entropy value and qualitative label (Low / Medium / High).                                        |
 
-##### Protocol Decoder
+##### Hashes Sub-tab
 
-Select a protocol from the **Protocol** dropdown (Auto-detect, HTTP, Telnet, SSH / OpenSSH, POP3, IMAP, SMTP) to attempt to parse the input bytes as that protocol and display a human-readable decoded view below.
+The **Hashes** sub-tab computes cryptographic hash digests of any input text. Type or paste text into the **Hashed Input** field; hashes are computed automatically and displayed in read-only fields below.
+
+| Hash output field | Algorithm                    |
+| ----------------- | ---------------------------- |
+| **MD5**           | MD5 (128-bit)                |
+| **SHA-1**         | SHA-1 (160-bit)              |
+| **SHA-256**       | SHA-256 (256-bit)            |
+| **SHA-384**       | SHA-384 (384-bit)            |
+| **SHA-512**       | SHA-512 (512-bit)            |
+| **SHA3-256**      | SHA-3 / Keccak-256           |
+| **SHA3-512**      | SHA-3 / Keccak-512           |
+| **RIPEMD-160**    | RIPEMD-160                   |
+| **Whirlpool**     | Whirlpool (512-bit)          |
+
+The Hashed Input field accepts escape sequences (`\n`, `\r`, `\t`, `\\`, `\xNN`) so exact byte sequences can be hashed without pasting raw binary data. Clicking **Convert** on the Conversions sub-tab also populates the Hashed Input field automatically from the current conversion input bytes.
+
+##### Decodes Sub-tab
+
+The **Decodes** sub-tab is a protocol decoder. Select a protocol from the **Protocol** dropdown (Auto-detect, HTTP, Telnet, SSH / OpenSSH, POP3, IMAP, SMTP) to attempt to parse the current conversion input bytes as that protocol and display a human-readable decoded view below.
 
 > The context menu's **Convert to...** submenu and **Load Raw Payload into Conv tab** option can automatically populate the Conv tab input from packet data or the current selection.
 
@@ -173,6 +197,7 @@ The **Crypt** tab provides a multi-panel workspace for inspecting cryptographic 
 | **Encountered SSL/TLS** | A list of all distinct SSL/TLS sessions detected in the loaded capture. Select an entry to view its details (SSL version, cipher, certificate text). Buttons: **Refresh** (re-scan the loaded data), **Filter packets** (populate the filter bar to show only packets in the selected session), **Load cert text** (copy the session certificate into the Certificate Loader). |
 | **Certificate Loader**  | Load a PEM certificate from a file (**Load certificate file**) or paste PEM text directly (**Use pasted certificate**). A parsed preview is shown below the input. **Clear** removes the loaded certificate.                                                                                                                                                                   |
 | **Private Key Loader**  | Load a PEM private key from a file (**Load private key file**) or paste PEM text directly (**Use pasted key**). A parsed preview is shown below. **Clear** removes the loaded key.                                                                                                                                                                                             |
+| **TLS/SSL Decrypt**     | Attempt RSA decryption of the selected SSL/TLS session's payload using the loaded private key. **Decrypt selected** runs the attempt; the decrypted bytes (hex and ASCII preview) are shown in the output pane. **Send to Conv** loads the decrypted payload as hex into the Conv tab. **Clear** clears the decryption output.                                                  |
 
 ##### PGP Sub-tab
 
@@ -188,18 +213,18 @@ Reserved workspace for future OpenSSH key and session tooling.
 
 The **Stats** tab shows aggregate statistics computed across the entire loaded capture (all hosts, all packets). Statistics are presented as labelled tag-cloud sections. Clicking any tag pre-fills the filter bar with a suggested filter expression for that value.
 
-| Section                   | Description                                                                                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Overview**              | Total packet count, unique hosts targeted, encrypted vs. unencrypted packet counts, unique protocol count, and unique GeoIP location count. |
-| **Application Protocols** | All distinct application-layer protocol names identified by port (e.g. HTTP, DNS, SMTP).                                                    |
-| **Transport Protocols**   | Transport layer protocols seen (TCP, UDP, ICMP).                                                                                            |
-| **Hosts / IPs**           | All unique source and destination IP addresses and target host values.                                                                      |
-| **Hostnames**             | Resolved hostnames from DNS or reverse-lookup data.                                                                                         |
-| **GeoIP Locations**       | City/country pairs from GeoIP, sorted by frequency.                                                                                         |
-| **Ports**                 | All source and destination port numbers observed.                                                                                           |
-| **MAC Vendors**           | Ethernet MAC vendor strings identified from OUI lookup.                                                                                     |
-| **MIME Types**            | All distinct MIME types found in payload data.                                                                                              |
-| **Data Types**            | All distinct magic-identified data type strings.                                                                                            |
+| Section                    | Description                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Capture Overview**       | Total packet count, unique hosts targeted, encrypted vs. unencrypted packet counts, unique protocol count, and unique GeoIP location count.                 |
+| **Application Protocols**  | All distinct application-layer protocol names identified by port (e.g. HTTP, DNS, SMTP).                                                                    |
+| **Transport Protocols**    | Transport layer protocols seen (TCP, UDP, ICMP).                                                                                                            |
+| **All Hosts Addressed**    | All unique source and destination IP addresses and target host values.                                                                                      |
+| **Hostnames (DNS)**        | Resolved hostnames from DNS or reverse-lookup data.                                                                                                         |
+| **Physical Locations**     | City/country pairs from GeoIP with occurrence counts, sorted by frequency. Location tags are not clickable (no direct filter query).                        |
+| **Ports Seen**             | All source and destination port numbers observed.                                                                                                           |
+| **MAC Vendors**            | Ethernet MAC vendor strings identified from OUI lookup.                                                                                                     |
+| **MIME Types**             | All distinct MIME types found in payload data.                                                                                                              |
+| **Data Types**             | All distinct magic-identified data type strings.                                                                                                            |
 
 ---
 
@@ -245,14 +270,15 @@ On subsequent launches, the **Unlock Keychain** dialog prompts for the password 
 
 ##### Create / Update Entry
 
-| Control          | Description                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------- |
-| **Keychain**     | Choose whether new entries are saved to the **Session auto keychain** or the **Persistent keychain**. |
-| **Entry label**  | Optional human-readable name for the entry.                                                           |
-| **Content area** | Paste the credential, secret, certificate, or notes to store.                                         |
-| **Save cert**    | Store the pasted content as a certificate entry.                                                      |
-| **Save key**     | Store the pasted content as a private key entry.                                                      |
-| **Save secret**  | Store the pasted content as a generic secret/password entry.                                          |
+| Control                          | Description                                                                                           |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Keychain**                     | Choose whether new entries are saved to the **Session auto keychain** or the **Persistent keychain**. |
+| **Reset keychain password**      | Wipes all persistent keychain entries and sets a new encryption password. A confirmation prompt is shown before proceeding. |
+| **Entry label**                  | Optional human-readable name for the entry.                                                           |
+| **Content area**                 | Paste the credential, secret, certificate, or notes to store.                                         |
+| **Save cert**                    | Store the pasted content as a certificate entry (enabled only in Persistent keychain mode).           |
+| **Save key**                     | Store the pasted content as a private key entry (enabled only in Persistent keychain mode).           |
+| **Save secret**                  | Store the pasted content as a generic secret/password entry (enabled only in Persistent keychain mode). |
 
 ##### Saved Entries
 
@@ -260,8 +286,9 @@ On subsequent launches, the **Unlock Keychain** dialog prompts for the password 
 | ---------------------- | ----------------------------------------------------------------------------------------------- |
 | **Entries list**       | Scrollable list of all saved entries in the currently selected keychain.                        |
 | **Load selected**      | Copy the selected entry's content into the Create/Update area for inspection or editing.        |
-| **Send to persistent** | Promote a session keychain entry to the persistent keychain.                                    |
-| **Delete selected**    | Permanently remove the selected entry.                                                          |
+| **Open link**          | Open the selected entry's content as a URL in the system's default browser. Only enabled when the entry contains a valid `http://` or `https://` URL. |
+| **Send to persistent** | Promote a session keychain entry to the persistent keychain (enabled only in Session mode).     |
+| **Delete selected**    | Permanently remove the selected entry (enabled only in Persistent keychain mode).               |
 | **Details preview**    | Shows the type, label, source, creation timestamp, and a content summary of the selected entry. |
 
 ##### Auto-population
@@ -272,6 +299,43 @@ PacketSnitch automatically populates the **Session** keychain from packet data w
 - Cookie/Set-Cookie header values extracted from HTTP payloads.
 
 These auto-entries appear with a source of `session-auto` and can be promoted to the persistent keychain via **Send to persistent**.
+
+##### Manual URI/URL Entry
+
+The context menu's **Add to Keystore... → Manual URI Session** and **Manual URI Persistent** options open a dialog to manually enter any `http://` or `https://` URL. The entered URL is saved as a `url` type entry in the selected keychain. Entries of this type can be opened directly in the system browser via **Open link**.
+
+---
+
+#### Notes Tab
+
+The **Notes** tab is a session notes workspace for creating and editing freeform text notes tied to the current session. Click **Notes** in the toolbar to open it.
+
+##### Notes Sidebar (right panel)
+
+| Control              | Description                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
+| **Notes list**       | Scrollable list of all notes in the current session, each prefixed with its position number and a preview of its text. Notes are color-coded by their assigned color. |
+| **Color picker**     | Color swatch used when creating a new note, and updated to show the color of the currently selected note. |
+| **New note input**   | Text area for composing the body of a new note before adding it.                                 |
+| **Add note**         | Creates a new note from the **New note input** text with the selected color and adds it to the top of the list. |
+| **Remove selected**  | Permanently removes the currently selected note from the list.                                   |
+| **Save notes file**  | Exports all current notes to a plain-text file on disk (Save dialog). Each note is separated by a `---` divider. |
+
+##### Notes Editor (main area)
+
+The main content area shows a full-width editable text area for the currently selected note. Edits are reflected immediately in the notes list preview. The editor is disabled when no note is selected.
+
+##### Notes Context Menu
+
+Right-clicking in packet or Conv views while notes are active shows a **Send to Notes...** submenu:
+
+| Item                        | Description                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------- |
+| **Send selected/context data**  | Creates a new note containing the currently selected text or packet context. |
+| **Send Conv converted output**  | Creates a new note containing the current Conv tab conversion output.        |
+| **Send Conv hashes**            | Creates a new note containing the current Conv tab hash outputs.             |
+
+Notes are saved as part of the session file when **Save Session** is used.
 
 ---
 
@@ -321,14 +385,16 @@ Paste clipboard text into the focused input element.
 
 Load the selected text or current packet data into the **Conv** tab with a specific input format pre-selected. The Conv tab is automatically opened and **Convert** is run.
 
-| Item                               | Description                                                                     |
-| ---------------------------------- | ------------------------------------------------------------------------------- |
-| **Load as Hex**                    | Load the selection as a hex-encoded byte string.                                |
-| **Load as Binary**                 | Load the selection as a binary bit-string.                                      |
-| **Load as Base64**                 | Load the selection as a base64-encoded string.                                  |
-| **Load as Decimal bytes**          | Load the selection as space-separated decimal byte values.                      |
-| **Load as ASCII / UTF-8**          | Load the selection as a plain text string.                                      |
-| **Load Raw Payload into Conv tab** | Load the current packet's full raw payload as hex into Conv and run conversion. |
+| Item                               | Description                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Load as Hex**                    | Load the selection as a hex-encoded byte string.                                                                    |
+| **Load as Binary**                 | Load the selection as a binary bit-string.                                                                          |
+| **Load as Base64**                 | Load the selection as a base64-encoded string.                                                                      |
+| **Load as Decimal bytes**          | Load the selection as space-separated decimal byte values.                                                          |
+| **Load as ASCII / UTF-8**          | Load the selection as a plain text string.                                                                          |
+| **Derive Data Type Guess**         | Run the data-type guesser on the selected text and show the ranked type guesses in the Conv tab's Data Insights.    |
+| **Load Cursor ASCII into Conv tab**| Load the ASCII string at the current hex-grid cursor position into the Conv tab input as ASCII / UTF-8.            |
+| **Load Raw Payload into Conv tab** | Load the current packet's full raw payload as hex into Conv and run conversion.                                     |
 
 ---
 
@@ -376,6 +442,20 @@ Save highlighted text or current context data directly to the keychain. Three le
 | **As Session Cookie** | Session keychain | Persistent keychain |
 
 Selecting a persistent target will prompt for the keychain password if it has not been unlocked yet.
+
+---
+
+##### Send to Notes...
+
+Send the current selection or Conv output directly to a new note in the Notes workspace.
+
+| Item                            | Description                                                                      |
+| ------------------------------- | -------------------------------------------------------------------------------- |
+| **Send selected/context data**  | Creates a new note containing the currently selected text or packet context.     |
+| **Send Conv converted output**  | Creates a new note containing the current Conv tab conversion output.            |
+| **Send Conv hashes**            | Creates a new note containing the current Conv tab hash outputs.                 |
+
+This submenu is only visible when there is context data available (selected text or active Conv output).
 
 ---
 
