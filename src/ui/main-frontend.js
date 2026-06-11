@@ -4401,6 +4401,8 @@ function getTotalPacketCount() {
 }
 
 // Minimum total-packet count that triggers the stream-loading overlay.
+// getFollowStreamPackets() iterates every packet across all hosts, so captures
+// with ~500+ packets produce a noticeable pause without the overlay.
 const STREAM_LOADING_THRESHOLD = 500;
 
 /**
