@@ -4388,6 +4388,39 @@ function getActivePacketCursor() {
 }
 
 /**
+ * Returns the total number of packets across all hosts in capturedPackets.
+ * Used to decide whether to show the stream-loading overlay.
+ */
+function getTotalPacketCount() {
+  const hosts = capturedPackets?.["Host"];
+  if (!hosts || typeof hosts !== "object") return 0;
+  return Object.values(hosts).reduce(
+    (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
+    0,
+  );
+}
+
+// Minimum total-packet count that triggers the stream-loading overlay.
+const STREAM_LOADING_THRESHOLD = 500;
+
+/**
+ * Shows the loading-container overlay with a stream-specific message.
+ * The caller is responsible for hiding it with hideStreamLoadingOverlay().
+ */
+function showStreamLoadingOverlay() {
+  const loadingTextEl = document.getElementById("loading-text");
+  const loadingContainerEl = document.getElementById("loading-container");
+  if (loadingTextEl) loadingTextEl.textContent = "Preparing stream...";
+  if (loadingContainerEl) loadingContainerEl.style.display = "block";
+}
+
+/** Hides the loading-container overlay shown by showStreamLoadingOverlay(). */
+function hideStreamLoadingOverlay() {
+  const loadingContainerEl = document.getElementById("loading-container");
+  if (loadingContainerEl) loadingContainerEl.style.display = "none";
+}
+
+/**
  * Returns metadata about the current packet's stream (4-tuple: srcIp, srcPort,
  * dstIp, dstPort, protocol), or null if no current packet is loaded.
  */
@@ -4477,6 +4510,22 @@ function buildStreamHex(streamPackets) {
 
 function followStreamToConv() {
   hideConvertContextMenu();
+  const isLarge = getTotalPacketCount() >= STREAM_LOADING_THRESHOLD;
+  if (isLarge) {
+    showStreamLoadingOverlay();
+    setTimeout(() => {
+      try {
+        _doFollowStreamToConv();
+      } finally {
+        hideStreamLoadingOverlay();
+      }
+    }, 0);
+  } else {
+    _doFollowStreamToConv();
+  }
+}
+
+function _doFollowStreamToConv() {
   const streamPackets = getFollowStreamPackets();
   if (!streamPackets.length) {
     statusUpdate("Status: No stream packets found for current packet");
@@ -4500,6 +4549,22 @@ function followStreamToConv() {
 
 function followStreamToCrypt() {
   hideConvertContextMenu();
+  const isLarge = getTotalPacketCount() >= STREAM_LOADING_THRESHOLD;
+  if (isLarge) {
+    showStreamLoadingOverlay();
+    setTimeout(() => {
+      try {
+        _doFollowStreamToCrypt();
+      } finally {
+        hideStreamLoadingOverlay();
+      }
+    }, 0);
+  } else {
+    _doFollowStreamToCrypt();
+  }
+}
+
+function _doFollowStreamToCrypt() {
   const streamPackets = getFollowStreamPackets();
   if (!streamPackets.length) {
     statusUpdate("Status: No stream packets found for current packet");
