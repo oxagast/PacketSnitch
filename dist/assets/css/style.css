@@ -594,6 +594,7 @@ strong {
   overflow-x: hidden;
   font-size: 14px;
   font-family: "Tahoma", "Courier New", Courier, monospace;
+<<<<<<< HEAD
 }
 
 .summary-compaction-status {
@@ -611,6 +612,8 @@ strong {
 
 .summary-compaction-status[hidden] {
   display: none;
+=======
+>>>>>>> 5862f29a91399490b9ba99449b672af01a186670
 }
 
 #tab-btns {
@@ -1615,17 +1618,28 @@ strong {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px 12px;
+<<<<<<< HEAD
   margin: 0 0 8px;
   padding: 6px 8px;
   border: 1px solid var(--color-3);
   background-color: transparent;
+=======
+  margin: 6px 0 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-3);
+  background-color: var(--color-8, var(--color-7));
+>>>>>>> 5862f29a91399490b9ba99449b672af01a186670
   color: var(--color-6);
   font-family: "Courier New", Courier, monospace;
   font-size: 12px;
 }
 
 .data-tools-manual-carve-row {
+<<<<<<< HEAD
   margin-top: 13px;
+=======
+  margin-top: 10px;
+>>>>>>> 5862f29a91399490b9ba99449b672af01a186670
   border: 1px solid var(--color-3);
   background-color: color-mix(in srgb, var(--data-tools-frame-bg) 78%, #000 22%);
   padding: 8px;
@@ -1689,6 +1703,7 @@ strong {
 .data-tools-cursor-value {
   display: inline-flex;
   align-items: center;
+<<<<<<< HEAD
   gap: 2px;
   white-space: nowrap;
 }
@@ -1728,6 +1743,12 @@ strong {
   color: var(--color-1);
 }
 
+=======
+  gap: 4px;
+  white-space: nowrap;
+}
+
+>>>>>>> 5862f29a91399490b9ba99449b672af01a186670
 #data-tools-load-more-output-btn {
   font-size: 11px;
   padding: 4px 8px;
@@ -1780,6 +1801,7 @@ strong {
   background-color: var(--color-2-hover);
 }
 
+<<<<<<< HEAD
 #subnet-ti-type,
 #subnet-ti-input {
   background-color: var(--data-tools-frame-bg);
@@ -1788,6 +1810,8 @@ strong {
   padding: 6px;
 }
 
+=======
+>>>>>>> 5862f29a91399490b9ba99449b672af01a186670
 #subnet-calc-input {
   width: 100%;
   box-sizing: border-box;
@@ -2039,7 +2063,11 @@ strong {
 }
 
 .data-tools-find-replace-section {
+<<<<<<< HEAD
   margin-top: 26px;
+=======
+  margin-top: 10px;
+>>>>>>> 5862f29a91399490b9ba99449b672af01a186670
   border: 1px solid var(--color-3);
   background-color: color-mix(in srgb, var(--data-tools-frame-bg) 78%, #000 22%);
   padding: 8px;
@@ -2128,6 +2156,7 @@ strong {
   margin-top: 2px;
 }
 
+<<<<<<< HEAD
 .data-tools-input-meta button {
   background-color: var(--color-2);
   border: 1px solid var(--color-3);
@@ -2140,6 +2169,8 @@ strong {
   background-color: var(--color-2-hover);
 }
 
+=======
+>>>>>>> 5862f29a91399490b9ba99449b672af01a186670
 .data-tools-input-edited {
   display: inline-flex;
   align-items: center;
